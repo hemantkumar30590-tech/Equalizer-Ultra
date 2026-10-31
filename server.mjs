@@ -250,6 +250,47 @@ const HTML_PAGE = `<!DOCTYPE html>
   </header>
 
   <main>
+    <!-- Out-Of-Head Room Externalizer (Smyth A16 / OOHL Style) -->
+    <div class="quantum-card" style="border-color: var(--amber);">
+      <div class="card-header">
+        <div>
+          <span class="card-title" style="color:var(--amber);">🔊 OUT-OF-HEAD ROOM EXTERNALIZER (SMYTH A16 / OOHL ENGINE — NEW!)</span>
+          <div id="oohStatus" style="font-size:11.5px;color:var(--emerald);margin-top:3px;font-family:monospace;">
+            OUT-OF-HEAD [3.0M SOFA]: 3.0m Throw • Wall Bounce 58% • ITD 340µs Crossfeed 62% • Pinna 8kHz Notch ON • Floor Sub-Wave ON
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="chip" onclick="setOohMode('off', 'In-Ear Direct (Off)', 0.5, 0)">🎧 In-Ear Direct</button>
+          <button class="chip" onclick="setOohMode('desk', '1.2m Studio Desk Monitors', 1.2, 38)">🖥️ 1.2m Studio Desk</button>
+          <button class="chip active" onclick="setOohMode('sofa', '3.0m Living Room 5.1 Sofa', 3.0, 58)">🛋️ 3.0m Living Room Sofa</button>
+          <button class="chip" onclick="setOohMode('imax', '6.0m IMAX Screen Throw', 6.0, 72)">🎬 6.0m IMAX Screen</button>
+          <button class="chip" onclick="setOohMode('nextroom', 'Next-Room / Open-Door Party', 4.8, 85)">🚪 Next-Room Party Speaker</button>
+          <button class="chip" onclick="setOohMode('lawn', 'Open-Air Lawn / Terrace Stage', 5.0, 44)">🌌 Open-Air Lawn Stage</button>
+        </div>
+      </div>
+
+      <div class="quantum-grid">
+        <div class="q-box">
+          <h4><span>Speaker Distance Throw (Bahar Ki Doori)</span><span id="oohDistVal" style="color:var(--cyan);">3.0 Meters</span></h4>
+          <p>Pushes vocals &amp; instruments 0.5m to 6.0m outside your head with HF air absorption</p>
+          <input id="oohDistSlider" type="range" min="0.5" max="6.0" step="0.1" value="3.0" style="width:100%;accent-color:var(--cyan);" oninput="updateOohDist(this.value)" />
+        </div>
+        <div class="q-box">
+          <h4><span>Early Room Wall &amp; Desk Bounce (8–22ms)</span><span id="oohRefVal" style="color:var(--amber);">58% Room Air</span></h4>
+          <p>3-Tap Floor (8ms), Desk (14ms) &amp; Side-Wall (22ms) acoustic reflections</p>
+          <input id="oohRefSlider" type="range" min="0" max="100" value="58" style="width:100%;accent-color:var(--amber);" oninput="updateOohReflection(this.value)" />
+        </div>
+        <div class="q-box">
+          <h4><span>Pinna Concha 8kHz Notch &amp; Floor Sub-Wave</span><span id="oohHrtfVal" style="color:var(--emerald);">BOTH ACTIVE</span></h4>
+          <p>340µs Skull-Shadow ITD + Outer-Ear Pinna Depth Notch + 40–63Hz Floor Resonance</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="chip active" id="pinnaBtn" onclick="toggleOohPinna()">👂 Pinna 8kHz &amp; Chest HRTF: ON</button>
+            <button class="chip active" id="floorSubBtn" onclick="toggleOohFloorSub()">🔊 Floor Sub-Wave: ON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 8-in-1 Future-Gen Quantum Lab + 3D Multi-Instrument & Dual-Woofer Stage Architect -->
     <div class="quantum-card" style="border-color: var(--magenta);">
       <div class="card-header">
@@ -1055,6 +1096,67 @@ const HTML_PAGE = `<!DOCTYPE html>
       PRESETS[currentPreset] = [...gains];
       document.getElementById("hyperMatrixStatus").textContent = "🧬 REFERENCE TRACK DNA LOCKED • 31-Band Spectral Envelope Cloned!";
       renderPresets();
+    }
+
+    let oohDist = 3.0;
+    let oohRef = 58;
+    let oohPinna = true;
+    let oohFloorSub = true;
+    let oohLabel = "3.0m Living Room 5.1 Sofa";
+
+    function applyOohCurve(modeKey) {
+      const distNorm = (oohDist - 0.5) / 5.5;
+      const refNorm = oohRef / 100.0;
+      for (let i = 0; i < 31; i++) {
+        let g = gains[i] * 0.55;
+        if (oohFloorSub && i <= 7) g += 3.5 + refNorm * 2.0;
+        if (oohPinna) {
+          if (i >= 9 && i <= 11) g += 2.2;
+          if (i === 12 || i === 13) g -= 1.4;
+          if (i >= 19 && i <= 22) g += 2.0;
+          if (i === 25 || i === 26) g -= 4.4;
+        }
+        if (i >= 27) g -= distNorm * 3.5;
+        if (modeKey === 'nextroom' && i >= 20) g -= (i - 19) * 1.1;
+        gains[i] = Math.max(-15, Math.min(15, Math.round(g * 2) / 2));
+      }
+      document.getElementById("oohStatus").textContent =
+        "🔊 OUT-OF-HEAD [" + oohLabel.toUpperCase() + "]: " + oohDist.toFixed(1) +
+        "m Throw • Wall Bounce " + oohRef + "% • ITD 340µs Crossfeed • " +
+        (oohPinna ? "Pinna 8kHz Notch ON" : "Pinna OFF") + " • " +
+        (oohFloorSub ? "Floor Sub-Wave ON" : "Sub-Wave OFF");
+      renderBands();
+    }
+
+    function setOohMode(key, label, dist, ref) {
+      oohLabel = label;
+      oohDist = dist;
+      oohRef = ref;
+      document.getElementById("oohDistVal").textContent = dist.toFixed(1) + " Meters";
+      document.getElementById("oohDistSlider").value = dist;
+      document.getElementById("oohRefVal").textContent = ref + "% Room Air";
+      document.getElementById("oohRefSlider").value = ref;
+      applyOohCurve(key);
+    }
+    function updateOohDist(v) {
+      oohDist = parseFloat(v);
+      document.getElementById("oohDistVal").textContent = oohDist.toFixed(1) + " Meters";
+      applyOohCurve('custom');
+    }
+    function updateOohReflection(v) {
+      oohRef = parseInt(v, 10);
+      document.getElementById("oohRefVal").textContent = oohRef + "% Room Air";
+      applyOohCurve('custom');
+    }
+    function toggleOohPinna() {
+      oohPinna = !oohPinna;
+      document.getElementById("pinnaBtn").textContent = "👂 Pinna 8kHz & Chest HRTF: " + (oohPinna ? "ON" : "OFF");
+      applyOohCurve('custom');
+    }
+    function toggleOohFloorSub() {
+      oohFloorSub = !oohFloorSub;
+      document.getElementById("floorSubBtn").textContent = "🔊 Floor Sub-Wave: " + (oohFloorSub ? "ON" : "OFF");
+      applyOohCurve('custom');
     }
 
     renderPresets();

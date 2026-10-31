@@ -75,6 +75,7 @@ import com.example.dsp.FutureGenAudioLabEngine
 import com.example.dsp.GyroHeadTrackingMode
 import com.example.dsp.HolographicVibeProfile
 import com.example.dsp.NeuralBrainwaveMode
+import com.example.dsp.OutOfHeadExternalizerMode
 import com.example.dsp.SpatialStageFormation
 import com.example.dsp.SpatialStageNode
 import com.example.dsp.SpeedCruiseMode
@@ -875,6 +876,11 @@ fun FutureGenQuantumLabDialog(
     onToggleBassHapticWoofer: () -> Unit = {},
     onApplyVenueClone: (AcousticVenueClone) -> Unit = {},
     onCaptureReferenceDna: () -> Unit = {},
+    onSelectOutOfHeadMode: (OutOfHeadExternalizerMode) -> Unit = {},
+    onUpdateOutOfHeadDistance: (Float) -> Unit = {},
+    onUpdateOutOfHeadReflection: (Int) -> Unit = {},
+    onTogglePinnaChestHrtf: () -> Unit = {},
+    onToggleSubFloorCoupler: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -910,13 +916,13 @@ fun FutureGenQuantumLabDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = "EQULTRA QUANTUM LAB & 3D STAGE",
+                                text = "EQULTRA QUANTUM LAB & OUT-OF-HEAD 3D",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
-                                text = "8 Next-Gen 3D Instrument Stage, Sonar, Neural & Spatial Engines",
+                                text = "Out-Of-Head Room Externalizer + 3D Stage + 2030 Hyper-Matrix",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ElectricCyan
                             )
@@ -939,6 +945,16 @@ fun FutureGenQuantumLabDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // 00. OUT-OF-HEAD ROOM EXTERNALIZER (SMYTH A16 / OOHL STYLE)
+                    OutOfHeadRoomExternalizerCard(
+                        uiState = uiState,
+                        onSelectMode = onSelectOutOfHeadMode,
+                        onUpdateDistanceMeters = onUpdateOutOfHeadDistance,
+                        onUpdateEarlyReflection = onUpdateOutOfHeadReflection,
+                        onTogglePinnaChestHrtf = onTogglePinnaChestHrtf,
+                        onToggleSubFloorCoupler = onToggleSubFloorCoupler
+                    )
+
                     // 0. 3D MULTI-INSTRUMENT & DUAL-WOOFER STAGE ARCHITECT
                     MultiNodeInstrumentStageCard(
                         uiState = uiState,
@@ -1976,4 +1992,236 @@ private fun StemSliderRow(
         )
     }
 }
+
+@Composable
+fun OutOfHeadRoomExternalizerCard(
+    uiState: EqUiState,
+    onSelectMode: (OutOfHeadExternalizerMode) -> Unit,
+    onUpdateDistanceMeters: (Float) -> Unit,
+    onUpdateEarlyReflection: (Int) -> Unit,
+    onTogglePinnaChestHrtf: () -> Unit,
+    onToggleSubFloorCoupler: () -> Unit
+) {
+    val isActive = uiState.outOfHeadMode != OutOfHeadExternalizerMode.OFF
+    Surface(
+        color = ObsidianCard,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            width = 1.5.dp,
+            brush = Brush.horizontalGradient(
+                listOf(ElectricCyan, SignalEmerald, StudioAmber)
+            )
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.SpeakerGroup,
+                            contentDescription = "Out-Of-Head Room Externalizer",
+                            tint = SignalEmerald,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "OUT-OF-HEAD ROOM EXTERNALIZER (OOHL)",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Makes earbuds/headphones sound like real speakers playing outside in your room!",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                        color = StudioAmber
+                    )
+                }
+                Text(
+                    text = if (isActive) uiState.outOfHeadMode.badge else "IN-EAR",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = AmoledBlack,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier
+                        .background(
+                            if (isActive) SignalEmerald else TextSecondary,
+                            RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+
+            // Live Telemetry Banner
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, if (isActive) SignalEmerald.copy(alpha = 0.6f) else ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = uiState.outOfHeadTelemetryText,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = if (isActive) SignalEmerald else TextSecondary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                )
+            }
+
+            // 1-Tap Out-Of-Head Speaker Environment Chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                OutOfHeadExternalizerMode.entries.forEach { mode ->
+                    val selected = uiState.outOfHeadMode == mode
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectMode(mode) },
+                        label = {
+                            Text(
+                                text = "${mode.title} [${mode.badge}]",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = SignalEmerald,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        )
+                    )
+                }
+            }
+
+            // Distance Throw Slider (0.5m .. 6.0m) + Early Room Wall Reflection Slider (0% .. 100%)
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Speaker Distance Throw (Bahar Ki Doori)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = String.format(Locale.US, "%.1f Meters Outside Head", uiState.outOfHeadDistanceMeters),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.outOfHeadDistanceMeters,
+                        onValueChange = onUpdateDistanceMeters,
+                        valueRange = 0.5f..6.0f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = ElectricCyan,
+                            activeTrackColor = ElectricCyan
+                        )
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Early Room Wall, Floor & Desk Bounce (8–22ms)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.outOfHeadEarlyReflectionPercent}% Room Air",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.outOfHeadEarlyReflectionPercent.toFloat(),
+                        onValueChange = { onUpdateEarlyReflection(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = StudioAmber,
+                            activeTrackColor = StudioAmber
+                        )
+                    )
+                }
+            }
+
+            // Psychoacoustic Hardware Switches: Pinna/Chest HRTF + Sub-Bass Floor Coupler
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = uiState.isPinnaChestHrtfEnabled,
+                    onClick = onTogglePinnaChestHrtf,
+                    label = {
+                        Text(
+                            text = if (uiState.isPinnaChestHrtfEnabled) {
+                                "👂 Outer-Ear Pinna 8kHz Notch & Chest Bounce: ON"
+                            } else {
+                                "👂 Outer-Ear Pinna & Chest HRTF: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = ElectricCyan,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+
+                FilterChip(
+                    selected = uiState.isSubFloorCouplerEnabled,
+                    onClick = onToggleSubFloorCoupler,
+                    label = {
+                        Text(
+                            text = if (uiState.isSubFloorCouplerEnabled) {
+                                "🔊 Sub-Bass Floor & Wall Pressure Wave: ON"
+                            } else {
+                                "🔊 Sub-Bass Floor Coupler: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = NeonMagenta,
+                        selectedLabelColor = Color.White,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+            }
+        }
+    }
+}
+
 

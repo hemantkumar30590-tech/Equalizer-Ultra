@@ -23,6 +23,7 @@ import com.example.dsp.FutureGenAudioLabEngine
 import com.example.dsp.GyroHeadTrackingMode
 import com.example.dsp.HolographicVibeProfile
 import com.example.dsp.NeuralBrainwaveMode
+import com.example.dsp.OutOfHeadExternalizerMode
 import com.example.dsp.SpatialStageFormation
 import com.example.dsp.SpatialStageNode
 import com.example.dsp.SpeedCruiseMode
@@ -118,7 +119,14 @@ data class EqUiState(
     val activeVenueClone: AcousticVenueClone = AcousticVenueClone.NONE,
     val referenceTrackName: String = "No Reference Locked",
     val isReferenceDnaActive: Boolean = false,
-    val hyperMatrixSummary: String = "2030 HYPER-MATRIX READY • 18\" SubSynth, 4-Stem De-Mixer, 4D Gyro, Tube & Venue Cloner"
+    val hyperMatrixSummary: String = "2030 HYPER-MATRIX READY • 18\" SubSynth, 4-Stem De-Mixer, 4D Gyro, Tube & Venue Cloner",
+    // Out-Of-Head Room Externalizer (Smyth A16 / OOHL Style)
+    val outOfHeadMode: OutOfHeadExternalizerMode = OutOfHeadExternalizerMode.OFF,
+    val outOfHeadDistanceMeters: Float = 3.0f,
+    val outOfHeadEarlyReflectionPercent: Int = 58,
+    val isPinnaChestHrtfEnabled: Boolean = true,
+    val isSubFloorCouplerEnabled: Boolean = true,
+    val outOfHeadTelemetryText: String = "OUT-OF-HEAD EXTERNALIZER READY • Tap any Room Speaker Mode to move sound outside your ears!"
 )
 
 class EqViewModel(application: Application) : AndroidViewModel(application) {
@@ -1423,6 +1431,94 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         onComplete(summary)
     }
 
+    // =========================================================================
+    // OUT-OF-HEAD ROOM EXTERNALIZER (SMYTH A16 / OOHL STYLE) CONTROLS
+    // =========================================================================
+
+    private fun recomputeAndApplyOutOfHeadExternalizer() {
+        _uiState.update { s ->
+            val result = FutureGenAudioLabEngine.synthesizeOutOfHeadExternalizer(
+                baseBands = s.bandGainsDb,
+                mode = s.outOfHeadMode,
+                distanceMeters = s.outOfHeadDistanceMeters,
+                earlyReflectionPercent = s.outOfHeadEarlyReflectionPercent,
+                pinnaChestHrtfEnabled = s.isPinnaChestHrtfEnabled,
+                subFloorCouplerEnabled = s.isSubFloorCouplerEnabled
+            )
+            if (s.outOfHeadMode == OutOfHeadExternalizerMode.OFF) {
+                s.copy(
+                    outOfHeadTelemetryText = result.telemetrySummary
+                )
+            } else {
+                s.copy(
+                    isMasterEnabled = true,
+                    activePresetName = "Out-Of-Head: ${s.outOfHeadMode.title}",
+                    bandGainsDb = result.sculptedBands31,
+                    bassBoostStrength = result.effectiveBassBoost,
+                    spatialLevel = result.effectiveSpatial3D,
+                    reverbLevel = result.effectiveReverbLevel,
+                    reverbRoom = result.effectiveReverbRoom,
+                    crossfeedStrengthPercent = result.effectiveCrossfeedPct,
+                    preampDb = result.effectivePreampDb,
+                    outOfHeadTelemetryText = result.telemetrySummary
+                )
+            }
+        }
+        syncDspEngine()
+    }
+
+    fun setOutOfHeadExternalizerMode(mode: OutOfHeadExternalizerMode) {
+        _uiState.update {
+            it.copy(
+                outOfHeadMode = mode,
+                outOfHeadDistanceMeters = mode.defaultDistanceMeters,
+                outOfHeadEarlyReflectionPercent = mode.defaultWallBouncePct
+            )
+        }
+        hapticManager.onAiPresetApplied("Out-Of-Head ${mode.badge}")
+        recomputeAndApplyOutOfHeadExternalizer()
+    }
+
+    fun updateOutOfHeadDistanceMeters(meters: Float) {
+        val clamped = (kotlin.math.round(meters * 10f) / 10f).coerceIn(0.5f, 6.0f)
+        _uiState.update { state ->
+            val nextMode = if (state.outOfHeadMode == OutOfHeadExternalizerMode.OFF) {
+                OutOfHeadExternalizerMode.LIVING_ROOM_SOFA_3M
+            } else state.outOfHeadMode
+            state.copy(
+                outOfHeadMode = nextMode,
+                outOfHeadDistanceMeters = clamped
+            )
+        }
+        recomputeAndApplyOutOfHeadExternalizer()
+    }
+
+    fun updateOutOfHeadEarlyReflection(percent: Int) {
+        val clamped = percent.coerceIn(0, 100)
+        _uiState.update { state ->
+            val nextMode = if (state.outOfHeadMode == OutOfHeadExternalizerMode.OFF) {
+                OutOfHeadExternalizerMode.LIVING_ROOM_SOFA_3M
+            } else state.outOfHeadMode
+            state.copy(
+                outOfHeadMode = nextMode,
+                outOfHeadEarlyReflectionPercent = clamped
+            )
+        }
+        recomputeAndApplyOutOfHeadExternalizer()
+    }
+
+    fun togglePinnaChestHrtf() {
+        _uiState.update { it.copy(isPinnaChestHrtfEnabled = !it.isPinnaChestHrtfEnabled) }
+        hapticManager.onControlTick("Pinna & Chest HRTF")
+        recomputeAndApplyOutOfHeadExternalizer()
+    }
+
+    fun toggleSubFloorCoupler() {
+        _uiState.update { it.copy(isSubFloorCouplerEnabled = !it.isSubFloorCouplerEnabled) }
+        hapticManager.onControlTick("Sub-Bass Floor Coupler")
+        recomputeAndApplyOutOfHeadExternalizer()
+    }
+
     private fun startFutureGenCoordinator() {
         viewModelScope.launch {
             var tickCount = 0
@@ -1455,7 +1551,12 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                         bassStemPct = s.stemBassPercent,
                         melodyStemPct = s.stemMelodyPercent,
                         analogDrivePct = if (s.analogSaturationMode == AnalogSaturationMode.CLEAN_DIGITAL) 0 else s.analogDrivePercent,
-                        crossfeedPct = s.crossfeedStrengthPercent
+                        crossfeedPct = s.crossfeedStrengthPercent,
+                        outOfHeadActive = s.outOfHeadMode != OutOfHeadExternalizerMode.OFF,
+                        outOfHeadDistanceM = s.outOfHeadDistanceMeters,
+                        outOfHeadReflectionPct = s.outOfHeadEarlyReflectionPercent,
+                        pinnaHrtf = s.isPinnaChestHrtfEnabled,
+                        subFloorCoupler = s.isSubFloorCouplerEnabled
                     )
                 }
                 // Bass-to-Haptic Sub-Woofer Tactile Engine: pulse phone vibrator on sub-bass hits
@@ -1530,7 +1631,12 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             bassStemPct = s.stemBassPercent,
             melodyStemPct = s.stemMelodyPercent,
             analogDrivePct = if (s.analogSaturationMode == AnalogSaturationMode.CLEAN_DIGITAL) 0 else s.analogDrivePercent,
-            crossfeedPct = s.crossfeedStrengthPercent
+            crossfeedPct = s.crossfeedStrengthPercent,
+            outOfHeadActive = s.outOfHeadMode != OutOfHeadExternalizerMode.OFF,
+            outOfHeadDistanceM = s.outOfHeadDistanceMeters,
+            outOfHeadReflectionPct = s.outOfHeadEarlyReflectionPercent,
+            pinnaHrtf = s.isPinnaChestHrtfEnabled,
+            subFloorCoupler = s.isSubFloorCouplerEnabled
         )
         dspEngine.updateDspState(
             enabled = s.isMasterEnabled,

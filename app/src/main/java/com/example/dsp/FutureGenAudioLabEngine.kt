@@ -715,6 +715,196 @@ object FutureGenAudioLabEngine {
         val summary = "🧬 REFERENCE DNA LOCKED: '$trackLabel' • 31-Band Tonality & Sub/Vocal Envelope Cloned"
         return cloned to summary
     }
+
+    /**
+     * Synthesizes a 6-Part "Out-Of-Head Room Externalizer (Smyth A16 / OOHL Style)" 31-band curve
+     * and spatial parameters so headphones/earbuds sound like physical loudspeakers playing
+     * 0.5m to 6.0m outside in the room rather than inside the ears/skull.
+     */
+    fun synthesizeOutOfHeadExternalizer(
+        baseBands: List<Float>,
+        mode: OutOfHeadExternalizerMode,
+        distanceMeters: Float,
+        earlyReflectionPercent: Int,
+        pinnaChestHrtfEnabled: Boolean,
+        subFloorCouplerEnabled: Boolean
+    ): OutOfHeadSynthesisResult {
+        if (mode == OutOfHeadExternalizerMode.OFF) {
+            return OutOfHeadSynthesisResult(
+                sculptedBands31 = EqPresetEntity.interpolateTo31Bands(baseBands),
+                effectiveBassBoost = 72,
+                effectiveSpatial3D = 38,
+                effectiveReverbLevel = 14,
+                effectiveReverbRoom = "Small Room",
+                effectiveCrossfeedPct = 20,
+                effectivePreampDb = -1.5f,
+                telemetrySummary = "OUT-OF-HEAD BYPASSED • Standard In-Ear Direct Headphone Playback"
+            )
+        }
+
+        val cleanBase = EqPresetEntity.interpolateTo31Bands(baseBands)
+        val distClamped = distanceMeters.coerceIn(0.5f, 6.0f)
+        val distNorm = ((distClamped - 0.5f) / 5.5f).coerceIn(0f, 1f)
+        val reflectionNorm = (earlyReflectionPercent.coerceIn(0, 100) / 100f)
+
+        val outBands = List(31) { idx ->
+            var g = cleanBase.getOrElse(idx) { 0f } * 0.65f
+
+            // 1. Sub-Bass Floor & Wall Pressure Coupler (20Hz - 100Hz, bands 0..7)
+            // Converts dry ear-canal bass into a physical floor/room acoustic wave
+            if (subFloorCouplerEnabled) {
+                when (idx) {
+                    in 0..2 -> g += 2.6f + reflectionNorm * 1.6f
+                    in 3..5 -> g += 3.8f + reflectionNorm * 2.2f // 40Hz-63Hz physical floor resonance
+                    in 6..7 -> g += 2.4f + reflectionNorm * 1.4f
+                }
+            }
+
+            // 2. Torso / Chest / Shoulder Acoustic Bounce (160Hz - 250Hz, bands 9..11)
+            // + Desk/Floor first-reflection comb dip (315Hz - 400Hz, bands 12..13)
+            if (pinnaChestHrtfEnabled) {
+                when (idx) {
+                    in 9..11 -> g += 2.0f + reflectionNorm * 1.2f  // Chest & shoulder warm bounce
+                    in 12..13 -> g -= 1.4f                         // Floor/desk cancellation cue
+                    in 19..22 -> g += 2.2f * (1f - distNorm * 0.35f) // 2kHz-3.15kHz frontal speaker throw
+                    in 25..26 -> g -= 4.4f                         // 6.3kHz-8kHz Outer-Ear Pinna Concha Depth Notch
+                }
+            }
+
+            // 3. Acoustic Air Absorption & Distance Throw (0.5m -> 6.0m)
+            // Further speakers have natural HF air damping above 10kHz (bands 27..30)
+            if (idx >= 27) {
+                val airRollOff = distNorm * 3.4f + (idx - 27) * distNorm * 0.7f
+                g -= airRollOff
+            }
+
+            // 4. Mode-Specific Room & Doorway Acoustic Transfer Function
+            when (mode) {
+                OutOfHeadExternalizerMode.STUDIO_DESK_1_2M -> {
+                    if (idx in 17..22) g += 1.4f
+                    if (idx in 4..7) g += 1.2f
+                }
+                OutOfHeadExternalizerMode.LIVING_ROOM_SOFA_3M -> {
+                    if (idx in 2..6) g += 2.2f
+                    if (idx in 8..10) g += 1.5f
+                }
+                OutOfHeadExternalizerMode.IMAX_SCREEN_6M -> {
+                    if (idx in 0..5) g += 3.2f
+                    if (idx in 16..21) g += 1.8f
+                }
+                OutOfHeadExternalizerMode.NEXT_ROOM_PARTY -> {
+                    // Sounds like a loud speaker playing outside in the next room / hallway
+                    if (idx in 2..7) g += 4.5f
+                    if (idx in 8..11) g += 2.2f
+                    if (idx >= 20) g -= (idx - 19) * 1.15f
+                }
+                OutOfHeadExternalizerMode.OPEN_AIR_LAWN -> {
+                    // Zero room-wall boominess, deep open-air sub throw & crisp stage air
+                    if (idx in 1..5) g += 2.8f
+                    if (idx in 10..14) g -= 1.6f
+                    if (idx in 22..24) g += 1.5f
+                }
+                OutOfHeadExternalizerMode.OFF -> Unit
+            }
+
+            (kotlin.math.round(g * 2f) / 2f).coerceIn(-15f, 15f)
+        }
+
+        val effBass = (68 + (if (subFloorCouplerEnabled) 14 else 0) + (reflectionNorm * 12).roundToInt()).coerceIn(35, 98)
+        val effSpatial = (64 + (distNorm * 28).roundToInt()).coerceIn(45, 98)
+        val effReverb = (mode.defaultWallBouncePct * 0.65f + reflectionNorm * 32f).roundToInt().coerceIn(12, 88)
+        val effCrossfeed = (42 + (distNorm * 36).roundToInt()).coerceIn(30, 88)
+        val effPreamp = (-1.5f - distNorm * 1.5f).coerceIn(-4.5f, 0f)
+
+        val summary = buildString {
+            append("🔊 OUT-OF-HEAD [${mode.badge}]: ")
+            append(String.format(java.util.Locale.US, "%.1fm Throw", distClamped))
+            append(" • Wall Bounce ${earlyReflectionPercent}%")
+            append(" • ITD 340µs Crossfeed ${effCrossfeed}%")
+            if (pinnaChestHrtfEnabled) append(" • Pinna 8kHz Notch ON")
+            if (subFloorCouplerEnabled) append(" • Floor Sub-Wave ON")
+        }
+
+        return OutOfHeadSynthesisResult(
+            sculptedBands31 = outBands,
+            effectiveBassBoost = effBass,
+            effectiveSpatial3D = effSpatial,
+            effectiveReverbLevel = effReverb,
+            effectiveReverbRoom = mode.recommendedRoom,
+            effectiveCrossfeedPct = effCrossfeed,
+            effectivePreampDb = effPreamp,
+            telemetrySummary = summary
+        )
+    }
+}
+
+data class OutOfHeadSynthesisResult(
+    val sculptedBands31: List<Float>,
+    val effectiveBassBoost: Int,
+    val effectiveSpatial3D: Int,
+    val effectiveReverbLevel: Int,
+    val effectiveReverbRoom: String,
+    val effectiveCrossfeedPct: Int,
+    val effectivePreampDb: Float,
+    val telemetrySummary: String
+)
+
+enum class OutOfHeadExternalizerMode(
+    val title: String,
+    val badge: String,
+    val defaultDistanceMeters: Float,
+    val defaultWallBouncePct: Int,
+    val recommendedRoom: String,
+    val subtitle: String
+) {
+    OFF(
+        title = "In-Ear Direct (Off)",
+        badge = "IN-EAR",
+        defaultDistanceMeters = 0.5f,
+        defaultWallBouncePct = 0,
+        recommendedRoom = "Small Room",
+        subtitle = "Standard inside-the-head headphone playback"
+    ),
+    STUDIO_DESK_1_2M(
+        title = "Studio Desk Monitors 1.2m",
+        badge = "1.2M DESK",
+        defaultDistanceMeters = 1.2f,
+        defaultWallBouncePct = 38,
+        recommendedRoom = "Small Room",
+        subtitle = "Nearfield studio monitors sitting 4 feet in front of your face on a desk"
+    ),
+    LIVING_ROOM_SOFA_3M(
+        title = "Living Room Sofa 3.0m",
+        badge = "3.0M SOFA",
+        defaultDistanceMeters = 3.0f,
+        defaultWallBouncePct = 58,
+        recommendedRoom = "Medium Room",
+        subtitle = "Tower speakers & floor subwoofer playing 10 feet ahead in your living room"
+    ),
+    IMAX_SCREEN_6M(
+        title = "IMAX Screen Throw 6.0m",
+        badge = "6.0M IMAX",
+        defaultDistanceMeters = 6.0f,
+        defaultWallBouncePct = 72,
+        recommendedRoom = "Large Hall",
+        subtitle = "Giant theater array projecting dialog & LFE bass from 20 feet in front"
+    ),
+    NEXT_ROOM_PARTY(
+        title = "Next-Room / Open-Door Speaker",
+        badge = "NEXT ROOM",
+        defaultDistanceMeters = 4.8f,
+        defaultWallBouncePct = 85,
+        recommendedRoom = "Large Hall",
+        subtitle = "Hyper-realistic illusion of a party speaker booming outside in the next room"
+    ),
+    OPEN_AIR_LAWN(
+        title = "Open-Air Lawn / Terrace Stage",
+        badge = "LAWN STAGE",
+        defaultDistanceMeters = 5.0f,
+        defaultWallBouncePct = 44,
+        recommendedRoom = "Plate",
+        subtitle = "Outdoor open-sky stage throw with zero ear-canal pressure"
+    )
 }
 
 enum class GyroHeadTrackingMode(
@@ -864,3 +1054,4 @@ enum class AcousticVenueClone(
         crossfeedPct = 40
     )
 }
+

@@ -470,7 +470,15 @@ fun EqultraScreen(
                             viewModel.captureAndLockReferenceTrackDna("Live Reference Track") { msg ->
                                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                             }
-                        }
+                        },
+                        onSelectOutOfHeadMode = { mode ->
+                            viewModel.setOutOfHeadExternalizerMode(mode)
+                            Toast.makeText(context, "Out-Of-Head Mode: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdateOutOfHeadDistance = viewModel::updateOutOfHeadDistanceMeters,
+                        onUpdateOutOfHeadReflection = viewModel::updateOutOfHeadEarlyReflection,
+                        onTogglePinnaChestHrtf = viewModel::togglePinnaChestHrtf,
+                        onToggleSubFloorCoupler = viewModel::toggleSubFloorCoupler
                     )
 
                     2 -> DevicePresetsTab(
@@ -759,6 +767,14 @@ fun EqultraScreen(
                     Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                 }
             },
+            onSelectOutOfHeadMode = { mode ->
+                viewModel.setOutOfHeadExternalizerMode(mode)
+                Toast.makeText(context, "Out-Of-Head Mode: ${mode.title}", Toast.LENGTH_SHORT).show()
+            },
+            onUpdateOutOfHeadDistance = viewModel::updateOutOfHeadDistanceMeters,
+            onUpdateOutOfHeadReflection = viewModel::updateOutOfHeadEarlyReflection,
+            onTogglePinnaChestHrtf = viewModel::togglePinnaChestHrtf,
+            onToggleSubFloorCoupler = viewModel::toggleSubFloorCoupler,
             onDismiss = { viewModel.setFutureLabDialogVisible(false) }
         )
     }
@@ -1399,7 +1415,12 @@ private fun BassAndSpatialDspTab(
     onUpdateCrossfeed: (Int) -> Unit,
     onToggleBassHapticWoofer: () -> Unit,
     onApplyVenueClone: (com.example.dsp.AcousticVenueClone) -> Unit,
-    onCaptureReferenceDna: () -> Unit
+    onCaptureReferenceDna: () -> Unit,
+    onSelectOutOfHeadMode: (com.example.dsp.OutOfHeadExternalizerMode) -> Unit,
+    onUpdateOutOfHeadDistance: (Float) -> Unit,
+    onUpdateOutOfHeadReflection: (Int) -> Unit,
+    onTogglePinnaChestHrtf: () -> Unit,
+    onToggleSubFloorCoupler: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -1416,6 +1437,18 @@ private fun BassAndSpatialDspTab(
             peakDb = peakDb,
             bassBoostPercent = uiState.bassBoostStrength,
             spatialPercent = uiState.spatialLevel
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Out-Of-Head Room Externalizer (Smyth A16 / OOHL Style) directly at top of Bass & 3D Tab
+        OutOfHeadRoomExternalizerCard(
+            uiState = uiState,
+            onSelectMode = onSelectOutOfHeadMode,
+            onUpdateDistanceMeters = onUpdateOutOfHeadDistance,
+            onUpdateEarlyReflection = onUpdateOutOfHeadReflection,
+            onTogglePinnaChestHrtf = onTogglePinnaChestHrtf,
+            onToggleSubFloorCoupler = onToggleSubFloorCoupler
         )
 
         Spacer(modifier = Modifier.height(12.dp))

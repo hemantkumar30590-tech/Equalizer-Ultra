@@ -106,6 +106,21 @@ class AudioDspEngine(
     @Volatile
     private var crossfeedNorm: Float = 0.25f
 
+    @Volatile
+    private var externalizerActive: Boolean = false
+
+    @Volatile
+    private var externalizerDistanceMeters: Float = 2.8f
+
+    @Volatile
+    private var externalizerReflectionNorm: Float = 0.55f
+
+    @Volatile
+    private var externalizerPinnaHrtf: Boolean = true
+
+    @Volatile
+    private var externalizerSubCoupler: Boolean = true
+
     private val _isPlayingTestLoop = MutableStateFlow(false)
     val isPlayingTestLoop: StateFlow<Boolean> = _isPlayingTestLoop.asStateFlow()
 
@@ -195,7 +210,12 @@ class AudioDspEngine(
         bassStemPct: Int = 100,
         melodyStemPct: Int = 100,
         analogDrivePct: Int = 0,
-        crossfeedPct: Int = 25
+        crossfeedPct: Int = 25,
+        outOfHeadActive: Boolean = false,
+        outOfHeadDistanceM: Float = 2.8f,
+        outOfHeadReflectionPct: Int = 55,
+        pinnaHrtf: Boolean = true,
+        subFloorCoupler: Boolean = true
     ) {
         neuralBrainwaveMode = brainwaveMode
         radarAzimuthDeg = azimuthDeg.coerceIn(-180f, 180f)
@@ -211,6 +231,11 @@ class AudioDspEngine(
         stemMelodyGain = (melodyStemPct.coerceIn(0, 200) / 100f)
         analogDriveNorm = (analogDrivePct.coerceIn(0, 100) / 100f)
         crossfeedNorm = (crossfeedPct.coerceIn(0, 100) / 100f)
+        externalizerActive = outOfHeadActive
+        externalizerDistanceMeters = outOfHeadDistanceM.coerceIn(0.5f, 6.0f)
+        externalizerReflectionNorm = (outOfHeadReflectionPct.coerceIn(0, 100) / 100f)
+        externalizerPinnaHrtf = pinnaHrtf
+        externalizerSubCoupler = subFloorCoupler
     }
 
     fun updateDspState(
@@ -313,6 +338,8 @@ class AudioDspEngine(
 
             var lpSub = 0f
             var lpMid = 0f
+            var skullShadowL = 0f
+            var skullShadowR = 0f
             val peakHolds = FloatArray(EqPresetEntity.BAND_COUNT) { 0.12f }
             val waveSnapshot = FloatArray(64)
 
@@ -385,6 +412,17 @@ class AudioDspEngine(
                     val delayedL = delayLineL[delayIdxL]
                     val delayedR = delayLineR[delayIdxR]
 
+                    // 3-Tap Early Room Reflections (8ms Floor = 352, 14ms Desk = 617, 22ms Side Wall = 970)
+                    val tapFloorL = delayLineL[(delayIdxL - 352 + delayLineL.size) % delayLineL.size]
+                    val tapDeskR = delayLineR[(delayIdxR - 617 + delayLineR.size) % delayLineR.size]
+                    val tapWallL = delayLineL[(delayIdxL - 970 + delayLineL.size) % delayLineL.size]
+                    val tapWallR = delayLineR[(delayIdxR - 970 + delayLineR.size) % delayLineR.size]
+                    // 340µs Interaural Time Difference (15 samples @ 44.1kHz)
+                    val itdCrossL = delayLineL[(delayIdxL - 15 + delayLineL.size) % delayLineL.size]
+                    val itdCrossR = delayLineR[(delayIdxR - 15 + delayLineR.size) % delayLineR.size]
+                    skullShadowL += 0.18f * (itdCrossL - skullShadowL)
+                    skullShadowR += 0.18f * (itdCrossR - skullShadowR)
+
                     val sideSignal = (midSynth.toFloat() * 0.6f + hiComponent * 0.9f) * spatialWidth
                     val bwMode = neuralBrainwaveMode
                     val binauralL = if (active && bwMode != NeuralBrainwaveMode.OFF) {
@@ -409,10 +447,19 @@ class AudioDspEngine(
                     val panGainR = (1f + (panNorm * 0.35f)).coerceIn(0.45f, 1.35f) *
                         10.0.pow((leftRightBalanceDb.coerceAtMost(0f)) / 20.0).toFloat()
 
-                    // Bauer Binaural Headphone-to-Studio-Monitor Crossfeed Matrix
+                    // Out-Of-Head Room Externalizer + Bauer Binaural Crossfeed Matrix
                     val xfeed = crossfeedNorm * 0.28f
-                    var outL = ((stemSignalL + stemSignalR * xfeed + sideSignal + delayedR * reverbMix + binauralL) * preampLinear) * panGainL
-                    var outR = ((stemSignalR + stemSignalL * xfeed - sideSignal + delayedL * reverbMix + binauralR) * preampLinear) * panGainR
+                    val oohMix = if (active && externalizerActive) externalizerReflectionNorm * 0.34f else 0f
+                    val distAtten = if (active && externalizerActive) {
+                        (1.0f - ((externalizerDistanceMeters - 0.5f) / 5.5f) * 0.18f).coerceIn(0.75f, 1.0f)
+                    } else 1.0f
+                    val earlyRefL = (tapFloorL * 0.42f + tapDeskR * 0.33f + tapWallR * 0.25f) * oohMix
+                    val earlyRefR = (tapFloorL * 0.42f + tapDeskR * 0.33f + tapWallL * 0.25f) * oohMix
+                    val skullCrossL = if (active && externalizerActive) skullShadowR * 0.26f else 0f
+                    val skullCrossR = if (active && externalizerActive) skullShadowL * 0.26f else 0f
+
+                    var outL = (((stemSignalL * distAtten) + stemSignalR * xfeed + skullCrossL + earlyRefL + sideSignal + delayedR * reverbMix + binauralL) * preampLinear) * panGainL
+                    var outR = (((stemSignalR * distAtten) + stemSignalL * xfeed + skullCrossR + earlyRefR - sideSignal + delayedL * reverbMix + binauralR) * preampLinear) * panGainR
 
                     // Analog Vacuum Tube / Tape Harmonic Saturation
                     if (analogDriveNorm > 0.02f) {
