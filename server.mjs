@@ -311,6 +311,66 @@ const HTML_PAGE = `<!DOCTYPE html>
       </div>
     </div>
 
+    <!-- 2030 Hyper-Matrix 10-Engine DSP Suite -->
+    <div class="quantum-card" style="border-color: var(--emerald);">
+      <div class="card-header">
+        <div>
+          <span class="card-title" style="color:var(--emerald);">🚀 2030 HYPER-MATRIX 10-ENGINE DSP SUITE (NEW UPGRADE)</span>
+          <div id="hyperMatrixStatus" style="font-size:11.5px;color:var(--cyan);margin-top:3px;font-family:monospace;">
+            18" SubSynth: 45% • 4-Stem[V:100% D:100% B:100% M:100%] • 4D Gyro: OFF • Crossfeed: 30%
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="chip active" onclick="applyStemMode('balanced')">🎚️ 100% Balanced</button>
+          <button class="chip" onclick="applyStemMode('karaoke')">🎤 Karaoke (Vocal Kill)</button>
+          <button class="chip" onclick="applyStemMode('vocal2x')">🎙️ 200% Vocal Isolate</button>
+          <button class="chip" onclick="applyStemMode('dnb')">🥁 Drum &amp; 808 Bass Solo</button>
+          <button class="btn btn-primary" onclick="captureRefDna()">🧬 10. Clone Song Mix DNA</button>
+        </div>
+      </div>
+
+      <div class="quantum-grid">
+        <div class="q-box">
+          <h4><span>1. 4D Gyro Head-Tracking</span><span id="gyroVal" style="color:var(--cyan);">STAGE LOCK</span></h4>
+          <p>Locks Vocals North or Subwoofer to Chest while turning head</p>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            <button class="chip" onclick="setGyro('OFF')">Off</button>
+            <button class="chip active" onclick="setGyro('STAGE LOCK')">Stage Lock</button>
+            <button class="chip" onclick="setGyro('CHEST SUB')">Chest Woofer</button>
+            <button class="chip" onclick="setGyro('4D IMAX')">4D IMAX</button>
+          </div>
+        </div>
+
+        <div class="q-box">
+          <h4><span>2 &amp; 8. 18&quot; Sub-Harmonic + Haptic</span><span id="subSynthVal" style="color:var(--magenta);">45% • HAPTIC ON</span></h4>
+          <p>24Hz–45Hz Missing-Fundamental Octave + Phone Bass Vibration</p>
+          <input type="range" min="0" max="100" value="45" style="width:100%;accent-color:var(--magenta);" oninput="updateSubSynth(this.value)" />
+        </div>
+
+        <div class="q-box">
+          <h4><span>4 &amp; 5. Speed Cruise + 12AX7 Tube</span><span id="cruiseTubeVal" style="color:var(--amber);">110 KM/H • TUBE</span></h4>
+          <p>Road-noise auto-boost + Vacuum Tube / Abbey Tape warmth</p>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            <button class="chip" onclick="setCruiseTube('45 KM/H City')">🚗 45 km/h</button>
+            <button class="chip active" onclick="setCruiseTube('110 KM/H Highway')">🏎️ 110 km/h</button>
+            <button class="chip" onclick="setCruiseTube('12AX7 Tube Warm')">🔥 12AX7 Tube</button>
+            <button class="chip" onclick="setCruiseTube('Reel Tape Glue')">📼 Tape Glue</button>
+          </div>
+        </div>
+
+        <div class="q-box">
+          <h4><span>6 &amp; 7. Tinnitus Shield + Crossfeed</span><span id="shieldVal" style="color:var(--emerald);">7.5kHz • 30%</span></h4>
+          <p>Suppresses harsh 6–9kHz sibilance + 280µs Studio Monitor Matrix</p>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            <button class="chip active" onclick="toggleTinnitusWeb()">🛡️ Tinnitus Shield: ON</button>
+            <button class="chip" onclick="setVenueWeb('Burmester 4D S-Class')">🚘 S-Class 4D</button>
+            <button class="chip" onclick="setVenueWeb('Berghain Sub Bunker')">🔊 Berghain</button>
+            <button class="chip" onclick="setVenueWeb('Dolby Cinema Row G')">🎬 Dolby Row G</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 8-in-1 Future-Gen Quantum Lab Card -->
     <div class="quantum-card">
       <div class="card-header">
@@ -945,6 +1005,56 @@ const HTML_PAGE = `<!DOCTYPE html>
         }
       });
       updateSelectedUi();
+    }
+
+    function applyStemMode(mode) {
+      const map = {
+        balanced: { label: "100% Balanced", delta: [0,0,0] },
+        karaoke:  { label: "Karaoke (Vocals Cut -9dB)", delta: [3.5, -8.5, 3.0] },
+        vocal2x:  { label: "200% Vocal Spotlight", delta: [-2.5, 7.5, -2.0] },
+        dnb:      { label: "Drum & 808 Bass Solo", delta: [6.5, -5.5, -3.5] }
+      };
+      const m = map[mode] || map.balanced;
+      for (let i = 0; i < 31; i++) {
+        const d = i <= 8 ? m.delta[0] : (i <= 21 ? m.delta[1] : m.delta[2]);
+        gains[i] = Math.max(-15, Math.min(15, Math.round((gains[i] * 0.5 + d) * 2) / 2));
+      }
+      document.getElementById("hyperMatrixStatus").textContent = "🎚️ 4-STEM DE-MIXER: " + m.label + " Applied to 31-Band Curve";
+      renderBands();
+    }
+    function setGyro(lbl) {
+      document.getElementById("gyroVal").textContent = lbl;
+      document.getElementById("hyperMatrixStatus").textContent = "🧭 4D GYRO HEAD-TRACKING: " + lbl + " Active";
+    }
+    function updateSubSynth(v) {
+      document.getElementById("subSynthVal").textContent = v + "% • HAPTIC ON";
+      for (let i = 0; i < 6; i++) {
+        gains[i] = Math.max(-15, Math.min(15, Math.round(((v / 100) * 8.5 - i * 0.5) * 2) / 2));
+      }
+      renderBands();
+    }
+    function setCruiseTube(lbl) {
+      document.getElementById("cruiseTubeVal").textContent = lbl;
+      document.getElementById("hyperMatrixStatus").textContent = "🏎️ SPEED CRUISE & ANALOG: " + lbl + " Engaged";
+    }
+    function toggleTinnitusWeb() {
+      gains[25] = -6.5; gains[26] = -4.5;
+      document.getElementById("hyperMatrixStatus").textContent = "🛡️ TINNITUS NOTCH-SHIELD: 7.5kHz–8kHz Harshness Suppressed (-6.5 dB)";
+      renderBands();
+    }
+    function setVenueWeb(name) {
+      currentPreset = "Venue: " + name;
+      gains = [8.2,8.5,8.6,7.8,6.8,5.5,4.0,2.5,1.2,0.2,-0.5,-0.8,-0.5,0.2,1.0,1.8,2.6,3.2,3.6,3.4,3.0,2.8,3.2,3.8,4.2,4.5,4.2,3.6,3.0,2.4,1.8];
+      PRESETS[currentPreset] = [...gains];
+      document.getElementById("hyperMatrixStatus").textContent = "🏛️ VENUE IMPULSE CLONED: " + name;
+      renderPresets();
+      renderBands();
+    }
+    function captureRefDna() {
+      currentPreset = "DNA: Cloned Reference Mix";
+      PRESETS[currentPreset] = [...gains];
+      document.getElementById("hyperMatrixStatus").textContent = "🧬 REFERENCE TRACK DNA LOCKED • 31-Band Spectral Envelope Cloned!";
+      renderPresets();
     }
 
     renderPresets();

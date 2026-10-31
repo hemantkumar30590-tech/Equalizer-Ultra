@@ -85,6 +85,27 @@ class AudioDspEngine(
     @Volatile
     private var stageHighPanLR: Float = 0f
 
+    @Volatile
+    private var subHarmonicSynthNorm: Float = 0.35f
+
+    @Volatile
+    private var stemVocalGain: Float = 1.0f
+
+    @Volatile
+    private var stemDrumGain: Float = 1.0f
+
+    @Volatile
+    private var stemBassGain: Float = 1.0f
+
+    @Volatile
+    private var stemMelodyGain: Float = 1.0f
+
+    @Volatile
+    private var analogDriveNorm: Float = 0.0f
+
+    @Volatile
+    private var crossfeedNorm: Float = 0.25f
+
     private val _isPlayingTestLoop = MutableStateFlow(false)
     val isPlayingTestLoop: StateFlow<Boolean> = _isPlayingTestLoop.asStateFlow()
 
@@ -167,7 +188,14 @@ class AudioDspEngine(
         lrBalanceDb: Float,
         subPanLR: Float = 0f,
         midPanLR: Float = 0f,
-        highPanLR: Float = 0f
+        highPanLR: Float = 0f,
+        subHarmonicPercent: Int = 35,
+        vocalStemPct: Int = 100,
+        drumStemPct: Int = 100,
+        bassStemPct: Int = 100,
+        melodyStemPct: Int = 100,
+        analogDrivePct: Int = 0,
+        crossfeedPct: Int = 25
     ) {
         neuralBrainwaveMode = brainwaveMode
         radarAzimuthDeg = azimuthDeg.coerceIn(-180f, 180f)
@@ -176,6 +204,13 @@ class AudioDspEngine(
         stageSubPanLR = subPanLR.coerceIn(-1f, 1f)
         stageMidPanLR = midPanLR.coerceIn(-1f, 1f)
         stageHighPanLR = highPanLR.coerceIn(-1f, 1f)
+        subHarmonicSynthNorm = (subHarmonicPercent.coerceIn(0, 100) / 100f)
+        stemVocalGain = (vocalStemPct.coerceIn(0, 200) / 100f)
+        stemDrumGain = (drumStemPct.coerceIn(0, 200) / 100f)
+        stemBassGain = (bassStemPct.coerceIn(0, 200) / 100f)
+        stemMelodyGain = (melodyStemPct.coerceIn(0, 200) / 100f)
+        analogDriveNorm = (analogDrivePct.coerceIn(0, 100) / 100f)
+        crossfeedNorm = (crossfeedPct.coerceIn(0, 100) / 100f)
     }
 
     fun updateDspState(
@@ -329,13 +364,20 @@ class AudioDspEngine(
                     val metallic = (sin(2.0 * PI * 6420.0 * t) * cos(2.0 * PI * 9150.0 * t) +
                         0.6 * sin(2.0 * PI * 12400.0 * t)) * hatEnv * 0.22
 
-                    val rawSignal = (kick + subBass + midSynth + metallic).toFloat()
+                    // Missing-Fundamental 18" Sub-Harmonic Octave Generator (NoteHz / 2)
+                    val subOctave = (sin(PI * noteHz * t) * 0.24 * subHarmonicSynthNorm).toFloat()
+                    val rawSignal =
+                        (kick * stemDrumGain +
+                            (subBass * stemBassGain) +
+                            subOctave +
+                            (midSynth * stemVocalGain) +
+                            (metallic * stemMelodyGain)).toFloat()
 
                     lpSub += 0.035f * (rawSignal - lpSub)
                     lpMid += 0.22f * ((rawSignal - lpSub) - lpMid)
                     val hiComponent = rawSignal - lpSub - lpMid
 
-                    val subComp = lpSub * (subEqGain + bassGain)
+                    val subComp = (lpSub + subOctave * 0.6f) * (subEqGain + bassGain)
                     val midComp = lpMid * midEqGain
                     val hiComp = hiComponent * highEqGain
                     val eqSignal = subComp + midComp + hiComp
@@ -367,8 +409,17 @@ class AudioDspEngine(
                     val panGainR = (1f + (panNorm * 0.35f)).coerceIn(0.45f, 1.35f) *
                         10.0.pow((leftRightBalanceDb.coerceAtMost(0f)) / 20.0).toFloat()
 
-                    var outL = ((stemSignalL + sideSignal + delayedR * reverbMix + binauralL) * preampLinear) * panGainL
-                    var outR = ((stemSignalR - sideSignal + delayedL * reverbMix + binauralR) * preampLinear) * panGainR
+                    // Bauer Binaural Headphone-to-Studio-Monitor Crossfeed Matrix
+                    val xfeed = crossfeedNorm * 0.28f
+                    var outL = ((stemSignalL + stemSignalR * xfeed + sideSignal + delayedR * reverbMix + binauralL) * preampLinear) * panGainL
+                    var outR = ((stemSignalR + stemSignalL * xfeed - sideSignal + delayedL * reverbMix + binauralR) * preampLinear) * panGainR
+
+                    // Analog Vacuum Tube / Tape Harmonic Saturation
+                    if (analogDriveNorm > 0.02f) {
+                        val drive = 1f + analogDriveNorm * 1.15f
+                        outL = tanh((outL * drive + 0.04f * analogDriveNorm * outL * outL).toDouble()).toFloat()
+                        outR = tanh((outR * drive + 0.04f * analogDriveNorm * outR * outR).toDouble()).toFloat()
+                    }
 
                     delayLineL[delayIdxL] = eqSignal + delayedL * (0.35f * reverbMix)
                     delayLineR[delayIdxR] = eqSignal + delayedR * (0.38f * reverbMix)

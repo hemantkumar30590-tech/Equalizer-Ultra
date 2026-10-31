@@ -16,12 +16,17 @@ import com.example.dsp.AiAutoEqEngine
 import com.example.dsp.AiVoiceControlEngine
 import com.example.dsp.AudioDspEngine
 import com.example.dsp.EqHapticFeedbackManager
+import com.example.dsp.AcousticVenueClone
+import com.example.dsp.AnalogSaturationMode
 import com.example.dsp.EsportsThreatRadarState
 import com.example.dsp.FutureGenAudioLabEngine
+import com.example.dsp.GyroHeadTrackingMode
 import com.example.dsp.HolographicVibeProfile
 import com.example.dsp.NeuralBrainwaveMode
 import com.example.dsp.SpatialStageFormation
 import com.example.dsp.SpatialStageNode
+import com.example.dsp.SpeedCruiseMode
+import com.example.dsp.StemDeMixerPreset
 import com.example.dsp.VoiceControlAction
 import com.example.service.EqForegroundService
 import kotlinx.coroutines.delay
@@ -91,7 +96,29 @@ data class EqUiState(
     val stageSubPanLR: Float = 0f,
     val stageMidPanLR: Float = 0f,
     val stageHighPanLR: Float = 0f,
-    val stageTelemetrySummary: String = "3D STAGE ARCHITECT READY • Drag Woofers, Vocals, Drums, Guitar & Towers anywhere in 360°"
+    val stageTelemetrySummary: String = "3D STAGE ARCHITECT READY • Drag Woofers, Vocals, Drums, Guitar & Towers anywhere in 360°",
+    // 2030 Hyper-Matrix 10-Engine Suite
+    val gyroHeadTrackingMode: GyroHeadTrackingMode = GyroHeadTrackingMode.OFF,
+    val gyroLiveYawDeg: Float = 0f,
+    val subHarmonicSynthPercent: Int = 45, // Missing Fundamental 18" Sub Synthesizer
+    val stemVocalPercent: Int = 100,       // Live 4-Stem De-Mixer: 0..200%
+    val stemDrumPercent: Int = 100,
+    val stemBassPercent: Int = 100,
+    val stemMelodyPercent: Int = 100,
+    val selectedStemPreset: StemDeMixerPreset = StemDeMixerPreset.STUDIO_BALANCED,
+    val speedCruiseMode: SpeedCruiseMode = SpeedCruiseMode.OFF,
+    val analogSaturationMode: AnalogSaturationMode = AnalogSaturationMode.CLEAN_DIGITAL,
+    val analogDrivePercent: Int = 35,
+    val isTinnitusShieldEnabled: Boolean = false,
+    val tinnitusNotchFreqHz: Int = 7500,
+    val safeListeningDbText: String = "SAFE DOSE: 74 dB SPL • Zero Ear-Fatigue Guard Ready",
+    val crossfeedStrengthPercent: Int = 30,
+    val isBassHapticWooferEnabled: Boolean = false,
+    val bassHapticIntensity: Int = 80,
+    val activeVenueClone: AcousticVenueClone = AcousticVenueClone.NONE,
+    val referenceTrackName: String = "No Reference Locked",
+    val isReferenceDnaActive: Boolean = false,
+    val hyperMatrixSummary: String = "2030 HYPER-MATRIX READY • 18\" SubSynth, 4-Stem De-Mixer, 4D Gyro, Tube & Venue Cloner"
 )
 
 class EqViewModel(application: Application) : AndroidViewModel(application) {
@@ -1194,23 +1221,249 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         syncDspEngine()
     }
 
+    // =========================================================================
+    // 2030 HYPER-MATRIX 10-ENGINE SUITE CONTROLS
+    // =========================================================================
+
+    private fun recomputeAndApplyHyperMatrix() {
+        _uiState.update { s ->
+            val (sculpted, summary) = FutureGenAudioLabEngine.synthesizeHyperMatrixCurve(
+                baseBands = s.bandGainsDb,
+                subHarmonicSynthPercent = s.subHarmonicSynthPercent,
+                stemVocalPercent = s.stemVocalPercent,
+                stemDrumPercent = s.stemDrumPercent,
+                stemBassPercent = s.stemBassPercent,
+                stemMelodyPercent = s.stemMelodyPercent,
+                speedCruiseMode = s.speedCruiseMode,
+                analogMode = s.analogSaturationMode,
+                analogDrivePercent = if (s.analogSaturationMode == AnalogSaturationMode.CLEAN_DIGITAL) 0 else s.analogDrivePercent,
+                tinnitusShieldEnabled = s.isTinnitusShieldEnabled,
+                tinnitusNotchHz = s.tinnitusNotchFreqHz
+            )
+            s.copy(
+                isMasterEnabled = true,
+                bandGainsDb = sculpted,
+                hyperMatrixSummary = summary
+            )
+        }
+        syncDspEngine()
+    }
+
+    fun setGyroHeadTrackingMode(mode: GyroHeadTrackingMode) {
+        _uiState.update {
+            it.copy(
+                gyroHeadTrackingMode = mode,
+                hyperMatrixSummary = "4D GYRO: ${mode.title} (${mode.badge}) • ${mode.subtitle}"
+            )
+        }
+        hapticManager.onControlTick("4D Gyro: ${mode.badge}")
+        syncDspEngine()
+    }
+
+    fun updateSubHarmonicSynthPercent(percent: Int) {
+        val clamped = percent.coerceIn(0, 100)
+        _uiState.update { it.copy(subHarmonicSynthPercent = clamped) }
+        recomputeAndApplyHyperMatrix()
+    }
+
+    fun applyStemDeMixerPreset(preset: StemDeMixerPreset) {
+        _uiState.update {
+            it.copy(
+                selectedStemPreset = preset,
+                stemVocalPercent = preset.vocalPct,
+                stemDrumPercent = preset.drumPct,
+                stemBassPercent = preset.bassPct,
+                stemMelodyPercent = preset.melodyPct,
+                activePresetName = "Stem: ${preset.title}"
+            )
+        }
+        hapticManager.onAiPresetApplied(preset.title)
+        recomputeAndApplyHyperMatrix()
+    }
+
+    fun updateStemMixLevels(
+        vocalPct: Int = _uiState.value.stemVocalPercent,
+        drumPct: Int = _uiState.value.stemDrumPercent,
+        bassPct: Int = _uiState.value.stemBassPercent,
+        melodyPct: Int = _uiState.value.stemMelodyPercent
+    ) {
+        _uiState.update {
+            it.copy(
+                stemVocalPercent = vocalPct.coerceIn(0, 200),
+                stemDrumPercent = drumPct.coerceIn(0, 200),
+                stemBassPercent = bassPct.coerceIn(0, 200),
+                stemMelodyPercent = melodyPct.coerceIn(0, 200)
+            )
+        }
+        recomputeAndApplyHyperMatrix()
+    }
+
+    fun setSpeedCruiseMode(mode: SpeedCruiseMode) {
+        _uiState.update {
+            it.copy(
+                speedCruiseMode = mode,
+                activePresetName = if (mode == SpeedCruiseMode.OFF) it.activePresetName else "Cruise: ${mode.title}"
+            )
+        }
+        hapticManager.onControlTick("Cruise: ${mode.badge}")
+        recomputeAndApplyHyperMatrix()
+    }
+
+    fun setAnalogSaturationMode(mode: AnalogSaturationMode) {
+        _uiState.update {
+            it.copy(
+                analogSaturationMode = mode,
+                activePresetName = if (mode == AnalogSaturationMode.CLEAN_DIGITAL) it.activePresetName else "Analog: ${mode.title}"
+            )
+        }
+        hapticManager.onControlTick("Analog: ${mode.badge}")
+        recomputeAndApplyHyperMatrix()
+    }
+
+    fun updateAnalogDrivePercent(percent: Int) {
+        _uiState.update { it.copy(analogDrivePercent = percent.coerceIn(0, 100)) }
+        recomputeAndApplyHyperMatrix()
+    }
+
+    fun toggleTinnitusShield() {
+        _uiState.update {
+            val next = !it.isTinnitusShieldEnabled
+            it.copy(
+                isTinnitusShieldEnabled = next,
+                safeListeningDbText = if (next) {
+                    "🛡️ TINNITUS NOTCH-SHIELD ACTIVE (${it.tinnitusNotchFreqHz}Hz -6.5dB) • Zero Ear Fatigue"
+                } else {
+                    "SAFE DOSE: 74 dB SPL • Zero Ear-Fatigue Guard Ready"
+                }
+            )
+        }
+        hapticManager.onControlTick("Tinnitus Shield")
+        recomputeAndApplyHyperMatrix()
+    }
+
+    fun updateTinnitusNotchFreq(hz: Int) {
+        _uiState.update {
+            it.copy(
+                tinnitusNotchFreqHz = hz.coerceIn(5000, 12000),
+                safeListeningDbText = "🛡️ TINNITUS NOTCH-SHIELD ACTIVE (${hz.coerceIn(5000, 12000)}Hz -6.5dB)"
+            )
+        }
+        if (_uiState.value.isTinnitusShieldEnabled) {
+            recomputeAndApplyHyperMatrix()
+        }
+    }
+
+    fun updateCrossfeedPercent(percent: Int) {
+        _uiState.update {
+            it.copy(
+                crossfeedStrengthPercent = percent.coerceIn(0, 100),
+                hyperMatrixSummary = "BINAURAL CROSSFEED: ${percent.coerceIn(0, 100)}% • Studio Monitor 280µs Matrix Active"
+            )
+        }
+        syncDspEngine()
+    }
+
+    fun toggleBassHapticWoofer() {
+        _uiState.update {
+            val next = !it.isBassHapticWooferEnabled
+            it.copy(
+                isBassHapticWooferEnabled = next,
+                hyperMatrixSummary = if (next) {
+                    "💓 TACTILE SUB-WOOFER HAPTICS ACTIVE (${it.bassHapticIntensity}%) • Phone vibrates on 20–63Hz drops"
+                } else {
+                    "Tactile Sub-Woofer Haptics Standby"
+                }
+            )
+        }
+        hapticManager.onAiPresetApplied("Bass Haptic Woofer")
+    }
+
+    fun applyAcousticVenueClone(venue: AcousticVenueClone) {
+        if (venue == AcousticVenueClone.NONE) {
+            _uiState.update { it.copy(activeVenueClone = venue) }
+            return
+        }
+        _uiState.update {
+            it.copy(
+                isMasterEnabled = true,
+                activeVenueClone = venue,
+                activePresetName = "Venue: ${venue.title}",
+                bandGainsDb = venue.bands31,
+                bassBoostStrength = venue.bassBoost,
+                spatialLevel = venue.spatial3D,
+                reverbLevel = venue.reverbLevel,
+                reverbRoom = venue.reverbRoom,
+                crossfeedStrengthPercent = venue.crossfeedPct,
+                hyperMatrixSummary = "🏛️ VENUE CLONED: ${venue.title} (${venue.badge}) • ${venue.subtitle}"
+            )
+        }
+        hapticManager.onAiPresetApplied(venue.title)
+        syncDspEngine()
+    }
+
+    fun captureAndLockReferenceTrackDna(customLabel: String = "Favorite Reference Mix", onComplete: (String) -> Unit = {}) {
+        val s = _uiState.value
+        val (clonedBands, summary) = FutureGenAudioLabEngine.captureReferenceTrackDna(
+            currentBands = s.bandGainsDb,
+            liveSpectrumBins = spectrumBins.value,
+            trackLabel = customLabel
+        )
+        _uiState.update {
+            it.copy(
+                isMasterEnabled = true,
+                activePresetName = "DNA: $customLabel",
+                referenceTrackName = customLabel,
+                isReferenceDnaActive = true,
+                bandGainsDb = clonedBands,
+                hyperMatrixSummary = summary
+            )
+        }
+        hapticManager.onAiPresetApplied("Reference DNA Cloned")
+        syncDspEngine()
+        onComplete(summary)
+    }
+
     private fun startFutureGenCoordinator() {
         viewModelScope.launch {
             var tickCount = 0
             while (isActive) {
                 val s = _uiState.value
-                if (s.isRadarAutoOrbitEnabled) {
-                    val nextAngle = ((s.radarAzimuthDeg + 7.5f + 180f) % 360f) - 180f
-                    _uiState.update { it.copy(radarAzimuthDeg = nextAngle) }
+                if (s.isRadarAutoOrbitEnabled || s.gyroHeadTrackingMode != GyroHeadTrackingMode.OFF) {
+                    val stepDeg = when (s.gyroHeadTrackingMode) {
+                        GyroHeadTrackingMode.STAGE_NORTH_LOCK -> kotlin.math.sin(tickCount * 0.22f) * 18f
+                        GyroHeadTrackingMode.WOOFER_CHEST_LOCK -> kotlin.math.cos(tickCount * 0.25f) * 28f
+                        GyroHeadTrackingMode.CINEMA_4D_INERTIAL -> ((s.radarAzimuthDeg + 6.0f + 180f) % 360f) - 180f
+                        GyroHeadTrackingMode.OFF -> ((s.radarAzimuthDeg + 7.5f + 180f) % 360f) - 180f
+                    }
+                    _uiState.update {
+                        it.copy(
+                            radarAzimuthDeg = stepDeg,
+                            gyroLiveYawDeg = stepDeg
+                        )
+                    }
                     dspEngine.updateFutureGenState(
                         brainwaveMode = s.neuralBrainwaveMode,
-                        azimuthDeg = nextAngle,
+                        azimuthDeg = stepDeg,
                         distanceNorm = s.radarDistanceNorm,
                         lrBalanceDb = s.leftRightBalanceDb,
-                        subPanLR = s.stageSubPanLR,
+                        subPanLR = if (s.gyroHeadTrackingMode == GyroHeadTrackingMode.WOOFER_CHEST_LOCK) 0f else s.stageSubPanLR,
                         midPanLR = s.stageMidPanLR,
-                        highPanLR = s.stageHighPanLR
+                        highPanLR = s.stageHighPanLR,
+                        subHarmonicPercent = s.subHarmonicSynthPercent,
+                        vocalStemPct = s.stemVocalPercent,
+                        drumStemPct = s.stemDrumPercent,
+                        bassStemPct = s.stemBassPercent,
+                        melodyStemPct = s.stemMelodyPercent,
+                        analogDrivePct = if (s.analogSaturationMode == AnalogSaturationMode.CLEAN_DIGITAL) 0 else s.analogDrivePercent,
+                        crossfeedPct = s.crossfeedStrengthPercent
                     )
+                }
+                // Bass-to-Haptic Sub-Woofer Tactile Engine: pulse phone vibrator on sub-bass hits
+                if (s.isBassHapticWooferEnabled && s.isMasterEnabled && tickCount % 2 == 0) {
+                    val subHit = (0..4).map { spectrumBins.value.getOrElse(it) { 0f } }.maxOrNull() ?: 0f
+                    if (subHit > 0.42f) {
+                        hapticManager.onControlTick("Sub-Bass Pulse ${(subHit * 100).toInt()}%")
+                    }
                 }
                 if (s.isEsportsXrayEnabled) {
                     _esportsRadarState.value = FutureGenAudioLabEngine.computeEsportsThreatRadar(
@@ -1270,7 +1523,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             lrBalanceDb = s.leftRightBalanceDb,
             subPanLR = s.stageSubPanLR,
             midPanLR = s.stageMidPanLR,
-            highPanLR = s.stageHighPanLR
+            highPanLR = s.stageHighPanLR,
+            subHarmonicPercent = s.subHarmonicSynthPercent,
+            vocalStemPct = s.stemVocalPercent,
+            drumStemPct = s.stemDrumPercent,
+            bassStemPct = s.stemBassPercent,
+            melodyStemPct = s.stemMelodyPercent,
+            analogDrivePct = if (s.analogSaturationMode == AnalogSaturationMode.CLEAN_DIGITAL) 0 else s.analogDrivePercent,
+            crossfeedPct = s.crossfeedStrengthPercent
         )
         dspEngine.updateDspState(
             enabled = s.isMasterEnabled,

@@ -68,12 +68,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.dsp.AcousticVenueClone
+import com.example.dsp.AnalogSaturationMode
 import com.example.dsp.EsportsThreatRadarState
 import com.example.dsp.FutureGenAudioLabEngine
+import com.example.dsp.GyroHeadTrackingMode
 import com.example.dsp.HolographicVibeProfile
 import com.example.dsp.NeuralBrainwaveMode
 import com.example.dsp.SpatialStageFormation
 import com.example.dsp.SpatialStageNode
+import com.example.dsp.SpeedCruiseMode
+import com.example.dsp.StemDeMixerPreset
 import com.example.ui.theme.AmoledBlack
 import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.HyperViolet
@@ -857,6 +862,19 @@ fun FutureGenQuantumLabDialog(
     onUpdateWooferCrossover: (Int) -> Unit = {},
     onToggleWooferPhase: () -> Unit = {},
     onToggleCenterVocalLock: () -> Unit = {},
+    onSelectGyroMode: (GyroHeadTrackingMode) -> Unit = {},
+    onUpdateSubHarmonicSynth: (Int) -> Unit = {},
+    onApplyStemPreset: (StemDeMixerPreset) -> Unit = {},
+    onUpdateStemLevels: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
+    onSelectSpeedCruise: (SpeedCruiseMode) -> Unit = {},
+    onSelectAnalogMode: (AnalogSaturationMode) -> Unit = {},
+    onUpdateAnalogDrive: (Int) -> Unit = {},
+    onToggleTinnitusShield: () -> Unit = {},
+    onUpdateTinnitusNotchFreq: (Int) -> Unit = {},
+    onUpdateCrossfeed: (Int) -> Unit = {},
+    onToggleBassHapticWoofer: () -> Unit = {},
+    onApplyVenueClone: (AcousticVenueClone) -> Unit = {},
+    onCaptureReferenceDna: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -933,6 +951,24 @@ fun FutureGenQuantumLabDialog(
                         onUpdateWooferCrossover = onUpdateWooferCrossover,
                         onToggleWooferPhase = onToggleWooferPhase,
                         onToggleCenterVocalLock = onToggleCenterVocalLock
+                    )
+
+                    // 0B. 2030 HYPER-MATRIX 10-ENGINE SUITE
+                    HyperMatrix2030SuiteCard(
+                        uiState = uiState,
+                        onSelectGyroMode = onSelectGyroMode,
+                        onUpdateSubHarmonicSynth = onUpdateSubHarmonicSynth,
+                        onApplyStemPreset = onApplyStemPreset,
+                        onUpdateStemLevels = onUpdateStemLevels,
+                        onSelectSpeedCruise = onSelectSpeedCruise,
+                        onSelectAnalogMode = onSelectAnalogMode,
+                        onUpdateAnalogDrive = onUpdateAnalogDrive,
+                        onToggleTinnitusShield = onToggleTinnitusShield,
+                        onUpdateTinnitusNotchFreq = onUpdateTinnitusNotchFreq,
+                        onUpdateCrossfeed = onUpdateCrossfeed,
+                        onToggleBassHapticWoofer = onToggleBassHapticWoofer,
+                        onApplyVenueClone = onApplyVenueClone,
+                        onCaptureReferenceDna = onCaptureReferenceDna
                     )
 
                     // 1. SONAR ACOUSTIC ROOM & EARBUD SCANNER
@@ -1436,3 +1472,508 @@ private fun ThreatBarColumn(
         )
     }
 }
+
+@Composable
+fun HyperMatrix2030SuiteCard(
+    uiState: EqUiState,
+    onSelectGyroMode: (GyroHeadTrackingMode) -> Unit,
+    onUpdateSubHarmonicSynth: (Int) -> Unit,
+    onApplyStemPreset: (StemDeMixerPreset) -> Unit,
+    onUpdateStemLevels: (Int, Int, Int, Int) -> Unit,
+    onSelectSpeedCruise: (SpeedCruiseMode) -> Unit,
+    onSelectAnalogMode: (AnalogSaturationMode) -> Unit,
+    onUpdateAnalogDrive: (Int) -> Unit,
+    onToggleTinnitusShield: () -> Unit,
+    onUpdateTinnitusNotchFreq: (Int) -> Unit,
+    onUpdateCrossfeed: (Int) -> Unit,
+    onToggleBassHapticWoofer: () -> Unit,
+    onApplyVenueClone: (AcousticVenueClone) -> Unit,
+    onCaptureReferenceDna: () -> Unit
+) {
+    Surface(
+        color = ObsidianCard,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            width = 1.5.dp,
+            brush = Brush.horizontalGradient(
+                listOf(NeonMagenta, ElectricCyan, SignalEmerald)
+            )
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "🚀 2030 HYPER-MATRIX 10-ENGINE DSP SUITE",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "10X ULTRA",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
+                            color = AmoledBlack,
+                            fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier
+                                .background(SignalEmerald, RoundedCornerShape(5.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                    Text(
+                        text = uiState.hyperMatrixSummary,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                        color = ElectricCyan,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            // 1. 4D GYROSCOPE HEAD-TRACKING & WOOFER CHEST LOCK
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "1. 4D Gyro Head-Tracking & Inertial Woofer Lock",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Yaw: ${uiState.gyroLiveYawDeg.roundToInt()}°",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        GyroHeadTrackingMode.entries.forEach { mode ->
+                            val selected = uiState.gyroHeadTrackingMode == mode
+                            FilterChip(
+                                selected = selected,
+                                onClick = { onSelectGyroMode(mode) },
+                                label = {
+                                    Text(
+                                        text = "${mode.title} (${mode.badge})",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = ElectricCyan,
+                                    selectedLabelColor = AmoledBlack,
+                                    containerColor = ObsidianCard,
+                                    labelColor = TextSecondary
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 2 & 8. MISSING-FUNDAMENTAL 18" SUB-HARMONIC SYNTH + BASS-TO-HAPTIC WOOFER
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, NeonMagenta.copy(alpha = 0.6f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "2. Virtual 18\" Sub-Harmonic Synth: ${uiState.subHarmonicSynthPercent}%",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = NeonMagenta,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Generates 24Hz–45Hz Missing-Fundamental Octave + Haptic Chest Slam",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                                color = TextSecondary
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = onToggleBassHapticWoofer,
+                            border = BorderStroke(
+                                1.dp,
+                                if (uiState.isBassHapticWooferEnabled) SignalEmerald else ObsidianBorder
+                            ),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                            modifier = Modifier.height(30.dp)
+                        ) {
+                            Text(
+                                text = if (uiState.isBassHapticWooferEnabled) "💓 HAPTIC SUB: ON" else "💓 HAPTIC SUB",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                color = if (uiState.isBassHapticWooferEnabled) SignalEmerald else TextPrimary
+                            )
+                        }
+                    }
+                    Slider(
+                        value = uiState.subHarmonicSynthPercent.toFloat(),
+                        onValueChange = { onUpdateSubHarmonicSynth(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = NeonMagenta,
+                            activeTrackColor = NeonMagenta
+                        )
+                    )
+                }
+            }
+
+            // 3. LIVE 4-STEM DE-MIXER & KARAOKE / VOCAL ISOLATOR
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, StudioAmber.copy(alpha = 0.7f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Text(
+                        text = "3. Live 4-Stem De-Mixer & Karaoke Isolator (0%–200%)",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = StudioAmber,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        StemDeMixerPreset.entries.forEach { preset ->
+                            val selected = uiState.selectedStemPreset == preset
+                            FilterChip(
+                                selected = selected,
+                                onClick = { onApplyStemPreset(preset) },
+                                label = {
+                                    Text(
+                                        text = "${preset.title} (${preset.badge})",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = StudioAmber,
+                                    selectedLabelColor = AmoledBlack,
+                                    containerColor = ObsidianCard,
+                                    labelColor = TextSecondary
+                                )
+                            )
+                        }
+                    }
+
+                    StemSliderRow(
+                        label = "🎤 Vocals (${uiState.stemVocalPercent}%)",
+                        value = uiState.stemVocalPercent,
+                        color = ElectricCyan,
+                        onChange = {
+                            onUpdateStemLevels(it, uiState.stemDrumPercent, uiState.stemBassPercent, uiState.stemMelodyPercent)
+                        }
+                    )
+                    StemSliderRow(
+                        label = "🥁 Drums (${uiState.stemDrumPercent}%)",
+                        value = uiState.stemDrumPercent,
+                        color = StudioAmber,
+                        onChange = {
+                            onUpdateStemLevels(uiState.stemVocalPercent, it, uiState.stemBassPercent, uiState.stemMelodyPercent)
+                        }
+                    )
+                    StemSliderRow(
+                        label = "🔊 Sub-Bass (${uiState.stemBassPercent}%)",
+                        value = uiState.stemBassPercent,
+                        color = NeonMagenta,
+                        onChange = {
+                            onUpdateStemLevels(uiState.stemVocalPercent, uiState.stemDrumPercent, it, uiState.stemMelodyPercent)
+                        }
+                    )
+                    StemSliderRow(
+                        label = "🎸 Melody/Air (${uiState.stemMelodyPercent}%)",
+                        value = uiState.stemMelodyPercent,
+                        color = SignalEmerald,
+                        onChange = {
+                            onUpdateStemLevels(uiState.stemVocalPercent, uiState.stemDrumPercent, uiState.stemBassPercent, it)
+                        }
+                    )
+                }
+            }
+
+            // 4 & 5. SPEED-ADAPTIVE CRUISE + ANALOG VACUUM TUBE / TAPE SATURATION
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, HyperViolet.copy(alpha = 0.7f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Text(
+                        text = "4. Speed-Adaptive Car / Bike / Gym Cruise DSP",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = SignalEmerald,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        SpeedCruiseMode.entries.forEach { mode ->
+                            val selected = uiState.speedCruiseMode == mode
+                            FilterChip(
+                                selected = selected,
+                                onClick = { onSelectSpeedCruise(mode) },
+                                label = {
+                                    Text(
+                                        text = "${mode.title} [${mode.badge}]",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = SignalEmerald,
+                                    selectedLabelColor = AmoledBlack,
+                                    containerColor = ObsidianCard,
+                                    labelColor = TextSecondary
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "5. Analog Vacuum Tube, Tape Glue & Air Exciter (Drive ${uiState.analogDrivePercent}%)",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = HyperViolet,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        AnalogSaturationMode.entries.forEach { mode ->
+                            val selected = uiState.analogSaturationMode == mode
+                            FilterChip(
+                                selected = selected,
+                                onClick = { onSelectAnalogMode(mode) },
+                                label = {
+                                    Text(
+                                        text = "${mode.title} (${mode.badge})",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = HyperViolet,
+                                    selectedLabelColor = Color.White,
+                                    containerColor = ObsidianCard,
+                                    labelColor = TextSecondary
+                                )
+                            )
+                        }
+                    }
+                    Slider(
+                        value = uiState.analogDrivePercent.toFloat(),
+                        onValueChange = { onUpdateAnalogDrive(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = HyperViolet,
+                            activeTrackColor = HyperViolet
+                        )
+                    )
+                }
+            }
+
+            // 6 & 7. SMART TINNITUS NOTCH-SHIELD + BINAURAL STUDIO MONITOR CROSSFEED
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "6. Smart Tinnitus Notch-Shield (${uiState.tinnitusNotchFreqHz} Hz)",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = ElectricCyan,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = uiState.safeListeningDbText,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                                color = SignalEmerald
+                            )
+                        }
+                        Switch(
+                            checked = uiState.isTinnitusShieldEnabled,
+                            onCheckedChange = { onToggleTinnitusShield() },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = AmoledBlack,
+                                checkedTrackColor = SignalEmerald
+                            )
+                        )
+                    }
+                    Slider(
+                        value = uiState.tinnitusNotchFreqHz.toFloat(),
+                        onValueChange = { onUpdateTinnitusNotchFreq(it.roundToInt()) },
+                        valueRange = 5000f..12000f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = ElectricCyan,
+                            activeTrackColor = ElectricCyan
+                        )
+                    )
+
+                    Text(
+                        text = "7. Bauer Binaural Studio Monitor Crossfeed: ${uiState.crossfeedStrengthPercent}% (280µs Matrix)",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = StudioAmber,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Slider(
+                        value = uiState.crossfeedStrengthPercent.toFloat(),
+                        onValueChange = { onUpdateCrossfeed(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = StudioAmber,
+                            activeTrackColor = StudioAmber
+                        )
+                    )
+                }
+            }
+
+            // 9 & 10. MULTI-ROOM VENUE IMPULSE CLONER + AI REFERENCE TRACK DNA MATCHER
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, SignalEmerald.copy(alpha = 0.65f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Text(
+                        text = "9. Multi-Room Legendary Acoustic Venue Cloner",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = SignalEmerald,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        AcousticVenueClone.entries.forEach { venue ->
+                            val selected = uiState.activeVenueClone == venue
+                            FilterChip(
+                                selected = selected,
+                                onClick = { onApplyVenueClone(venue) },
+                                label = {
+                                    Text(
+                                        text = "${venue.title} (${venue.badge})",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = SignalEmerald,
+                                    selectedLabelColor = AmoledBlack,
+                                    containerColor = ObsidianCard,
+                                    labelColor = TextSecondary
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "10. AI Reference Track Mix Cloner (${uiState.referenceTrackName})",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = ElectricCyan,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Button(
+                        onClick = onCaptureReferenceDna,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ElectricCyan,
+                            contentColor = AmoledBlack
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "🧬 CAPTURE & CLONE CURRENT SONG'S 31-BAND MIX DNA",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StemSliderRow(
+    label: String,
+    value: Int,
+    color: Color,
+    onChange: (Int) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            color = color,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.width(118.dp)
+        )
+        Slider(
+            value = value.toFloat(),
+            onValueChange = { onChange(it.roundToInt()) },
+            valueRange = 0f..200f,
+            modifier = Modifier.weight(1f),
+            colors = SliderDefaults.colors(
+                thumbColor = color,
+                activeTrackColor = color
+            )
+        )
+    }
+}
+

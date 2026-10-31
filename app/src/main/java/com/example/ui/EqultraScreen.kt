@@ -447,7 +447,30 @@ fun EqultraScreen(
                         },
                         onUpdateWooferCrossover = viewModel::updateWooferCrossoverHz,
                         onToggleWooferPhase = viewModel::toggleWooferPhaseInvert,
-                        onToggleCenterVocalLock = viewModel::toggleCenterVocalLock
+                        onToggleCenterVocalLock = viewModel::toggleCenterVocalLock,
+                        onSelectGyroMode = viewModel::setGyroHeadTrackingMode,
+                        onUpdateSubHarmonicSynth = viewModel::updateSubHarmonicSynthPercent,
+                        onApplyStemPreset = { preset ->
+                            viewModel.applyStemDeMixerPreset(preset)
+                            Toast.makeText(context, "Stem De-Mixer: ${preset.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdateStemLevels = viewModel::updateStemMixLevels,
+                        onSelectSpeedCruise = viewModel::setSpeedCruiseMode,
+                        onSelectAnalogMode = viewModel::setAnalogSaturationMode,
+                        onUpdateAnalogDrive = viewModel::updateAnalogDrivePercent,
+                        onToggleTinnitusShield = viewModel::toggleTinnitusShield,
+                        onUpdateTinnitusNotchFreq = viewModel::updateTinnitusNotchFreq,
+                        onUpdateCrossfeed = viewModel::updateCrossfeedPercent,
+                        onToggleBassHapticWoofer = viewModel::toggleBassHapticWoofer,
+                        onApplyVenueClone = { venue ->
+                            viewModel.applyAcousticVenueClone(venue)
+                            Toast.makeText(context, "Venue Cloned: ${venue.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onCaptureReferenceDna = {
+                            viewModel.captureAndLockReferenceTrackDna("Live Reference Track") { msg ->
+                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     )
 
                     2 -> DevicePresetsTab(
@@ -713,6 +736,29 @@ fun EqultraScreen(
             onUpdateWooferCrossover = viewModel::updateWooferCrossoverHz,
             onToggleWooferPhase = viewModel::toggleWooferPhaseInvert,
             onToggleCenterVocalLock = viewModel::toggleCenterVocalLock,
+            onSelectGyroMode = viewModel::setGyroHeadTrackingMode,
+            onUpdateSubHarmonicSynth = viewModel::updateSubHarmonicSynthPercent,
+            onApplyStemPreset = { preset ->
+                viewModel.applyStemDeMixerPreset(preset)
+                Toast.makeText(context, "Stem De-Mixer: ${preset.title}", Toast.LENGTH_SHORT).show()
+            },
+            onUpdateStemLevels = viewModel::updateStemMixLevels,
+            onSelectSpeedCruise = viewModel::setSpeedCruiseMode,
+            onSelectAnalogMode = viewModel::setAnalogSaturationMode,
+            onUpdateAnalogDrive = viewModel::updateAnalogDrivePercent,
+            onToggleTinnitusShield = viewModel::toggleTinnitusShield,
+            onUpdateTinnitusNotchFreq = viewModel::updateTinnitusNotchFreq,
+            onUpdateCrossfeed = viewModel::updateCrossfeedPercent,
+            onToggleBassHapticWoofer = viewModel::toggleBassHapticWoofer,
+            onApplyVenueClone = { venue ->
+                viewModel.applyAcousticVenueClone(venue)
+                Toast.makeText(context, "Venue Cloned: ${venue.title}", Toast.LENGTH_SHORT).show()
+            },
+            onCaptureReferenceDna = {
+                viewModel.captureAndLockReferenceTrackDna("Live Reference Track") { msg ->
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                }
+            },
             onDismiss = { viewModel.setFutureLabDialogVisible(false) }
         )
     }
@@ -1340,7 +1386,20 @@ private fun BassAndSpatialDspTab(
     onApplyStageFormation: (com.example.dsp.SpatialStageFormation) -> Unit,
     onUpdateWooferCrossover: (Int) -> Unit,
     onToggleWooferPhase: () -> Unit,
-    onToggleCenterVocalLock: () -> Unit
+    onToggleCenterVocalLock: () -> Unit,
+    onSelectGyroMode: (com.example.dsp.GyroHeadTrackingMode) -> Unit,
+    onUpdateSubHarmonicSynth: (Int) -> Unit,
+    onApplyStemPreset: (com.example.dsp.StemDeMixerPreset) -> Unit,
+    onUpdateStemLevels: (Int, Int, Int, Int) -> Unit,
+    onSelectSpeedCruise: (com.example.dsp.SpeedCruiseMode) -> Unit,
+    onSelectAnalogMode: (com.example.dsp.AnalogSaturationMode) -> Unit,
+    onUpdateAnalogDrive: (Int) -> Unit,
+    onToggleTinnitusShield: () -> Unit,
+    onUpdateTinnitusNotchFreq: (Int) -> Unit,
+    onUpdateCrossfeed: (Int) -> Unit,
+    onToggleBassHapticWoofer: () -> Unit,
+    onApplyVenueClone: (com.example.dsp.AcousticVenueClone) -> Unit,
+    onCaptureReferenceDna: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -1373,6 +1432,26 @@ private fun BassAndSpatialDspTab(
             onUpdateWooferCrossover = onUpdateWooferCrossover,
             onToggleWooferPhase = onToggleWooferPhase,
             onToggleCenterVocalLock = onToggleCenterVocalLock
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 2030 Hyper-Matrix 10-Engine DSP Suite directly in Bass & 3D Tab
+        HyperMatrix2030SuiteCard(
+            uiState = uiState,
+            onSelectGyroMode = onSelectGyroMode,
+            onUpdateSubHarmonicSynth = onUpdateSubHarmonicSynth,
+            onApplyStemPreset = onApplyStemPreset,
+            onUpdateStemLevels = onUpdateStemLevels,
+            onSelectSpeedCruise = onSelectSpeedCruise,
+            onSelectAnalogMode = onSelectAnalogMode,
+            onUpdateAnalogDrive = onUpdateAnalogDrive,
+            onToggleTinnitusShield = onToggleTinnitusShield,
+            onUpdateTinnitusNotchFreq = onUpdateTinnitusNotchFreq,
+            onUpdateCrossfeed = onUpdateCrossfeed,
+            onToggleBassHapticWoofer = onToggleBassHapticWoofer,
+            onApplyVenueClone = onApplyVenueClone,
+            onCaptureReferenceDna = onCaptureReferenceDna
         )
 
         Spacer(modifier = Modifier.height(12.dp))
