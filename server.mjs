@@ -250,11 +250,72 @@ const HTML_PAGE = `<!DOCTYPE html>
   </header>
 
   <main>
-    <!-- 7-in-1 Future-Gen Quantum Lab Card -->
+    <!-- 8-in-1 Future-Gen Quantum Lab + 3D Multi-Instrument & Dual-Woofer Stage Architect -->
+    <div class="quantum-card" style="border-color: var(--magenta);">
+      <div class="card-header">
+        <div>
+          <span class="card-title" style="color:var(--magenta);">🎛️ 3D MULTI-INSTRUMENT &amp; VIRTUAL 7.1.4 DUAL-WOOFER STAGE ARCHITECT</span>
+          <div id="stageTelemetry" style="font-size:11.5px;color:var(--cyan);margin-top:3px;font-family:monospace;">
+            Live Concert Arena • 2 Woofers Active (X-Over 90Hz • Phase 0°) • Sub L/R +0% | Mid +0% | Air +0%
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="chip active" onclick="setStageFormation('arena')">🏟️ Live Concert Arena</button>
+          <button class="chip" onclick="setStageFormation('drummer')">🥁 Drummer's Throne</button>
+          <button class="chip" onclick="setStageFormation('maybach')">🚘 Maybach 4D Cabin</button>
+          <button class="chip" onclick="setStageFormation('club360')">🔊 360° Club Dual-Woofer</button>
+          <button class="chip" onclick="setStageFormation('split')">🎧 Binaural Stem Split</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;align-items:center;">
+        <div style="background:#06080d;border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">
+            DRAG ANY INSTRUMENT, SPEAKER OR SUBWOOFER AROUND YOUR HEAD (360° ROOM FLOOR)
+          </div>
+          <canvas id="stageCanvas" width="340" height="270" style="width:100%;max-width:340px;height:270px;background:#05070b;border-radius:10px;border:1px solid #1e2636;cursor:grab;touch-action:none;"></canvas>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="q-box">
+            <h4>
+              <span id="selNodeTitle" style="color:var(--cyan);">Selected: Front 18&quot; Subwoofer (SUB-1)</span>
+              <span id="selNodeCoords" style="color:var(--emerald);font-family:monospace;">Azimuth -24° • Dist 55%</span>
+            </h4>
+            <p id="selNodeBand">20Hz – 90Hz Deep Sub-Bass Woofer Cone • Drag node on radar or tune below</p>
+            <label style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+              <span>Node Acoustic Gain</span>
+              <span id="selNodeGainVal" style="color:var(--cyan);font-family:monospace;">+3.5 dB</span>
+            </label>
+            <input id="selNodeGainSlider" type="range" min="-12" max="12" step="0.5" value="3.5" style="width:100%;accent-color:var(--cyan);" oninput="updateSelectedNodeGain(this.value)" />
+            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+              <button class="btn" onclick="toggleSelectedMute()" id="muteNodeBtn">🔇 Mute Node</button>
+              <button class="btn" onclick="toggleSelectedSolo()" id="soloNodeBtn">🎯 Solo Node</button>
+              <button class="btn" onclick="centerSelectedNode()">🎯 Snap Front Center</button>
+            </div>
+          </div>
+
+          <div class="q-box">
+            <h4>
+              <span>Dual-Woofer Crossover &amp; Phase Engine</span>
+              <span id="xoverVal" style="color:var(--magenta);font-family:monospace;">90 Hz • 0° Phase</span>
+            </h4>
+            <p>Controls Sub-1 (Front) + Sub-2 (Rear Trunk) low-pass cutoff &amp; polarity alignment</p>
+            <input type="range" min="45" max="160" value="90" style="width:100%;accent-color:var(--magenta);" oninput="updateCrossover(this.value)" />
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+              <button class="chip active" id="phaseBtn" onclick="toggleWooferPhase()">⚡ Woofer Phase: 0° Normal</button>
+              <button class="chip active" id="vocalLockBtn" onclick="toggleVocalLock()">🎤 Center Vocal Lock: ON</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8-in-1 Future-Gen Quantum Lab Card -->
     <div class="quantum-card">
       <div class="card-header">
         <div>
-          <span class="card-title">⚡ 7-IN-1 FUTURE-GEN QUANTUM AUDIO LAB (2027 EDITION)</span>
+          <span class="card-title">⚡ 8-IN-1 FUTURE-GEN QUANTUM AUDIO LAB (2027 EDITION)</span>
           <div id="quantumStatus" style="font-size:11.5px;color:var(--emerald);margin-top:3px;font-family:monospace;">
             SONAR READY • Bio-Ear Age: 20 Yrs (92% Golden Score) • 360° Azimuth: 0°
           </div>
@@ -647,9 +708,250 @@ const HTML_PAGE = `<!DOCTYPE html>
       requestAnimationFrame(drawSpectrum);
     }
 
+    // 3D Multi-Instrument & Virtual 7.1.4 Dual-Woofer Stage Architect Interactive Engine
+    const STAGE_NODES = [
+      { id: "sub1", code: "SUB-1", title: 'Front 18" Subwoofer', band: "20Hz–90Hz Deep Sub-Bass Woofer Cone", az: -24, dist: 0.55, gain: 3.5, color: "#FF2A85", muted: false, solo: false },
+      { id: "sub2", code: "SUB-2", title: 'Rear Trunk 15" Woofer', band: "30Hz–110Hz Rear Tactile LFE Woofer", az: 162, dist: 0.65, gain: 2.5, color: "#FF6D00", muted: false, solo: false },
+      { id: "voc",  code: "VOC",   title: "Lead Vocals & Dialog", band: "300Hz–3.2kHz Center Presence Stem", az: 0, dist: 0.35, gain: 2.0, color: "#00F0FF", muted: false, solo: false },
+      { id: "drm",  code: "DRM",   title: "Kick & Snare Kit", band: "60Hz–250Hz & 2.5kHz Attack", az: 18, dist: 0.48, gain: 2.0, color: "#FFB300", muted: false, solo: false },
+      { id: "gtr",  code: "GTR",   title: "Acoustic & Lead Guitar", band: "250Hz–4kHz Harmonic Body", az: -48, dist: 0.52, gain: 1.5, color: "#00E676", muted: false, solo: false },
+      { id: "syn",  code: "SYN",   title: "Synth Pad & Cymbal Air", band: "5kHz–20kHz 3D Shimmer Ribbon", az: 52, dist: 0.56, gain: 1.8, color: "#8B5CF6", muted: false, solo: false },
+      { id: "spkl", code: "SPK-L", title: "Left Tower Monitor", band: "Full-Range Left Acoustic Array", az: -65, dist: 0.72, gain: 1.0, color: "#38BDF8", muted: false, solo: false },
+      { id: "spkr", code: "SPK-R", title: "Right Tower Monitor", band: "Full-Range Right Acoustic Array", az: 65, dist: 0.72, gain: 1.0, color: "#38BDF8", muted: false, solo: false }
+    ];
+    let selectedNodeId = "sub1";
+    let draggingNodeId = null;
+    let wooferCrossover = 90;
+    let wooferPhase180 = false;
+    let vocalCenterLock = true;
+
+    const stageCanvas = document.getElementById("stageCanvas");
+    const sCtx = stageCanvas.getContext("2d");
+
+    function getStageCoords(node) {
+      const cx = stageCanvas.width / 2;
+      const cy = stageCanvas.height / 2;
+      const maxR = Math.min(cx, cy) - 24;
+      const rad = ((node.az - 90) * Math.PI) / 180;
+      const r = node.dist * maxR;
+      return { x: cx + Math.cos(rad) * r, y: cy + Math.sin(rad) * r };
+    }
+
+    function updateSelectedUi() {
+      const n = STAGE_NODES.find(x => x.id === selectedNodeId) || STAGE_NODES[0];
+      document.getElementById("selNodeTitle").textContent = "Selected: " + n.title + " (" + n.code + ")";
+      document.getElementById("selNodeCoords").textContent = "Azimuth " + Math.round(n.az) + "° • Dist " + Math.round(n.dist * 100) + "%";
+      document.getElementById("selNodeBand").textContent = n.band;
+      document.getElementById("selNodeGainVal").textContent = (n.gain >= 0 ? "+" : "") + n.gain.toFixed(1) + " dB";
+      document.getElementById("selNodeGainSlider").value = n.gain;
+      document.getElementById("muteNodeBtn").textContent = n.muted ? "🔊 Unmute Node" : "🔇 Mute Node";
+      document.getElementById("soloNodeBtn").textContent = n.solo ? "🎯 Unsolo Node" : "🎯 Solo Node";
+      recomputeStageEq();
+    }
+
+    function recomputeStageEq() {
+      let subPan = 0, midPan = 0, airPan = 0;
+      STAGE_NODES.forEach(n => {
+        if (n.muted) return;
+        const pan = Math.sin((n.az * Math.PI) / 180) * (1 - n.dist * 0.35);
+        if (n.id.startsWith("sub") || n.id === "drm") subPan += pan * 35;
+        else if (n.id === "voc" || n.id === "gtr") midPan += pan * 40;
+        else airPan += pan * 40;
+      });
+      document.getElementById("stageTelemetry").textContent =
+        "Stage Active • 2 Woofers (X-Over " + wooferCrossover + "Hz • Phase " + (wooferPhase180 ? "180°" : "0°") +
+        ") • Sub L/R " + Math.round(subPan) + "% | Mid " + Math.round(midPan) + "% | Air " + Math.round(airPan) + "%";
+    }
+
+    function drawStageRadar() {
+      sCtx.clearRect(0, 0, stageCanvas.width, stageCanvas.height);
+      const cx = stageCanvas.width / 2;
+      const cy = stageCanvas.height / 2;
+      const maxR = Math.min(cx, cy) - 24;
+
+      [0.33, 0.66, 1.0].forEach(f => {
+        sCtx.beginPath();
+        sCtx.arc(cx, cy, maxR * f, 0, Math.PI * 2);
+        sCtx.strokeStyle = "#1b2436";
+        sCtx.lineWidth = 1;
+        sCtx.stroke();
+      });
+
+      sCtx.beginPath();
+      sCtx.moveTo(cx, 10); sCtx.lineTo(cx, stageCanvas.height - 10);
+      sCtx.moveTo(10, cy); sCtx.lineTo(stageCanvas.width - 10, cy);
+      sCtx.strokeStyle = "#161e2e";
+      sCtx.stroke();
+
+      // Listener head
+      sCtx.beginPath();
+      sCtx.arc(cx, cy, 11, 0, Math.PI * 2);
+      sCtx.fillStyle = "#101826";
+      sCtx.fill();
+      sCtx.strokeStyle = "#00F0FF";
+      sCtx.lineWidth = 2;
+      sCtx.stroke();
+      sCtx.fillStyle = "#F4F7FF";
+      sCtx.font = "bold 8px monospace";
+      sCtx.textAlign = "center";
+      sCtx.fillText("YOU", cx, cy + 3);
+
+      STAGE_NODES.forEach(n => {
+        const pos = getStageCoords(n);
+        const isSel = n.id === selectedNodeId;
+
+        if (n.id.startsWith("sub") && !n.muted) {
+          const pulseR = 16 + Math.abs(Math.sin(tick * 1.4)) * 9;
+          sCtx.beginPath();
+          sCtx.arc(pos.x, pos.y, pulseR, 0, Math.PI * 2);
+          sCtx.strokeStyle = n.color + "55";
+          sCtx.lineWidth = 2;
+          sCtx.stroke();
+        }
+
+        sCtx.beginPath();
+        sCtx.moveTo(cx, cy);
+        sCtx.lineTo(pos.x, pos.y);
+        sCtx.strokeStyle = isSel ? n.color : "#232d42";
+        sCtx.lineWidth = isSel ? 1.8 : 1;
+        sCtx.stroke();
+
+        sCtx.beginPath();
+        sCtx.arc(pos.x, pos.y, isSel ? 15 : 12, 0, Math.PI * 2);
+        sCtx.fillStyle = n.muted ? "#1f2430" : "#0b101b";
+        sCtx.fill();
+        sCtx.strokeStyle = n.muted ? "#525b70" : n.color;
+        sCtx.lineWidth = isSel ? 2.6 : 1.6;
+        sCtx.stroke();
+
+        sCtx.fillStyle = n.muted ? "#68738c" : "#F4F7FF";
+        sCtx.font = "bold 8px monospace";
+        sCtx.textAlign = "center";
+        sCtx.fillText(n.code, pos.x, pos.y + 3);
+      });
+
+      requestAnimationFrame(drawStageRadar);
+    }
+
+    function handleStagePointer(clientX, clientY, isStart) {
+      const rect = stageCanvas.getBoundingClientRect();
+      const scaleX = stageCanvas.width / rect.width;
+      const scaleY = stageCanvas.height / rect.height;
+      const px = (clientX - rect.left) * scaleX;
+      const py = (clientY - rect.top) * scaleY;
+
+      if (isStart) {
+        let best = null, bestD = 999;
+        STAGE_NODES.forEach(n => {
+          const p = getStageCoords(n);
+          const d = Math.hypot(px - p.x, py - p.y);
+          if (d < bestD) { bestD = d; best = n; }
+        });
+        if (best && bestD <= 28) {
+          selectedNodeId = best.id;
+          draggingNodeId = best.id;
+          updateSelectedUi();
+        }
+        return;
+      }
+
+      if (!draggingNodeId) return;
+      const n = STAGE_NODES.find(x => x.id === draggingNodeId);
+      if (!n) return;
+      const cx = stageCanvas.width / 2;
+      const cy = stageCanvas.height / 2;
+      const maxR = Math.min(cx, cy) - 24;
+      const dx = px - cx;
+      const dy = py - cy;
+      let az = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+      if (az > 180) az -= 360;
+      if (az < -180) az += 360;
+      n.az = vocalCenterLock && n.id === "voc" ? 0 : az;
+      n.dist = Math.max(0.08, Math.min(1.0, Math.hypot(dx, dy) / maxR));
+      updateSelectedUi();
+    }
+
+    stageCanvas.addEventListener("pointerdown", e => {
+      stageCanvas.setPointerCapture(e.pointerId);
+      handleStagePointer(e.clientX, e.clientY, true);
+    });
+    stageCanvas.addEventListener("pointermove", e => {
+      if (draggingNodeId) handleStagePointer(e.clientX, e.clientY, false);
+    });
+    stageCanvas.addEventListener("pointerup", () => { draggingNodeId = null; });
+
+    function updateSelectedNodeGain(v) {
+      const n = STAGE_NODES.find(x => x.id === selectedNodeId);
+      if (!n) return;
+      n.gain = parseFloat(v);
+      updateSelectedUi();
+    }
+    function toggleSelectedMute() {
+      const n = STAGE_NODES.find(x => x.id === selectedNodeId);
+      if (!n) return;
+      n.muted = !n.muted;
+      updateSelectedUi();
+    }
+    function toggleSelectedSolo() {
+      const n = STAGE_NODES.find(x => x.id === selectedNodeId);
+      if (!n) return;
+      n.solo = !n.solo;
+      STAGE_NODES.forEach(o => { if (o.id !== n.id) o.muted = n.solo; });
+      if (!n.solo) STAGE_NODES.forEach(o => { o.muted = false; });
+      updateSelectedUi();
+    }
+    function centerSelectedNode() {
+      const n = STAGE_NODES.find(x => x.id === selectedNodeId);
+      if (!n) return;
+      n.az = 0; n.dist = 0.25;
+      updateSelectedUi();
+    }
+    function updateCrossover(hz) {
+      wooferCrossover = parseInt(hz, 10);
+      document.getElementById("xoverVal").textContent = wooferCrossover + " Hz • " + (wooferPhase180 ? "180°" : "0°") + " Phase";
+      recomputeStageEq();
+    }
+    function toggleWooferPhase() {
+      wooferPhase180 = !wooferPhase180;
+      document.getElementById("phaseBtn").textContent = "⚡ Woofer Phase: " + (wooferPhase180 ? "180° Inverted" : "0° Normal");
+      updateCrossover(wooferCrossover);
+    }
+    function toggleVocalLock() {
+      vocalCenterLock = !vocalCenterLock;
+      document.getElementById("vocalLockBtn").textContent = "🎤 Center Vocal Lock: " + (vocalCenterLock ? "ON" : "OFF");
+      if (vocalCenterLock) {
+        const voc = STAGE_NODES.find(x => x.id === "voc");
+        if (voc) voc.az = 0;
+      }
+      updateSelectedUi();
+    }
+    function setStageFormation(key) {
+      const presets = {
+        arena:   { sub1: [-24,0.55,3.5], sub2: [162,0.65,2.5], voc: [0,0.32,2.2], drm: [18,0.48,2.0], gtr: [-48,0.52,1.5], syn: [52,0.56,1.8], spkl: [-65,0.72,1.2], spkr: [65,0.72,1.2] },
+        drummer: { sub1: [0,0.22,4.5],   sub2: [180,0.35,4.0], voc: [0,0.58,1.5], drm: [0,0.14,4.2],  gtr: [-75,0.62,1.8], syn: [75,0.62,2.0], spkl: [-95,0.78,1.5], spkr: [95,0.78,1.5] },
+        maybach: { sub1: [-35,0.42,5.0], sub2: [145,0.48,4.8], voc: [0,0.25,2.8], drm: [12,0.40,2.5], gtr: [-55,0.46,2.0], syn: [55,0.46,2.4], spkl: [-45,0.55,2.2], spkr: [45,0.55,2.2] },
+        club360: { sub1: [-90,0.35,6.0], sub2: [90,0.35,6.0],  voc: [0,0.40,1.8], drm: [180,0.42,3.8],gtr: [-135,0.65,2.0],syn: [135,0.65,2.8],spkl: [-45,0.80,2.5], spkr: [45,0.80,2.5] },
+        split:   { sub1: [-85,0.45,4.2], sub2: [-110,0.55,3.8],voc: [0,0.20,3.2], drm: [-70,0.48,3.0],gtr: [75,0.48,3.0],  syn: [95,0.55,3.2], spkl: [-90,0.75,2.0], spkr: [90,0.75,2.0] }
+      };
+      const cfg = presets[key];
+      if (!cfg) return;
+      STAGE_NODES.forEach(n => {
+        if (cfg[n.id]) {
+          n.az = cfg[n.id][0];
+          n.dist = cfg[n.id][1];
+          n.gain = cfg[n.id][2];
+          n.muted = false;
+          n.solo = false;
+        }
+      });
+      updateSelectedUi();
+    }
+
     renderPresets();
     renderBands();
+    updateSelectedUi();
     drawSpectrum();
+    drawStageRadar();
   </script>
 </body>
 </html>`;

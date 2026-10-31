@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Hearing
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Radar
+import androidx.compose.material.icons.filled.SpeakerGroup
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.SurroundSound
 import androidx.compose.material3.Button
@@ -71,22 +72,23 @@ import com.example.dsp.EsportsThreatRadarState
 import com.example.dsp.FutureGenAudioLabEngine
 import com.example.dsp.HolographicVibeProfile
 import com.example.dsp.NeuralBrainwaveMode
+import com.example.dsp.SpatialStageFormation
+import com.example.dsp.SpatialStageNode
 import com.example.ui.theme.AmoledBlack
 import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.HyperViolet
 import com.example.ui.theme.NeonMagenta
 import com.example.ui.theme.ObsidianBorder
 import com.example.ui.theme.ObsidianCard
-import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.SignalEmerald
 import com.example.ui.theme.StudioAmber
-import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -147,7 +149,7 @@ fun FutureGenQuickStripCard(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "7-IN-1 NEXT-GEN",
+                                text = "8-IN-1 3D STAGE",
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
                                 color = AmoledBlack,
                                 fontWeight = FontWeight.Bold,
@@ -157,7 +159,7 @@ fun FutureGenQuickStripCard(
                             )
                         }
                         Text(
-                            text = "Sonar Room Scan • Brainwave 40Hz • 360° Radar • Bio-Ear DNA • AI Rider • X-Ray",
+                            text = "3D Instrument & Woofer Stage • Sonar • 40Hz Brainwave • Bio-Ear • X-Ray",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                             color = ElectricCyan,
                             maxLines = 1,
@@ -179,7 +181,7 @@ fun FutureGenQuickStripCard(
                         .testTag("open_future_lab_btn")
                 ) {
                     Text(
-                        text = "OPEN LAB",
+                        text = "3D STAGE & LAB",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.ExtraBold
                     )
@@ -194,12 +196,37 @@ fun FutureGenQuickStripCard(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 OutlinedButton(
+                    onClick = onOpenFutureLab,
+                    border = BorderStroke(1.dp, StudioAmber),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                    modifier = Modifier
+                        .weight(1.1f)
+                        .height(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SpeakerGroup,
+                        contentDescription = "3D Instrument & Woofer Stage",
+                        tint = StudioAmber,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "3D WOOFER STAGE",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        color = StudioAmber,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
+                }
+
+                OutlinedButton(
                     onClick = onRunSonarSweep,
                     border = BorderStroke(1.dp, ElectricCyan),
                     shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(0.95f)
                         .height(36.dp)
                 ) {
                     Icon(
@@ -210,8 +237,8 @@ fun FutureGenQuickStripCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = if (uiState.isRunningSonarScan) "SCANNING..." else "SONAR SCAN",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        text = if (uiState.isRunningSonarScan) "SCAN..." else "SONAR",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                         color = ElectricCyan,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1
@@ -225,9 +252,9 @@ fun FutureGenQuickStripCard(
                         if (uiState.isDynamicAutoRiderEnabled) SignalEmerald else ObsidianBorder
                     ),
                     shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(0.95f)
                         .height(36.dp)
                 ) {
                     Icon(
@@ -238,8 +265,8 @@ fun FutureGenQuickStripCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = if (uiState.isDynamicAutoRiderEnabled) "AI RIDER: ON" else "AI RIDER",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        text = if (uiState.isDynamicAutoRiderEnabled) "RIDER ON" else "AI RIDER",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                         color = if (uiState.isDynamicAutoRiderEnabled) SignalEmerald else TextPrimary,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1
@@ -253,9 +280,9 @@ fun FutureGenQuickStripCard(
                         if (uiState.isEsportsXrayEnabled) NeonMagenta else ObsidianBorder
                     ),
                     shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(0.95f)
                         .height(36.dp)
                 ) {
                     Icon(
@@ -266,8 +293,8 @@ fun FutureGenQuickStripCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = if (uiState.isEsportsXrayEnabled) "X-RAY: ON" else "X-RAY HUD",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        text = if (uiState.isEsportsXrayEnabled) "X-RAY ON" else "X-RAY",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                         color = if (uiState.isEsportsXrayEnabled) NeonMagenta else TextPrimary,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1
@@ -326,8 +353,8 @@ fun FutureGenQuickStripCard(
                         uiState.isEsportsXrayEnabled -> esportsRadar.dominantCueLabel
                         uiState.isDynamicAutoRiderEnabled -> uiState.autoRiderStatusText
                         uiState.neuralBrainwaveMode != NeuralBrainwaveMode.OFF ->
-                            "🧠 NEURAL ${uiState.neuralBrainwaveMode.badge} ACTIVE • 360° AZIMUTH ${uiState.radarAzimuthDeg.roundToInt()}°"
-                        else -> uiState.sonarTelemetryText
+                            "🧠 NEURAL ${uiState.neuralBrainwaveMode.badge} • ${uiState.stageTelemetrySummary}"
+                        else -> uiState.stageTelemetrySummary
                     },
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                     color = SignalEmerald,
@@ -341,6 +368,465 @@ fun FutureGenQuickStripCard(
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                     color = StudioAmber,
                     fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Interactive 3D Multi-Instrument & Virtual 7.1.4 Dual-Woofer/Speaker Stage Architect Card.
+ * Can be embedded directly in Bass & DSP Tab as well as inside the Quantum Lab Dialog.
+ */
+@Composable
+fun MultiNodeInstrumentStageCard(
+    uiState: EqUiState,
+    onSelectNode: (String) -> Unit,
+    onUpdateNodePosition: (String, Float, Float) -> Unit,
+    onUpdateNodeGain: (String, Float) -> Unit,
+    onToggleNodeMute: (String) -> Unit,
+    onToggleNodeSolo: (String) -> Unit,
+    onApplyFormation: (SpatialStageFormation) -> Unit,
+    onUpdateWooferCrossover: (Int) -> Unit,
+    onToggleWooferPhase: () -> Unit,
+    onToggleCenterVocalLock: () -> Unit
+) {
+    val selectedNode = uiState.stageNodes.find { it.id == uiState.selectedStageNodeId }
+        ?: uiState.stageNodes.firstOrNull()
+
+    Surface(
+        color = ObsidianCard,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.5.dp, StudioAmber.copy(alpha = 0.85f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.SpeakerGroup,
+                        contentDescription = "3D Multi-Instrument & Woofer Stage",
+                        tint = StudioAmber,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = "3D INSTRUMENT & DUAL-WOOFER STAGE ARCHITECT",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(
+                            text = "Drag Subwoofers, Vocals, Drums, Guitar, Synth & Surround Towers in 360°",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            color = StudioAmber
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 1-Tap Stage Formations
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                SpatialStageFormation.entries.forEach { formation ->
+                    val isSelected = uiState.selectedStageFormation == formation
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onApplyFormation(formation) },
+                        label = {
+                            Text(
+                                text = "${formation.title} (${formation.badge})",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = StudioAmber,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextSecondary
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Interactive 360° Multi-Node Studio Floor Canvas
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                MultiNodeStageFloorCanvas(
+                    nodes = uiState.stageNodes,
+                    selectedNodeId = uiState.selectedStageNodeId,
+                    onSelectNode = onSelectNode,
+                    onMoveNode = onUpdateNodePosition
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Selectable Instrument / Woofer Node Chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                uiState.stageNodes.forEach { node ->
+                    val isSelected = node.id == uiState.selectedStageNodeId
+                    val nodeColor = when (node.category) {
+                        "WOOFER" -> NeonMagenta
+                        "INSTRUMENT" -> ElectricCyan
+                        else -> SignalEmerald
+                    }
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onSelectNode(node.id) },
+                        label = {
+                            Text(
+                                text = "${node.shortTag} (${node.azimuthDeg.roundToInt()}°)",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                fontWeight = FontWeight.Bold
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = nodeColor,
+                            selectedLabelColor = if (nodeColor == NeonMagenta) Color.White else AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = if (node.muted) TextSecondary.copy(alpha = 0.4f) else nodeColor
+                        )
+                    )
+                }
+            }
+
+            // Selected Node Inspector Controls (Gain dB, Angle, Distance, Mute, Solo)
+            if (selectedNode != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    color = AmoledBlack,
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, ObsidianBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "${selectedNode.label} [${selectedNode.shortTag}]",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = ElectricCyan,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Angle: ${selectedNode.azimuthDeg.roundToInt()}° • Distance: ${(selectedNode.distanceNorm * 10f).roundToInt() / 10f}m • Gain: ${String.format(Locale.US, "%+.1fdB", selectedNode.gainDb)}",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    color = TextSecondary
+                                )
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                OutlinedButton(
+                                    onClick = { onToggleNodeMute(selectedNode.id) },
+                                    border = BorderStroke(1.dp, if (selectedNode.muted) NeonMagenta else ObsidianBorder),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                    modifier = Modifier.height(28.dp)
+                                ) {
+                                    Text(
+                                        text = if (selectedNode.muted) "MUTED" else "MUTE",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                        color = if (selectedNode.muted) NeonMagenta else TextSecondary
+                                    )
+                                }
+                                OutlinedButton(
+                                    onClick = { onToggleNodeSolo(selectedNode.id) },
+                                    border = BorderStroke(1.dp, if (selectedNode.solo) StudioAmber else ObsidianBorder),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                    modifier = Modifier.height(28.dp)
+                                ) {
+                                    Text(
+                                        text = if (selectedNode.solo) "SOLO ON" else "SOLO",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                        color = if (selectedNode.solo) StudioAmber else TextSecondary
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Node Gain",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                color = TextSecondary,
+                                modifier = Modifier.width(66.dp)
+                            )
+                            Slider(
+                                value = selectedNode.gainDb,
+                                onValueChange = { onUpdateNodeGain(selectedNode.id, it) },
+                                valueRange = -12f..12f,
+                                modifier = Modifier.weight(1f),
+                                colors = SliderDefaults.colors(
+                                    thumbColor = ElectricCyan,
+                                    activeTrackColor = ElectricCyan
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Dual-Woofer Crossover Hz + Phase 0°/180° + Center Vocal Lock
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Dual-Woofer Crossover: ${uiState.wooferCrossoverHz} Hz",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            OutlinedButton(
+                                onClick = onToggleWooferPhase,
+                                border = BorderStroke(1.dp, if (uiState.wooferPhaseInvert180) NeonMagenta else ElectricCyan),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                modifier = Modifier.height(28.dp)
+                            ) {
+                                Text(
+                                    text = if (uiState.wooferPhaseInvert180) "PHASE: 180°" else "PHASE: 0°",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                    color = if (uiState.wooferPhaseInvert180) NeonMagenta else ElectricCyan
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = onToggleCenterVocalLock,
+                                border = BorderStroke(1.dp, if (uiState.centerVocalLock) SignalEmerald else ObsidianBorder),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                modifier = Modifier.height(28.dp)
+                            ) {
+                                Text(
+                                    text = if (uiState.centerVocalLock) "VOCAL LOCK: ON" else "VOCAL LOCK: OFF",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                    color = if (uiState.centerVocalLock) SignalEmerald else TextSecondary
+                                )
+                            }
+                        }
+                    }
+
+                    Slider(
+                        value = uiState.wooferCrossoverHz.toFloat(),
+                        onValueChange = { onUpdateWooferCrossover(it.roundToInt()) },
+                        valueRange = 40f..120f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = NeonMagenta,
+                            activeTrackColor = NeonMagenta
+                        )
+                    )
+
+                    Text(
+                        text = uiState.stageTelemetrySummary,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = SignalEmerald
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MultiNodeStageFloorCanvas(
+    nodes: List<SpatialStageNode>,
+    selectedNodeId: String,
+    onSelectNode: (String) -> Unit,
+    onMoveNode: (String, Float, Float) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(230.dp)
+            .clip(CircleShape)
+            .background(AmoledBlack)
+            .border(1.5.dp, StudioAmber.copy(alpha = 0.7f), CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(nodes, selectedNodeId) {
+                    detectTapGestures { tapOffset ->
+                        val cx = size.width / 2f
+                        val cy = size.height / 2f
+                        val maxR = min(cx, cy) * 0.84f
+
+                        // Check if user tapped near an existing node to select it
+                        val tappedNode = nodes.minByOrNull { node ->
+                            val rad = (node.azimuthDeg - 90f) * (PI.toFloat() / 180f)
+                            val nx = cx + cos(rad) * (maxR * node.distanceNorm)
+                            val ny = cy + sin(rad) * (maxR * node.distanceNorm)
+                            hypot(tapOffset.x - nx, tapOffset.y - ny)
+                        }
+                        if (tappedNode != null) {
+                            val rad = (tappedNode.azimuthDeg - 90f) * (PI.toFloat() / 180f)
+                            val nx = cx + cos(rad) * (maxR * tappedNode.distanceNorm)
+                            val ny = cy + sin(rad) * (maxR * tappedNode.distanceNorm)
+                            if (hypot(tapOffset.x - nx, tapOffset.y - ny) < 34f) {
+                                onSelectNode(tappedNode.id)
+                                return@detectTapGestures
+                            }
+                        }
+
+                        // Otherwise move currently selected node to tapped position
+                        val dx = tapOffset.x - cx
+                        val dy = tapOffset.y - cy
+                        val dist = (sqrt(dx * dx + dy * dy) / maxR).coerceIn(0.15f, 1f)
+                        val angleDeg = ((atan2(dy, dx) * 180f / PI.toFloat()) + 90f).let {
+                            if (it > 180f) it - 360f else if (it < -180f) it + 360f else it
+                        }
+                        onMoveNode(selectedNodeId, angleDeg, dist)
+                    }
+                }
+                .pointerInput(nodes, selectedNodeId) {
+                    detectDragGestures(
+                        onDragStart = { startOffset ->
+                            val cx = size.width / 2f
+                            val cy = size.height / 2f
+                            val maxR = min(cx, cy) * 0.84f
+                            val nearest = nodes.minByOrNull { node ->
+                                val rad = (node.azimuthDeg - 90f) * (PI.toFloat() / 180f)
+                                val nx = cx + cos(rad) * (maxR * node.distanceNorm)
+                                val ny = cy + sin(rad) * (maxR * node.distanceNorm)
+                                hypot(startOffset.x - nx, startOffset.y - ny)
+                            }
+                            if (nearest != null) {
+                                val rad = (nearest.azimuthDeg - 90f) * (PI.toFloat() / 180f)
+                                val nx = cx + cos(rad) * (maxR * nearest.distanceNorm)
+                                val ny = cy + sin(rad) * (maxR * nearest.distanceNorm)
+                                if (hypot(startOffset.x - nx, startOffset.y - ny) < 48f) {
+                                    onSelectNode(nearest.id)
+                                }
+                            }
+                        },
+                        onDrag = { change, _ ->
+                            change.consume()
+                            val cx = size.width / 2f
+                            val cy = size.height / 2f
+                            val maxR = min(cx, cy) * 0.84f
+                            val dx = change.position.x - cx
+                            val dy = change.position.y - cy
+                            val dist = (sqrt(dx * dx + dy * dy) / maxR).coerceIn(0.15f, 1f)
+                            val angleDeg = ((atan2(dy, dx) * 180f / PI.toFloat()) + 90f).let {
+                                if (it > 180f) it - 360f else if (it < -180f) it + 360f else it
+                            }
+                            onMoveNode(selectedNodeId, angleDeg, dist)
+                        }
+                    )
+                }
+        ) {
+            val cx = size.width / 2f
+            val cy = size.height / 2f
+            val maxR = min(cx, cy) * 0.84f
+
+            // Acoustic room rings
+            for (r in listOf(0.32f, 0.64f, 0.96f)) {
+                drawCircle(
+                    color = ElectricCyan.copy(alpha = 0.16f),
+                    radius = maxR * r,
+                    center = Offset(cx, cy),
+                    style = Stroke(width = 1.dp.toPx())
+                )
+            }
+            // Front/Back and Left/Right axis lines
+            drawLine(
+                color = ElectricCyan.copy(alpha = 0.14f),
+                start = Offset(cx, 0f),
+                end = Offset(cx, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+            drawLine(
+                color = ElectricCyan.copy(alpha = 0.14f),
+                start = Offset(0f, cy),
+                end = Offset(size.width, cy),
+                strokeWidth = 1.dp.toPx()
+            )
+
+            // Listener head in center
+            drawCircle(
+                color = SignalEmerald.copy(alpha = 0.25f),
+                radius = 13.dp.toPx(),
+                center = Offset(cx, cy)
+            )
+            drawCircle(
+                color = SignalEmerald,
+                radius = 6.dp.toPx(),
+                center = Offset(cx, cy)
+            )
+
+            // Draw all 8 Instrument, Subwoofer & Speaker nodes
+            nodes.forEach { node ->
+                val rad = (node.azimuthDeg - 90f) * (PI.toFloat() / 180f)
+                val nx = cx + cos(rad) * (maxR * node.distanceNorm.coerceIn(0.15f, 1f))
+                val ny = cy + sin(rad) * (maxR * node.distanceNorm.coerceIn(0.15f, 1f))
+                val isSelected = node.id == selectedNodeId
+
+                val baseColor = when (node.category) {
+                    "WOOFER" -> NeonMagenta
+                    "INSTRUMENT" -> ElectricCyan
+                    else -> StudioAmber
+                }
+                val color = if (node.muted) baseColor.copy(alpha = 0.25f) else baseColor
+
+                // Vector ray from listener head to node
+                drawLine(
+                    color = color.copy(alpha = if (isSelected) 0.75f else 0.28f),
+                    start = Offset(cx, cy),
+                    end = Offset(nx, ny),
+                    strokeWidth = if (isSelected) 2.2.dp.toPx() else 1.dp.toPx()
+                )
+
+                // Outer halo if selected or woofer
+                if (isSelected || node.category == "WOOFER") {
+                    drawCircle(
+                        color = color.copy(alpha = if (isSelected) 0.36f else 0.18f),
+                        radius = if (isSelected) 16.dp.toPx() else 12.dp.toPx(),
+                        center = Offset(nx, ny)
+                    )
+                }
+
+                // Node core
+                drawCircle(
+                    color = if (isSelected) Color.White else color,
+                    radius = if (isSelected) 8.dp.toPx() else 6.dp.toPx(),
+                    center = Offset(nx, ny)
                 )
             }
         }
@@ -362,6 +848,15 @@ fun FutureGenQuantumLabDialog(
     onToggleDynamicAutoRider: () -> Unit,
     onToggleEsportsXray: () -> Unit,
     onApplyHolographicVibe: (HolographicVibeProfile) -> Unit,
+    onSelectStageNode: (String) -> Unit = {},
+    onUpdateStageNodePosition: (String, Float, Float) -> Unit = { _, _, _ -> },
+    onUpdateStageNodeGain: (String, Float) -> Unit = { _, _ -> },
+    onToggleStageNodeMute: (String) -> Unit = {},
+    onToggleStageNodeSolo: (String) -> Unit = {},
+    onApplyStageFormation: (SpatialStageFormation) -> Unit = {},
+    onUpdateWooferCrossover: (Int) -> Unit = {},
+    onToggleWooferPhase: () -> Unit = {},
+    onToggleCenterVocalLock: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -374,7 +869,7 @@ fun FutureGenQuantumLabDialog(
             border = BorderStroke(1.5.dp, ElectricCyan),
             modifier = Modifier
                 .fillMaxWidth(0.95f)
-                .height(690.dp)
+                .height(710.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -397,13 +892,13 @@ fun FutureGenQuantumLabDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = "EQULTRA QUANTUM LAB (2027 SUITE)",
+                                text = "EQULTRA QUANTUM LAB & 3D STAGE",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
-                                text = "7 Next-Gen Acoustic, Neural & Spatial Engines",
+                                text = "8 Next-Gen 3D Instrument Stage, Sonar, Neural & Spatial Engines",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ElectricCyan
                             )
@@ -426,6 +921,20 @@ fun FutureGenQuantumLabDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // 0. 3D MULTI-INSTRUMENT & DUAL-WOOFER STAGE ARCHITECT
+                    MultiNodeInstrumentStageCard(
+                        uiState = uiState,
+                        onSelectNode = onSelectStageNode,
+                        onUpdateNodePosition = onUpdateStageNodePosition,
+                        onUpdateNodeGain = onUpdateStageNodeGain,
+                        onToggleNodeMute = onToggleStageNodeMute,
+                        onToggleNodeSolo = onToggleStageNodeSolo,
+                        onApplyFormation = onApplyStageFormation,
+                        onUpdateWooferCrossover = onUpdateWooferCrossover,
+                        onToggleWooferPhase = onToggleWooferPhase,
+                        onToggleCenterVocalLock = onToggleCenterVocalLock
+                    )
+
                     // 1. SONAR ACOUSTIC ROOM & EARBUD SCANNER
                     Surface(
                         color = ObsidianCard,
@@ -581,13 +1090,13 @@ fun FutureGenQuantumLabDialog(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Column {
                                         Text(
-                                            text = "3. 360° Holographic Soundstage Radar",
+                                            text = "3. 360° Master Soundstage Orbit & L/R Trim",
                                             style = MaterialTheme.typography.titleSmall,
                                             color = TextPrimary,
                                             fontWeight = FontWeight.Bold
                                         )
                                         Text(
-                                            text = "Drag virtual speaker orbit (ITD/ILD Binaural Panning)",
+                                            text = "Global head-tracked orbit + Audiophile Left/Right dB balance",
                                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                                             color = TextSecondary
                                         )
@@ -608,20 +1117,6 @@ fun FutureGenQuantumLabDialog(
                                         color = if (uiState.isRadarAutoOrbitEnabled) SignalEmerald else TextPrimary
                                     )
                                 }
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Interactive 360° Radar Canvas
-                            Box(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                SoundstageRadarCanvas(
-                                    azimuthDeg = uiState.radarAzimuthDeg,
-                                    distanceNorm = uiState.radarDistanceNorm,
-                                    onPositionChanged = onUpdateRadarPosition
-                                )
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -939,111 +1434,5 @@ private fun ThreatBarColumn(
                 .height(6.dp)
                 .clip(RoundedCornerShape(4.dp))
         )
-    }
-}
-
-@Composable
-private fun SoundstageRadarCanvas(
-    azimuthDeg: Float,
-    distanceNorm: Float,
-    onPositionChanged: (Float, Float) -> Unit
-) {
-    val rad = (azimuthDeg - 90f) * (PI.toFloat() / 180f)
-    Box(
-        modifier = Modifier
-            .size(160.dp)
-            .clip(CircleShape)
-            .background(AmoledBlack)
-            .border(1.dp, ObsidianBorder, CircleShape),
-        contentAlignment = Alignment.Center
-    ) {
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectTapGestures { offset ->
-                        val cx = size.width / 2f
-                        val cy = size.height / 2f
-                        val dx = offset.x - cx
-                        val dy = offset.y - cy
-                        val maxR = min(cx, cy) * 0.85f
-                        val dist = (sqrt(dx * dx + dy * dy) / maxR).coerceIn(0.15f, 1f)
-                        val angleDeg = ((atan2(dy, dx) * 180f / PI.toFloat()) + 90f).let {
-                            if (it > 180f) it - 360f else if (it < -180f) it + 360f else it
-                        }
-                        onPositionChanged(angleDeg, dist)
-                    }
-                }
-                .pointerInput(Unit) {
-                    detectDragGestures { change, _ ->
-                        change.consume()
-                        val cx = size.width / 2f
-                        val cy = size.height / 2f
-                        val dx = change.position.x - cx
-                        val dy = change.position.y - cy
-                        val maxR = min(cx, cy) * 0.85f
-                        val dist = (sqrt(dx * dx + dy * dy) / maxR).coerceIn(0.15f, 1f)
-                        val angleDeg = ((atan2(dy, dx) * 180f / PI.toFloat()) + 90f).let {
-                            if (it > 180f) it - 360f else if (it < -180f) it + 360f else it
-                        }
-                        onPositionChanged(angleDeg, dist)
-                    }
-                }
-        ) {
-            val cx = size.width / 2f
-            val cy = size.height / 2f
-            val maxR = min(cx, cy) * 0.85f
-
-            // Concentric radar rings
-            for (r in listOf(0.35f, 0.68f, 1.0f)) {
-                drawCircle(
-                    color = ElectricCyan.copy(alpha = 0.18f),
-                    radius = maxR * r,
-                    center = Offset(cx, cy),
-                    style = Stroke(width = 1.dp.toPx())
-                )
-            }
-            // Crosshairs
-            drawLine(
-                color = ElectricCyan.copy(alpha = 0.15f),
-                start = Offset(cx, 0f),
-                end = Offset(cx, size.height),
-                strokeWidth = 1.dp.toPx()
-            )
-            drawLine(
-                color = ElectricCyan.copy(alpha = 0.15f),
-                start = Offset(0f, cy),
-                end = Offset(size.width, cy),
-                strokeWidth = 1.dp.toPx()
-            )
-
-            // Listener head at center
-            drawCircle(
-                color = SignalEmerald,
-                radius = 6.dp.toPx(),
-                center = Offset(cx, cy)
-            )
-
-            // Virtual sound source node
-            val sx = cx + cos(rad) * (maxR * distanceNorm.coerceIn(0.15f, 1f))
-            val sy = cy + sin(rad) * (maxR * distanceNorm.coerceIn(0.15f, 1f))
-
-            drawLine(
-                color = NeonMagenta.copy(alpha = 0.6f),
-                start = Offset(cx, cy),
-                end = Offset(sx, sy),
-                strokeWidth = 2.dp.toPx()
-            )
-            drawCircle(
-                color = NeonMagenta.copy(alpha = 0.28f),
-                radius = 14.dp.toPx(),
-                center = Offset(sx, sy)
-            )
-            drawCircle(
-                color = ElectricCyan,
-                radius = 7.dp.toPx(),
-                center = Offset(sx, sy)
-            )
-        }
     }
 }

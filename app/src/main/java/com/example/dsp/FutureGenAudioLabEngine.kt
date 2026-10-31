@@ -6,7 +6,6 @@ import android.media.AudioTrack
 import com.example.data.EqPresetEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -29,6 +28,43 @@ enum class NeuralBrainwaveMode(
     THETA_6HZ("Theta 6Hz", "6Hz MEDITATE", 6f, 174f, "Deep meditation, spatial daydream & acoustic immersion"),
     DELTA_2HZ("Delta 2Hz", "2Hz SLEEP", 2.2f, 136.1f, "Late-night restorative sleep & sub-harmonic ear recovery")
 }
+
+data class SpatialStageNode(
+    val id: String,
+    val label: String,
+    val shortTag: String,
+    val category: String, // "WOOFER", "INSTRUMENT", "SPEAKER"
+    val bandStartIdx: Int,
+    val bandEndIdx: Int,
+    val azimuthDeg: Float, // -180..+180 (0 = Front Center, -90 = Left, +90 = Right, 180 = Rear)
+    val distanceNorm: Float, // 0.15..1.0 (proximity to listener head)
+    val gainDb: Float = 0f, // -12..+12 dB
+    val muted: Boolean = false,
+    val solo: Boolean = false
+)
+
+enum class SpatialStageFormation(
+    val title: String,
+    val subtitle: String,
+    val badge: String
+) {
+    CONCERT_ARENA("Live Concert Stage", "Vocals front-center, Guitar L, Keys/Air R, Dual Subwoofers front", "CONCERT 3D"),
+    DRUMMERS_THRONE("Drummer's Seat POV", "Drums & Kick ultra-close, Guitar/Keys wide ±80°, Rear surround", "ON-STAGE POV"),
+    MAYBACH_CABIN("Maybach 4-Corner Cabin", "Dual under-seat woofers + 4-corner surround array + Center Vocal Lock", "CABIN 7.1.4"),
+    CLUB_SURROUND_360("360° Dual-Woofer Club", "Front-Left + Rear-Right opposing subwoofers for 360° chest slam", "CLUB 360°"),
+    BINAURAL_STEM_SPLIT("Binaural Stem Split", "Bass & Drums Left stage, Vocals Center, Guitar & Synth Right stage", "STEM SPLIT")
+}
+
+data class MultiNodeStageSynthesis(
+    val sculptedBands31: List<Float>,
+    val subBandPanLR: Float, // -1.0 (Left) .. +1.0 (Right)
+    val midBandPanLR: Float,
+    val highBandPanLR: Float,
+    val effectiveBassBoost: Int,
+    val effectiveSpatial3D: Int,
+    val effectiveReverbMix: Int,
+    val telemetrySummary: String
+)
 
 data class SonarScanReport(
     val roomAcousticsType: String,
@@ -76,6 +112,160 @@ data class HolographicVibeProfile(
 
 object FutureGenAudioLabEngine {
 
+    fun defaultStageNodesForFormation(
+        formation: SpatialStageFormation = SpatialStageFormation.CONCERT_ARENA
+    ): List<SpatialStageNode> {
+        return when (formation) {
+            SpatialStageFormation.CONCERT_ARENA -> listOf(
+                SpatialStageNode("sub_l", "Subwoofer L (20–63Hz)", "SUB-L", "WOOFER", 0, 5, -32f, 0.42f, 4.5f),
+                SpatialStageNode("sub_r", "Subwoofer R (808 Punch)", "SUB-R", "WOOFER", 2, 7, 32f, 0.42f, 4.5f),
+                SpatialStageNode("drums", "Kick & Snare Drums", "DRUMS", "INSTRUMENT", 6, 11, 0f, 0.48f, 2.5f),
+                SpatialStageNode("vocals", "Lead Vocals (Center)", "VOCAL", "INSTRUMENT", 14, 21, 0f, 0.30f, 3.5f),
+                SpatialStageNode("guitar", "Acoustic / Elec Guitar", "GUITAR", "INSTRUMENT", 12, 18, -52f, 0.50f, 2.0f),
+                SpatialStageNode("synth_air", "Synth, Strings & Air", "SYNTH", "INSTRUMENT", 22, 30, 55f, 0.54f, 3.0f),
+                SpatialStageNode("spk_l", "Left Surround Tower", "SPK-L", "SPEAKER", 10, 26, -110f, 0.72f, 1.5f),
+                SpatialStageNode("spk_r", "Right Surround Tower", "SPK-R", "SPEAKER", 10, 26, 110f, 0.72f, 1.5f)
+            )
+            SpatialStageFormation.DRUMMERS_THRONE -> listOf(
+                SpatialStageNode("sub_l", "Subwoofer L (20–63Hz)", "SUB-L", "WOOFER", 0, 5, -25f, 0.28f, 5.5f),
+                SpatialStageNode("sub_r", "Subwoofer R (808 Punch)", "SUB-R", "WOOFER", 2, 7, 25f, 0.28f, 5.5f),
+                SpatialStageNode("drums", "Kick & Snare Drums", "DRUMS", "INSTRUMENT", 6, 11, 0f, 0.20f, 6.0f),
+                SpatialStageNode("vocals", "Lead Vocals (Front)", "VOCAL", "INSTRUMENT", 14, 21, 0f, 0.55f, 2.0f),
+                SpatialStageNode("guitar", "Guitar Amp Stack L", "GUITAR", "INSTRUMENT", 12, 18, -82f, 0.38f, 3.5f),
+                SpatialStageNode("synth_air", "Hi-Hats & Overheads", "SYNTH", "INSTRUMENT", 22, 30, 78f, 0.32f, 4.5f),
+                SpatialStageNode("spk_l", "Stage Monitor L", "SPK-L", "SPEAKER", 10, 26, -135f, 0.65f, 2.0f),
+                SpatialStageNode("spk_r", "Stage Monitor R", "SPK-R", "SPEAKER", 10, 26, 135f, 0.65f, 2.0f)
+            )
+            SpatialStageFormation.MAYBACH_CABIN -> listOf(
+                SpatialStageNode("sub_l", "Front Seat Woofer L", "SUB-L", "WOOFER", 0, 5, -45f, 0.30f, 6.0f),
+                SpatialStageNode("sub_r", "Rear Trunk Woofer R", "SUB-R", "WOOFER", 2, 7, 155f, 0.36f, 6.0f),
+                SpatialStageNode("drums", "Cabin Mid-Bass", "DRUMS", "INSTRUMENT", 6, 11, -18f, 0.40f, 3.5f),
+                SpatialStageNode("vocals", "Center Dash Vocal Lock", "VOCAL", "INSTRUMENT", 14, 21, 0f, 0.26f, 4.0f),
+                SpatialStageNode("guitar", "Front Pillar L", "GUITAR", "INSTRUMENT", 12, 18, -40f, 0.42f, 2.5f),
+                SpatialStageNode("synth_air", "3D Roof Tweeters", "SYNTH", "INSTRUMENT", 22, 30, 40f, 0.38f, 3.8f),
+                SpatialStageNode("spk_l", "Rear Door Surround L", "SPK-L", "SPEAKER", 10, 26, -125f, 0.50f, 3.0f),
+                SpatialStageNode("spk_r", "Rear Door Surround R", "SPK-R", "SPEAKER", 10, 26, 125f, 0.50f, 3.0f)
+            )
+            SpatialStageFormation.CLUB_SURROUND_360 -> listOf(
+                SpatialStageNode("sub_l", "Club Horn Sub L", "SUB-L", "WOOFER", 0, 5, -38f, 0.24f, 7.5f),
+                SpatialStageNode("sub_r", "Rear Corner Sub R", "SUB-R", "WOOFER", 2, 7, 142f, 0.28f, 7.5f),
+                SpatialStageNode("drums", "Club Kick Array", "DRUMS", "INSTRUMENT", 6, 11, 0f, 0.32f, 5.5f),
+                SpatialStageNode("vocals", "DJ Booth Vocals", "VOCAL", "INSTRUMENT", 14, 21, 0f, 0.42f, 2.5f),
+                SpatialStageNode("guitar", "Left Wall Array", "GUITAR", "INSTRUMENT", 12, 18, -88f, 0.48f, 2.0f),
+                SpatialStageNode("synth_air", "Laser Synth Dome", "SYNTH", "INSTRUMENT", 22, 30, 88f, 0.44f, 4.5f),
+                SpatialStageNode("spk_l", "Rear Stack L", "SPK-L", "SPEAKER", 10, 26, -150f, 0.52f, 3.5f),
+                SpatialStageNode("spk_r", "Rear Stack R", "SPK-R", "SPEAKER", 10, 26, 150f, 0.52f, 3.5f)
+            )
+            SpatialStageFormation.BINAURAL_STEM_SPLIT -> listOf(
+                SpatialStageNode("sub_l", "Subwoofer L", "SUB-L", "WOOFER", 0, 5, -65f, 0.35f, 4.5f),
+                SpatialStageNode("sub_r", "Subwoofer R", "SUB-R", "WOOFER", 2, 7, -45f, 0.35f, 4.0f),
+                SpatialStageNode("drums", "Drums & Rhythm (Left)", "DRUMS", "INSTRUMENT", 6, 11, -70f, 0.36f, 4.0f),
+                SpatialStageNode("vocals", "Vocals (Dead Center)", "VOCAL", "INSTRUMENT", 14, 21, 0f, 0.25f, 4.5f),
+                SpatialStageNode("guitar", "Guitar & Keys (Right)", "GUITAR", "INSTRUMENT", 12, 18, 65f, 0.36f, 4.0f),
+                SpatialStageNode("synth_air", "Strings & Air (Right)", "SYNTH", "INSTRUMENT", 22, 30, 80f, 0.38f, 4.0f),
+                SpatialStageNode("spk_l", "Ambient L", "SPK-L", "SPEAKER", 10, 26, -120f, 0.65f, 1.0f),
+                SpatialStageNode("spk_r", "Ambient R", "SPK-R", "SPEAKER", 10, 26, 120f, 0.65f, 1.0f)
+            )
+        }
+    }
+
+    /**
+     * Synthesizes the 8 draggable Instrument & Woofer/Speaker nodes into a 31-band ISO EQ curve
+     * AND independent Sub/Mid/High stereo binaural panning offsets.
+     */
+    fun synthesizeMultiNodeStage(
+        nodes: List<SpatialStageNode>,
+        wooferCrossoverHz: Int,
+        wooferPhaseInvert180: Boolean,
+        centerVocalLock: Boolean
+    ): MultiNodeStageSynthesis {
+        val anySolo = nodes.any { it.solo }
+        val activeNodes = nodes.filter { node ->
+            if (anySolo) node.solo else !node.muted
+        }
+
+        // Compute crossover band index from wooferCrossoverHz (40..120Hz -> bands 3..8)
+        val crossoverBandIdx = EqPresetEntity.FREQUENCY_HZ.indexOfFirst { it >= wooferCrossoverHz }
+            .let { if (it == -1) 6 else it }
+
+        val bands = MutableList(31) { 0f }
+        val bandWeights = FloatArray(31) { 0f }
+
+        for (node in nodes) {
+            val isAudible = if (anySolo) node.solo else !node.muted
+            if (!isAudible) {
+                for (b in node.bandStartIdx..node.bandEndIdx.coerceAtMost(30)) {
+                    bands[b] = bands[b] - 6.0f
+                }
+                continue
+            }
+
+            // Proximity boost: closer nodes (distance 0.15) get up to +4.5 dB, far nodes (1.0) get -2.0 dB
+            val proximityDb = (0.58f - node.distanceNorm.coerceIn(0.15f, 1.0f)) * 9.0f
+            val totalNodeDb = (node.gainDb + proximityDb).coerceIn(-12f, 12f)
+
+            val startB = node.bandStartIdx.coerceIn(0, 30)
+            val endB = if (node.category == "WOOFER") {
+                maxOf(node.bandEndIdx, crossoverBandIdx).coerceIn(0, 30)
+            } else {
+                node.bandEndIdx.coerceIn(0, 30)
+            }
+
+            for (b in startB..endB) {
+                val centerB = (startB + endB) / 2f
+                val halfSpan = ((endB - startB) / 2f).coerceAtLeast(1f)
+                val bell = cos(((b - centerB) / (halfSpan + 1.5f)) * (PI / 2.0)).toFloat().coerceIn(0.25f, 1f)
+                val phaseBonus = if (node.category == "WOOFER" && !wooferPhaseInvert180) 1.2f else if (node.category == "WOOFER") -0.8f else 0f
+                bands[b] += (totalNodeDb + phaseBonus) * bell
+                bandWeights[b] += bell
+            }
+        }
+
+        // Normalize and apply Center Vocal Lock if enabled
+        for (i in 0 until 31) {
+            val w = bandWeights[i].coerceAtLeast(1f)
+            var v = bands[i] / (w * 0.68f)
+            if (centerVocalLock && i in 15..21) {
+                v = maxOf(v, 2.8f) // Ensure vocal clarity stays locked forward
+            }
+            bands[i] = (kotlin.math.round(v * 2f) / 2f).coerceIn(-15f, 15f)
+        }
+
+        // Compute independent Sub / Mid / High stereo binaural pan (-1.0 Left .. +1.0 Right)
+        fun avgPanForRange(range: IntRange): Float {
+            val matching = activeNodes.filter { it.bandStartIdx <= range.last && it.bandEndIdx >= range.first }
+            if (matching.isEmpty()) return 0f
+            val sum = matching.sumOf { sin((it.azimuthDeg * PI) / 180.0) * (1.15 - it.distanceNorm * 0.5) }
+            return (sum / matching.size).toFloat().coerceIn(-0.95f, 0.95f)
+        }
+
+        val subPan = avgPanForRange(0..7)
+        val midPan = if (centerVocalLock) avgPanForRange(8..20) * 0.35f else avgPanForRange(8..20)
+        val highPan = avgPanForRange(21..30)
+
+        val avgDist = if (activeNodes.isNotEmpty()) activeNodes.map { it.distanceNorm }.average().toFloat() else 0.5f
+        val wooferNodes = activeNodes.filter { it.category == "WOOFER" }
+        val effBass = if (wooferNodes.isEmpty()) 25 else {
+            val avgSubGain = wooferNodes.map { it.gainDb + (1f - it.distanceNorm) * 6f }.average().toFloat()
+            (58 + (avgSubGain * 4.2f).roundToInt()).coerceIn(20, 100)
+        }
+        val effSpatial = (45 + (avgDist * 48f).roundToInt()).coerceIn(30, 98)
+        val effReverb = (10 + (avgDist * 42f).roundToInt()).coerceIn(8, 75)
+
+        val summary = "STAGE ACTIVE: ${activeNodes.size}/${nodes.size} Nodes • Woofer X-Over ${wooferCrossoverHz}Hz • Pan[Sub ${String.format("%+.0f%%", subPan * 100)}, Mid ${String.format("%+.0f%%", midPan * 100)}, Air ${String.format("%+.0f%%", highPan * 100)}]"
+
+        return MultiNodeStageSynthesis(
+            sculptedBands31 = bands,
+            subBandPanLR = subPan,
+            midBandPanLR = midPan,
+            highBandPanLR = highPan,
+            effectiveBassBoost = effBass,
+            effectiveSpatial3D = effSpatial,
+            effectiveReverbMix = effReverb,
+            telemetrySummary = summary
+        )
+    }
+
     val HOLOGRAPHIC_VIBES: List<HolographicVibeProfile> = listOf(
         HolographicVibeProfile(
             id = "rolls_royce_rain",
@@ -109,7 +299,7 @@ object FutureGenAudioLabEngine {
             spatial3D = 76,
             reverbLevel = 32,
             reverbRoom = "Large Hall",
-            preverbSafePreamp(),
+            preampDb = -3.0f,
             brainwaveMode = NeuralBrainwaveMode.BETA_18HZ,
             radarAzimuthDeg = 18f
         ),
@@ -169,17 +359,10 @@ object FutureGenAudioLabEngine {
         )
     )
 
-    private fun preverbSafePreamp(): Float = -3.0f
-
-    /**
-     * Plays a real 1.2-second logarithmic acoustic sonar sweep (40Hz -> 14kHz) + sonar ping
-     * and computes a 31-band reverse room/earbud acoustic compensation profile.
-     */
     suspend fun runSonarAcousticCalibration(
         liveSpectrumBins: List<Float>,
         targetDeviceName: String
     ): SonarScanReport = withContext(Dispatchers.Default) {
-        // Play audible futuristic sonar chirp sweep via AudioTrack
         runCatching {
             val sampleRate = 44100
             val durationSamples = (sampleRate * 0.95).toInt()
@@ -221,7 +404,6 @@ object FutureGenAudioLabEngine {
             track.release()
         }
 
-        // Analyze live spectrum bins to detect room/earbud resonances and nulls
         val bins = if (liveSpectrumBins.size == 31) liveSpectrumBins else List(31) { 0.35f }
         var peakIdx = 8
         var peakEnergy = 0f
@@ -259,9 +441,6 @@ object FutureGenAudioLabEngine {
         )
     }
 
-    /**
-     * Plays a pure audiogram calibration test tone for the given frequency (e.g., 250Hz, 1kHz, 4kHz, 8kHz, 12.5kHz, 16kHz).
-     */
     suspend fun playPureAudiogramTone(freqHz: Int, earChannel: String = "BOTH") = withContext(Dispatchers.Default) {
         runCatching {
             val sampleRate = 44100
@@ -299,10 +478,6 @@ object FutureGenAudioLabEngine {
         }
     }
 
-    /**
-     * Builds a personalized 31-Band Bio-Ear DNA curve from user sensitivity ratings across 6 test frequencies.
-     * sensitivityRatings: 6 values in 0f..1f (where 1.0 = heard crystal clear, 0.3 = faint, etc.)
-     */
     fun buildBioEarDnaProfile(
         sensitivityRatings: List<Float>,
         leftRightBiasDb: Float
@@ -320,16 +495,14 @@ object FutureGenAudioLabEngine {
             else -> 14200
         }
 
-        // Map 6 audiogram anchor points to 31 ISO bands: invert deficits to restore missing detail
-        val anchorIndices = intArrayOf(11, 17, 23, 26, 28, 29) // 250Hz, 1k, 4k, 8k, 12.5k, 16k
+        val anchorIndices = intArrayOf(11, 17, 23, 26, 28, 29)
         val compensation = MutableList(31) { idx ->
             when {
-                idx < 7 -> 4.2f - idx * 0.35f // Warm sub-bass foundation
+                idx < 7 -> 4.2f - idx * 0.35f
                 else -> 0f
             }
         }
         for (i in 0 until 31) {
-            // Find nearest anchor
             var weightedBoost = 0f
             var weightSum = 0f
             for (a in anchorIndices.indices) {
@@ -360,19 +533,12 @@ object FutureGenAudioLabEngine {
         )
     }
 
-    /**
-     * Esports Tactical X-Ray 31-Band Profile (BGMI / COD / Valorant Footstep & Reload Booster).
-     * Suppresses 80–315Hz explosion mud so footsteps at 1.6kHz–4kHz and directional pin-drop cues pop out.
-     */
     fun getEsportsTacticalXrayBands(): List<Float> = listOf(
         -3.5f, -3.0f, -2.5f, -2.0f, -1.5f, -2.0f, -2.8f, -3.5f, -4.0f, -3.8f,
         -3.2f, -2.5f, -1.5f, 0.0f, 1.5f, 3.0f, 4.5f, 5.8f, 6.8f, 7.5f,
         8.0f, 8.2f, 7.8f, 6.8f, 5.5f, 4.2f, 3.5f, 2.8f, 2.0f, 1.2f, 0.5f
     )
 
-    /**
-     * Computes live directional footstep & gunfire threat radar levels from spectrum and stereo VU telemetry.
-     */
     fun computeEsportsThreatRadar(
         enabled: Boolean,
         spectrumBins: List<Float>,
@@ -402,9 +568,6 @@ object FutureGenAudioLabEngine {
         )
     }
 
-    /**
-     * Computes real-time Dynamic AI Auto-Rider micro-adjustments based on live spectrum content.
-     */
     fun computeDynamicAutoRiderStep(
         baseBands: List<Float>,
         spectrumBins: List<Float>,
@@ -427,7 +590,7 @@ object FutureGenAudioLabEngine {
             val base = baseBands.getOrElse(idx) { 0f }
             val delta = when {
                 idx <= 6 -> if (subEnergy > 0.45f) 1.5f else 0.8f
-                idx in 10..13 -> -1.0f // Dynamic anti-mud scoop
+                idx in 10..13 -> -1.0f
                 idx in 17..22 -> if (vocalEnergy >= subEnergy) 1.8f else 0.9f
                 idx >= 25 -> if (airEnergy < 0.35f) 1.4f else 0.6f
                 else -> 0f

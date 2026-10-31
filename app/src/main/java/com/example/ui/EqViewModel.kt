@@ -20,6 +20,8 @@ import com.example.dsp.EsportsThreatRadarState
 import com.example.dsp.FutureGenAudioLabEngine
 import com.example.dsp.HolographicVibeProfile
 import com.example.dsp.NeuralBrainwaveMode
+import com.example.dsp.SpatialStageFormation
+import com.example.dsp.SpatialStageNode
 import com.example.dsp.VoiceControlAction
 import com.example.service.EqForegroundService
 import kotlinx.coroutines.delay
@@ -78,7 +80,18 @@ data class EqUiState(
     val bioEarDiagnosisSummary: String = "Bio-Ear Age: 20 Yrs (Bat-Ear Golden Hearing) • Max Audible: 18.8kHz",
     val isDynamicAutoRiderEnabled: Boolean = false,
     val autoRiderStatusText: String = "AI AUTO-RIDER STANDBY • Real-time genre & vocal adaptation",
-    val isEsportsXrayEnabled: Boolean = false
+    val isEsportsXrayEnabled: Boolean = false,
+    // 8. 3D Multi-Instrument & Virtual 7.1.4 Woofer/Speaker Stage Architect
+    val stageNodes: List<SpatialStageNode> = FutureGenAudioLabEngine.defaultStageNodesForFormation(SpatialStageFormation.CONCERT_ARENA),
+    val selectedStageNodeId: String = "sub_l",
+    val selectedStageFormation: SpatialStageFormation = SpatialStageFormation.CONCERT_ARENA,
+    val wooferCrossoverHz: Int = 80,
+    val wooferPhaseInvert180: Boolean = false,
+    val centerVocalLock: Boolean = true,
+    val stageSubPanLR: Float = 0f,
+    val stageMidPanLR: Float = 0f,
+    val stageHighPanLR: Float = 0f,
+    val stageTelemetrySummary: String = "3D STAGE ARCHITECT READY • Drag Woofers, Vocals, Drums, Guitar & Towers anywhere in 360°"
 )
 
 class EqViewModel(application: Application) : AndroidViewModel(application) {
@@ -980,6 +993,207 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         syncDspEngine()
     }
 
+    fun selectStageNode(nodeId: String) {
+        _uiState.update { it.copy(selectedStageNodeId = nodeId) }
+        hapticManager.onControlTick("Node: $nodeId")
+    }
+
+    fun updateStageNodePosition(nodeId: String, azimuthDeg: Float, distanceNorm: Float) {
+        _uiState.update { state ->
+            val updatedNodes = state.stageNodes.map { node ->
+                if (node.id == nodeId) {
+                    node.copy(
+                        azimuthDeg = azimuthDeg.coerceIn(-180f, 180f),
+                        distanceNorm = distanceNorm.coerceIn(0.15f, 1.0f)
+                    )
+                } else node
+            }
+            val synth = FutureGenAudioLabEngine.synthesizeMultiNodeStage(
+                nodes = updatedNodes,
+                wooferCrossoverHz = state.wooferCrossoverHz,
+                wooferPhaseInvert180 = state.wooferPhaseInvert180,
+                centerVocalLock = state.centerVocalLock
+            )
+            state.copy(
+                isMasterEnabled = true,
+                activePresetName = "3D Stage: ${state.selectedStageFormation.title}",
+                stageNodes = updatedNodes,
+                bandGainsDb = synth.sculptedBands31,
+                bassBoostStrength = synth.effectiveBassBoost,
+                spatialLevel = synth.effectiveSpatial3D,
+                reverbLevel = synth.effectiveReverbMix,
+                stageSubPanLR = synth.subBandPanLR,
+                stageMidPanLR = synth.midBandPanLR,
+                stageHighPanLR = synth.highBandPanLR,
+                stageTelemetrySummary = synth.telemetrySummary
+            )
+        }
+        syncDspEngine()
+    }
+
+    fun updateStageNodeGain(nodeId: String, gainDb: Float) {
+        val clamped = (kotlin.math.round(gainDb * 2f) / 2f).coerceIn(-12f, 12f)
+        _uiState.update { state ->
+            val updatedNodes = state.stageNodes.map { node ->
+                if (node.id == nodeId) node.copy(gainDb = clamped) else node
+            }
+            val synth = FutureGenAudioLabEngine.synthesizeMultiNodeStage(
+                nodes = updatedNodes,
+                wooferCrossoverHz = state.wooferCrossoverHz,
+                wooferPhaseInvert180 = state.wooferPhaseInvert180,
+                centerVocalLock = state.centerVocalLock
+            )
+            state.copy(
+                isMasterEnabled = true,
+                activePresetName = "3D Stage Custom",
+                stageNodes = updatedNodes,
+                bandGainsDb = synth.sculptedBands31,
+                bassBoostStrength = synth.effectiveBassBoost,
+                spatialLevel = synth.effectiveSpatial3D,
+                reverbLevel = synth.effectiveReverbMix,
+                stageSubPanLR = synth.subBandPanLR,
+                stageMidPanLR = synth.midBandPanLR,
+                stageHighPanLR = synth.highBandPanLR,
+                stageTelemetrySummary = synth.telemetrySummary
+            )
+        }
+        syncDspEngine()
+    }
+
+    fun toggleStageNodeMute(nodeId: String) {
+        _uiState.update { state ->
+            val updatedNodes = state.stageNodes.map { node ->
+                if (node.id == nodeId) node.copy(muted = !node.muted) else node
+            }
+            val synth = FutureGenAudioLabEngine.synthesizeMultiNodeStage(
+                nodes = updatedNodes,
+                wooferCrossoverHz = state.wooferCrossoverHz,
+                wooferPhaseInvert180 = state.wooferPhaseInvert180,
+                centerVocalLock = state.centerVocalLock
+            )
+            state.copy(
+                stageNodes = updatedNodes,
+                bandGainsDb = synth.sculptedBands31,
+                stageSubPanLR = synth.subBandPanLR,
+                stageMidPanLR = synth.midBandPanLR,
+                stageHighPanLR = synth.highBandPanLR,
+                stageTelemetrySummary = synth.telemetrySummary
+            )
+        }
+        hapticManager.onControlTick("Mute $nodeId")
+        syncDspEngine()
+    }
+
+    fun toggleStageNodeSolo(nodeId: String) {
+        _uiState.update { state ->
+            val updatedNodes = state.stageNodes.map { node ->
+                if (node.id == nodeId) node.copy(solo = !node.solo) else node
+            }
+            val synth = FutureGenAudioLabEngine.synthesizeMultiNodeStage(
+                nodes = updatedNodes,
+                wooferCrossoverHz = state.wooferCrossoverHz,
+                wooferPhaseInvert180 = state.wooferPhaseInvert180,
+                centerVocalLock = state.centerVocalLock
+            )
+            state.copy(
+                stageNodes = updatedNodes,
+                bandGainsDb = synth.sculptedBands31,
+                stageSubPanLR = synth.subBandPanLR,
+                stageMidPanLR = synth.midBandPanLR,
+                stageHighPanLR = synth.highBandPanLR,
+                stageTelemetrySummary = synth.telemetrySummary
+            )
+        }
+        hapticManager.onControlTick("Solo $nodeId")
+        syncDspEngine()
+    }
+
+    fun applyStageFormation(formation: SpatialStageFormation) {
+        val nodes = FutureGenAudioLabEngine.defaultStageNodesForFormation(formation)
+        val s = _uiState.value
+        val synth = FutureGenAudioLabEngine.synthesizeMultiNodeStage(
+            nodes = nodes,
+            wooferCrossoverHz = s.wooferCrossoverHz,
+            wooferPhaseInvert180 = s.wooferPhaseInvert180,
+            centerVocalLock = s.centerVocalLock
+        )
+        _uiState.update {
+            it.copy(
+                isMasterEnabled = true,
+                activePresetName = "Stage: ${formation.title}",
+                selectedStageFormation = formation,
+                stageNodes = nodes,
+                bandGainsDb = synth.sculptedBands31,
+                bassBoostStrength = synth.effectiveBassBoost,
+                spatialLevel = synth.effectiveSpatial3D,
+                reverbLevel = synth.effectiveReverbMix,
+                stageSubPanLR = synth.subBandPanLR,
+                stageMidPanLR = synth.midBandPanLR,
+                stageHighPanLR = synth.highBandPanLR,
+                stageTelemetrySummary = synth.telemetrySummary
+            )
+        }
+        hapticManager.onAiPresetApplied(formation.title)
+        syncDspEngine()
+    }
+
+    fun updateWooferCrossoverHz(hz: Int) {
+        val clamped = hz.coerceIn(40, 120)
+        _uiState.update { state ->
+            val synth = FutureGenAudioLabEngine.synthesizeMultiNodeStage(
+                nodes = state.stageNodes,
+                wooferCrossoverHz = clamped,
+                wooferPhaseInvert180 = state.wooferPhaseInvert180,
+                centerVocalLock = state.centerVocalLock
+            )
+            state.copy(
+                wooferCrossoverHz = clamped,
+                bandGainsDb = synth.sculptedBands31,
+                stageTelemetrySummary = synth.telemetrySummary
+            )
+        }
+        syncDspEngine()
+    }
+
+    fun toggleWooferPhaseInvert() {
+        _uiState.update { state ->
+            val next = !state.wooferPhaseInvert180
+            val synth = FutureGenAudioLabEngine.synthesizeMultiNodeStage(
+                nodes = state.stageNodes,
+                wooferCrossoverHz = state.wooferCrossoverHz,
+                wooferPhaseInvert180 = next,
+                centerVocalLock = state.centerVocalLock
+            )
+            state.copy(
+                wooferPhaseInvert180 = next,
+                bandGainsDb = synth.sculptedBands31,
+                stageTelemetrySummary = synth.telemetrySummary
+            )
+        }
+        hapticManager.onControlTick("Woofer Phase 180°")
+        syncDspEngine()
+    }
+
+    fun toggleCenterVocalLock() {
+        _uiState.update { state ->
+            val next = !state.centerVocalLock
+            val synth = FutureGenAudioLabEngine.synthesizeMultiNodeStage(
+                nodes = state.stageNodes,
+                wooferCrossoverHz = state.wooferCrossoverHz,
+                wooferPhaseInvert180 = state.wooferPhaseInvert180,
+                centerVocalLock = next
+            )
+            state.copy(
+                centerVocalLock = next,
+                bandGainsDb = synth.sculptedBands31,
+                stageMidPanLR = synth.midBandPanLR,
+                stageTelemetrySummary = synth.telemetrySummary
+            )
+        }
+        hapticManager.onControlTick("Center Vocal Lock")
+        syncDspEngine()
+    }
+
     private fun startFutureGenCoordinator() {
         viewModelScope.launch {
             var tickCount = 0
@@ -992,7 +1206,10 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                         brainwaveMode = s.neuralBrainwaveMode,
                         azimuthDeg = nextAngle,
                         distanceNorm = s.radarDistanceNorm,
-                        lrBalanceDb = s.leftRightBalanceDb
+                        lrBalanceDb = s.leftRightBalanceDb,
+                        subPanLR = s.stageSubPanLR,
+                        midPanLR = s.stageMidPanLR,
+                        highPanLR = s.stageHighPanLR
                     )
                 }
                 if (s.isEsportsXrayEnabled) {
@@ -1050,7 +1267,10 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             brainwaveMode = s.neuralBrainwaveMode,
             azimuthDeg = s.radarAzimuthDeg,
             distanceNorm = s.radarDistanceNorm,
-            lrBalanceDb = s.leftRightBalanceDb
+            lrBalanceDb = s.leftRightBalanceDb,
+            subPanLR = s.stageSubPanLR,
+            midPanLR = s.stageMidPanLR,
+            highPanLR = s.stageHighPanLR
         )
         dspEngine.updateDspState(
             enabled = s.isMasterEnabled,

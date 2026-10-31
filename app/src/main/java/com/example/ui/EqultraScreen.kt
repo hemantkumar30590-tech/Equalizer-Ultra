@@ -428,7 +428,26 @@ fun EqultraScreen(
                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                             }
                             viewModel.toggleSoftLimiter()
-                        }
+                        },
+                        onSelectStageNode = viewModel::selectStageNode,
+                        onUpdateStageNodePosition = viewModel::updateStageNodePosition,
+                        onUpdateStageNodeGain = viewModel::updateStageNodeGain,
+                        onToggleStageNodeMute = viewModel::toggleStageNodeMute,
+                        onToggleStageNodeSolo = viewModel::toggleStageNodeSolo,
+                        onApplyStageFormation = { formation ->
+                            if (isHapticsEnabled) {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                            }
+                            viewModel.applyStageFormation(formation)
+                            Toast.makeText(
+                                context,
+                                "Applied Stage Formation: ${formation.title}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        },
+                        onUpdateWooferCrossover = viewModel::updateWooferCrossoverHz,
+                        onToggleWooferPhase = viewModel::toggleWooferPhaseInvert,
+                        onToggleCenterVocalLock = viewModel::toggleCenterVocalLock
                     )
 
                     2 -> DevicePresetsTab(
@@ -678,6 +697,22 @@ fun EqultraScreen(
                     Toast.LENGTH_SHORT
                 ).show()
             },
+            onSelectStageNode = viewModel::selectStageNode,
+            onUpdateStageNodePosition = viewModel::updateStageNodePosition,
+            onUpdateStageNodeGain = viewModel::updateStageNodeGain,
+            onToggleStageNodeMute = viewModel::toggleStageNodeMute,
+            onToggleStageNodeSolo = viewModel::toggleStageNodeSolo,
+            onApplyStageFormation = { formation ->
+                viewModel.applyStageFormation(formation)
+                Toast.makeText(
+                    context,
+                    "Applied Stage Formation: ${formation.title}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            onUpdateWooferCrossover = viewModel::updateWooferCrossoverHz,
+            onToggleWooferPhase = viewModel::toggleWooferPhaseInvert,
+            onToggleCenterVocalLock = viewModel::toggleCenterVocalLock,
             onDismiss = { viewModel.setFutureLabDialogVisible(false) }
         )
     }
@@ -1296,7 +1331,16 @@ private fun BassAndSpatialDspTab(
     onReverbChanged: (Int) -> Unit,
     onReverbRoomChanged: (String) -> Unit,
     onPreampChanged: (Float) -> Unit,
-    onToggleLimiter: () -> Unit
+    onToggleLimiter: () -> Unit,
+    onSelectStageNode: (String) -> Unit,
+    onUpdateStageNodePosition: (String, Float, Float) -> Unit,
+    onUpdateStageNodeGain: (String, Float) -> Unit,
+    onToggleStageNodeMute: (String) -> Unit,
+    onToggleStageNodeSolo: (String) -> Unit,
+    onApplyStageFormation: (com.example.dsp.SpatialStageFormation) -> Unit,
+    onUpdateWooferCrossover: (Int) -> Unit,
+    onToggleWooferPhase: () -> Unit,
+    onToggleCenterVocalLock: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -1313,6 +1357,22 @@ private fun BassAndSpatialDspTab(
             peakDb = peakDb,
             bassBoostPercent = uiState.bassBoostStrength,
             spatialPercent = uiState.spatialLevel
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 3D Multi-Instrument & Virtual 7.1.4 Dual-Woofer Stage Architect directly in Bass & 3D Tab
+        MultiNodeInstrumentStageCard(
+            uiState = uiState,
+            onSelectNode = onSelectStageNode,
+            onUpdateNodePosition = onUpdateStageNodePosition,
+            onUpdateNodeGain = onUpdateStageNodeGain,
+            onToggleNodeMute = onToggleStageNodeMute,
+            onToggleNodeSolo = onToggleStageNodeSolo,
+            onApplyFormation = onApplyStageFormation,
+            onUpdateWooferCrossover = onUpdateWooferCrossover,
+            onToggleWooferPhase = onToggleWooferPhase,
+            onToggleCenterVocalLock = onToggleCenterVocalLock
         )
 
         Spacer(modifier = Modifier.height(12.dp))
