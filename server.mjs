@@ -4,6 +4,7 @@ import path from 'node:path';
 
 const PORT = 3000;
 const APK_PATHS = [
+  '/app/applet/Equltra-v1.0.apk',
   '/app/applet/app/build/outputs/apk/debug/app-debug.apk',
   '/app/applet/.build-outputs/app-debug.apk',
 ];
