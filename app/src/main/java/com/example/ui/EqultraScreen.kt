@@ -140,6 +140,7 @@ fun EqultraScreen(
     val voiceStatusBadge by viewModel.voiceStatusBadge.collectAsStateWithLifecycle()
     val isHapticsEnabled by viewModel.isHapticsEnabled.collectAsStateWithLifecycle()
     val lastHapticEventLabel by viewModel.lastHapticEventLabel.collectAsStateWithLifecycle()
+    val esportsRadarState by viewModel.esportsRadarState.collectAsStateWithLifecycle()
     val hapticFeedback = LocalHapticFeedback.current
     val localView = LocalView.current
 
@@ -385,7 +386,24 @@ fun EqultraScreen(
                         },
                         isHapticsEnabled = isHapticsEnabled,
                         lastHapticEventLabel = lastHapticEventLabel,
-                        onToggleHaptics = viewModel::toggleHapticsEnabled
+                        onToggleHaptics = viewModel::toggleHapticsEnabled,
+                        esportsRadarState = esportsRadarState,
+                        onOpenFutureLab = { viewModel.setFutureLabDialogVisible(true) },
+                        onRunSonarSweep = {
+                            viewModel.runSonarAcousticScan { msg ->
+                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        onToggleAutoRider = viewModel::toggleDynamicAutoRider,
+                        onToggleEsportsXray = viewModel::toggleEsportsXray,
+                        onApplyHolographicVibe = { vibe ->
+                            viewModel.applyHolographicVibe(vibe)
+                            Toast.makeText(
+                                context,
+                                "Applied Holographic Vibe: ${vibe.title}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     )
 
                     1 -> BassAndSpatialDspTab(
@@ -626,6 +644,41 @@ fun EqultraScreen(
                 viewModel.setAiAutoEqDialogVisible(true)
             },
             onDismiss = { viewModel.setVoiceControlDialogVisible(false) }
+        )
+    }
+
+    if (uiState.showFutureLabDialog) {
+        val context = LocalContext.current
+        FutureGenQuantumLabDialog(
+            uiState = uiState,
+            esportsRadar = esportsRadarState,
+            onRunSonarSweep = {
+                viewModel.runSonarAcousticScan { msg ->
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                }
+            },
+            onSelectBrainwaveMode = viewModel::setNeuralBrainwaveMode,
+            onUpdateRadarPosition = viewModel::updateRadarPosition,
+            onToggleRadarOrbit = viewModel::toggleRadarAutoOrbit,
+            onUpdateLeftRightBalance = viewModel::updateLeftRightBalance,
+            onPlayAudiogramTone = viewModel::playAudiogramCalibrationTone,
+            onUpdateAudiogramSensitivity = viewModel::updateAudiogramSensitivity,
+            onApplyBioEarDnaProfile = {
+                viewModel.applyBioEarDnaProfile { summary ->
+                    Toast.makeText(context, summary, Toast.LENGTH_LONG).show()
+                }
+            },
+            onToggleDynamicAutoRider = viewModel::toggleDynamicAutoRider,
+            onToggleEsportsXray = viewModel::toggleEsportsXray,
+            onApplyHolographicVibe = { vibe ->
+                viewModel.applyHolographicVibe(vibe)
+                Toast.makeText(
+                    context,
+                    "Applied Holographic Vibe: ${vibe.title}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            onDismiss = { viewModel.setFutureLabDialogVisible(false) }
         )
     }
 }
@@ -894,7 +947,13 @@ private fun TenBandEqualizerTab(
     onLockProMode: () -> Unit = {},
     isHapticsEnabled: Boolean = true,
     lastHapticEventLabel: String = "TACTILE HAPTICS READY",
-    onToggleHaptics: () -> Unit = {}
+    onToggleHaptics: () -> Unit = {},
+    esportsRadarState: com.example.dsp.EsportsThreatRadarState = com.example.dsp.EsportsThreatRadarState(),
+    onOpenFutureLab: () -> Unit = {},
+    onRunSonarSweep: () -> Unit = {},
+    onToggleAutoRider: () -> Unit = {},
+    onToggleEsportsXray: () -> Unit = {},
+    onApplyHolographicVibe: (com.example.dsp.HolographicVibeProfile) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -915,6 +974,19 @@ private fun TenBandEqualizerTab(
             stereoVuLevels = stereoVuLevels,
             systemVolumePercent = systemVolumePercent,
             isSystemAudioActive = isSystemAudioActive
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // 7-in-1 Future-Gen Quantum Lab Quick Strip Card
+        FutureGenQuickStripCard(
+            uiState = uiState,
+            esportsRadar = esportsRadarState,
+            onOpenFutureLab = onOpenFutureLab,
+            onRunSonarSweep = onRunSonarSweep,
+            onToggleAutoRider = onToggleAutoRider,
+            onToggleEsportsXray = onToggleEsportsXray,
+            onApplyHolographicVibe = onApplyHolographicVibe
         )
 
         Spacer(modifier = Modifier.height(10.dp))

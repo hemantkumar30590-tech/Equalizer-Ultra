@@ -16,14 +16,20 @@ import com.example.dsp.AiAutoEqEngine
 import com.example.dsp.AiVoiceControlEngine
 import com.example.dsp.AudioDspEngine
 import com.example.dsp.EqHapticFeedbackManager
+import com.example.dsp.EsportsThreatRadarState
+import com.example.dsp.FutureGenAudioLabEngine
+import com.example.dsp.HolographicVibeProfile
+import com.example.dsp.NeuralBrainwaveMode
 import com.example.dsp.VoiceControlAction
 import com.example.service.EqForegroundService
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -47,6 +53,7 @@ data class EqUiState(
     val showAiAutoEqDialog: Boolean = false,
     val showAiProUnlockDialog: Boolean = false,
     val showVoiceControlDialog: Boolean = false,
+    val showFutureLabDialog: Boolean = false,
     val isAiProUnlocked: Boolean = false,
     val isGeneratingAiEq: Boolean = false,
     val aiPromptInput: String = "",
@@ -56,7 +63,22 @@ data class EqUiState(
     val lastVoiceCommandSummary: String = "Say \"Bass full 100%\", \"AirPods Pro 3\", \"Sync YouTube\", or \"AI Punjabi Bass\"",
     val voiceCommandHistory: List<String> = listOf(
         "🎙️ Ready: Speak in Hindi, Hinglish, or English to control 31-Band EQ, Bass, 3D, Presets & AI Auto-EQ"
-    )
+    ),
+    // 7-in-1 Future-Gen Quantum Lab State
+    val isRunningSonarScan: Boolean = false,
+    val sonarTelemetryText: String = "SONAR READY • Tap 'SONAR SCAN' for 45Hz–12.8kHz Room & Earbud Calibration",
+    val neuralBrainwaveMode: NeuralBrainwaveMode = NeuralBrainwaveMode.OFF,
+    val radarAzimuthDeg: Float = 0f,
+    val radarDistanceNorm: Float = 0.55f,
+    val isRadarAutoOrbitEnabled: Boolean = false,
+    val leftRightBalanceDb: Float = 0f,
+    val audiogramSensitivities: List<Float> = listOf(0.92f, 0.94f, 0.88f, 0.84f, 0.78f, 0.74f),
+    val bioEarAgeYears: Int = 20,
+    val bioEarGoldenScore: Int = 92,
+    val bioEarDiagnosisSummary: String = "Bio-Ear Age: 20 Yrs (Bat-Ear Golden Hearing) • Max Audible: 18.8kHz",
+    val isDynamicAutoRiderEnabled: Boolean = false,
+    val autoRiderStatusText: String = "AI AUTO-RIDER STANDBY • Real-time genre & vocal adaptation",
+    val isEsportsXrayEnabled: Boolean = false
 )
 
 class EqViewModel(application: Application) : AndroidViewModel(application) {
@@ -96,6 +118,9 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
     val isHapticsEnabled: StateFlow<Boolean>
     val lastHapticEventLabel: StateFlow<String>
     val hapticTriggerCount: StateFlow<Int>
+
+    private val _esportsRadarState = MutableStateFlow(EsportsThreatRadarState())
+    val esportsRadarState: StateFlow<EsportsThreatRadarState> = _esportsRadarState.asStateFlow()
 
     private val serviceReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -190,6 +215,7 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         syncDspEngine()
+        startFutureGenCoordinator()
     }
 
     private fun reloadFromPresetManager() {
@@ -797,6 +823,217 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun setFutureLabDialogVisible(visible: Boolean) {
+        _uiState.update { it.copy(showFutureLabDialog = visible) }
+    }
+
+    fun runSonarAcousticScan(onDone: (String) -> Unit = {}) {
+        if (_uiState.value.isRunningSonarScan) return
+        _uiState.update {
+            it.copy(
+                isRunningSonarScan = true,
+                sonarTelemetryText = "🔊 EMITTING 45Hz–12.8kHz LOGARITHMIC SONAR SWEEP..."
+            )
+        }
+        viewModelScope.launch {
+            val report = FutureGenAudioLabEngine.runSonarAcousticCalibration(
+                liveSpectrumBins = spectrumBins.value,
+                targetDeviceName = _uiState.value.aiSelectedDevice
+            )
+            _uiState.update {
+                it.copy(
+                    isRunningSonarScan = false,
+                    isMasterEnabled = true,
+                    activePresetName = "Sonar Room Calibrated",
+                    bandGainsDb = report.compensationBands31,
+                    bassBoostStrength = report.recommendedBass,
+                    spatialLevel = report.recommendedSpatial,
+                    reverbRoom = report.recommendedReverbRoom,
+                    sonarTelemetryText = report.telemetrySummary
+                )
+            }
+            hapticManager.onAiPresetApplied("Sonar Room Calibrated")
+            syncDspEngine()
+            onDone(report.telemetrySummary)
+        }
+    }
+
+    fun setNeuralBrainwaveMode(mode: NeuralBrainwaveMode) {
+        _uiState.update { it.copy(neuralBrainwaveMode = mode) }
+        hapticManager.onControlTick("Brainwave: ${mode.title}")
+        syncDspEngine()
+    }
+
+    fun updateRadarPosition(azimuthDeg: Float, distanceNorm: Float) {
+        _uiState.update {
+            it.copy(
+                radarAzimuthDeg = azimuthDeg.coerceIn(-180f, 180f),
+                radarDistanceNorm = distanceNorm.coerceIn(0.15f, 1.0f)
+            )
+        }
+        syncDspEngine()
+    }
+
+    fun toggleRadarAutoOrbit() {
+        val next = !_uiState.value.isRadarAutoOrbitEnabled
+        _uiState.update { it.copy(isRadarAutoOrbitEnabled = next) }
+        hapticManager.onPresetToggled(next, "360° Auto Orbit")
+    }
+
+    fun updateLeftRightBalance(balanceDb: Float) {
+        val clamped = (kotlin.math.round(balanceDb * 2f) / 2f).coerceIn(-6f, 6f)
+        _uiState.update { it.copy(leftRightBalanceDb = clamped) }
+        syncDspEngine()
+    }
+
+    fun playAudiogramCalibrationTone(freqHz: Int) {
+        viewModelScope.launch {
+            FutureGenAudioLabEngine.playPureAudiogramTone(freqHz)
+        }
+    }
+
+    fun updateAudiogramSensitivity(index: Int, rating: Float) {
+        if (index !in 0..5) return
+        _uiState.update { state ->
+            val list = state.audiogramSensitivities.toMutableList()
+            if (list.size == 6) {
+                list[index] = rating.coerceIn(0.2f, 1.0f)
+            }
+            state.copy(audiogramSensitivities = list)
+        }
+    }
+
+    fun applyBioEarDnaProfile(onDone: (String) -> Unit = {}) {
+        val s = _uiState.value
+        val profile = FutureGenAudioLabEngine.buildBioEarDnaProfile(
+            sensitivityRatings = s.audiogramSensitivities,
+            leftRightBiasDb = s.leftRightBalanceDb
+        )
+        _uiState.update {
+            it.copy(
+                isMasterEnabled = true,
+                activePresetName = "Bio-Ear DNA (${profile.estimatedEarAgeYears}Y)",
+                bandGainsDb = profile.dnaCompensationBands31,
+                bioEarAgeYears = profile.estimatedEarAgeYears,
+                bioEarGoldenScore = profile.goldenEarScorePercent,
+                bioEarDiagnosisSummary = profile.diagnosisSummary
+            )
+        }
+        hapticManager.onAiPresetApplied("Bio-Ear DNA")
+        syncDspEngine()
+        onDone(profile.diagnosisSummary)
+    }
+
+    fun toggleDynamicAutoRider() {
+        val next = !_uiState.value.isDynamicAutoRiderEnabled
+        _uiState.update {
+            it.copy(
+                isDynamicAutoRiderEnabled = next,
+                autoRiderStatusText = if (next) {
+                    "AI RIDER ACTIVE • Real-time spectral vocal & bass morphing"
+                } else {
+                    "AI AUTO-RIDER STANDBY • Real-time genre & vocal adaptation"
+                }
+            )
+        }
+        hapticManager.onPresetToggled(next, "Dynamic AI Auto-Rider")
+    }
+
+    fun toggleEsportsXray() {
+        val next = !_uiState.value.isEsportsXrayEnabled
+        if (next) {
+            _uiState.update {
+                it.copy(
+                    isEsportsXrayEnabled = true,
+                    isMasterEnabled = true,
+                    activePresetName = "Esports Tactical X-Ray",
+                    bandGainsDb = FutureGenAudioLabEngine.getEsportsTacticalXrayBands(),
+                    bassBoostStrength = 34,
+                    spatialLevel = 92,
+                    reverbRoom = "None",
+                    reverbLevel = 0
+                )
+            }
+        } else {
+            _uiState.update { it.copy(isEsportsXrayEnabled = false) }
+        }
+        hapticManager.onPresetToggled(next, "Esports Tactical X-Ray")
+        syncDspEngine()
+    }
+
+    fun applyHolographicVibe(vibe: HolographicVibeProfile) {
+        _uiState.update {
+            it.copy(
+                isMasterEnabled = true,
+                activePresetName = vibe.title,
+                bandGainsDb = vibe.bands31,
+                bassBoostStrength = vibe.bassBoost,
+                spatialLevel = vibe.spatial3D,
+                reverbLevel = vibe.reverbLevel,
+                reverbRoom = vibe.reverbRoom,
+                preampDb = vibe.preampDb,
+                neuralBrainwaveMode = vibe.brainwaveMode,
+                radarAzimuthDeg = vibe.radarAzimuthDeg
+            )
+        }
+        hapticManager.onAiPresetApplied(vibe.title)
+        syncDspEngine()
+    }
+
+    private fun startFutureGenCoordinator() {
+        viewModelScope.launch {
+            var tickCount = 0
+            while (isActive) {
+                val s = _uiState.value
+                if (s.isRadarAutoOrbitEnabled) {
+                    val nextAngle = ((s.radarAzimuthDeg + 7.5f + 180f) % 360f) - 180f
+                    _uiState.update { it.copy(radarAzimuthDeg = nextAngle) }
+                    dspEngine.updateFutureGenState(
+                        brainwaveMode = s.neuralBrainwaveMode,
+                        azimuthDeg = nextAngle,
+                        distanceNorm = s.radarDistanceNorm,
+                        lrBalanceDb = s.leftRightBalanceDb
+                    )
+                }
+                if (s.isEsportsXrayEnabled) {
+                    _esportsRadarState.value = FutureGenAudioLabEngine.computeEsportsThreatRadar(
+                        enabled = true,
+                        spectrumBins = spectrumBins.value,
+                        stereoVu = stereoVuLevels.value,
+                        azimuthDeg = _uiState.value.radarAzimuthDeg
+                    )
+                } else if (_esportsRadarState.value.enabled) {
+                    _esportsRadarState.value = EsportsThreatRadarState(enabled = false)
+                }
+                if (s.isDynamicAutoRiderEnabled && tickCount % 4 == 0) {
+                    val (morphedBands, label) = FutureGenAudioLabEngine.computeDynamicAutoRiderStep(
+                        baseBands = s.bandGainsDb,
+                        spectrumBins = spectrumBins.value,
+                        dominantHz = dominantFreqHz.value
+                    )
+                    _uiState.update {
+                        it.copy(
+                            bandGainsDb = morphedBands,
+                            autoRiderStatusText = label
+                        )
+                    }
+                    dspEngine.updateDspState(
+                        enabled = s.isMasterEnabled,
+                        bandsDb = morphedBands,
+                        bass = s.bassBoostStrength,
+                        reverb = s.reverbLevel,
+                        reverbRoom = s.reverbRoom,
+                        spatial = s.spatialLevel,
+                        preamp = s.preampDb,
+                        limiter = s.softLimiterEnabled
+                    )
+                }
+                tickCount++
+                delay(180)
+            }
+        }
+    }
+
     private fun syncDspEngine() {
         val s = _uiState.value
         presetManager.persistActiveProfileState(
@@ -808,6 +1045,12 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             reverbRoom = s.reverbRoom,
             spatialLevel = s.spatialLevel,
             preampDb = s.preampDb
+        )
+        dspEngine.updateFutureGenState(
+            brainwaveMode = s.neuralBrainwaveMode,
+            azimuthDeg = s.radarAzimuthDeg,
+            distanceNorm = s.radarDistanceNorm,
+            lrBalanceDb = s.leftRightBalanceDb
         )
         dspEngine.updateDspState(
             enabled = s.isMasterEnabled,

@@ -64,6 +64,18 @@ class AudioDspEngine(
     @Volatile
     private var softLimiterEnabled: Boolean = true
 
+    @Volatile
+    private var neuralBrainwaveMode: NeuralBrainwaveMode = NeuralBrainwaveMode.OFF
+
+    @Volatile
+    private var radarAzimuthDeg: Float = 0f
+
+    @Volatile
+    private var radarDistanceNorm: Float = 0.55f
+
+    @Volatile
+    private var leftRightBalanceDb: Float = 0f
+
     private val _isPlayingTestLoop = MutableStateFlow(false)
     val isPlayingTestLoop: StateFlow<Boolean> = _isPlayingTestLoop.asStateFlow()
 
@@ -137,6 +149,18 @@ class AudioDspEngine(
             }
             false
         }
+    }
+
+    fun updateFutureGenState(
+        brainwaveMode: NeuralBrainwaveMode,
+        azimuthDeg: Float,
+        distanceNorm: Float,
+        lrBalanceDb: Float
+    ) {
+        neuralBrainwaveMode = brainwaveMode
+        radarAzimuthDeg = azimuthDeg.coerceIn(-180f, 180f)
+        radarDistanceNorm = distanceNorm.coerceIn(0.15f, 1.0f)
+        leftRightBalanceDb = lrBalanceDb.coerceIn(-6f, 6f)
     }
 
     fun updateDspState(
@@ -305,8 +329,22 @@ class AudioDspEngine(
                     val delayedR = delayLineR[delayIdxR]
 
                     val sideSignal = (midSynth.toFloat() * 0.6f + hiComponent * 0.9f) * spatialWidth
-                    var outL = (eqSignal + sideSignal + delayedR * reverbMix) * preampLinear
-                    var outR = (eqSignal - sideSignal + delayedL * reverbMix) * preampLinear
+                    val bwMode = neuralBrainwaveMode
+                    val binauralL = if (active && bwMode != NeuralBrainwaveMode.OFF) {
+                        (sin(2.0 * PI * bwMode.carrierHz * t) * 0.085).toFloat()
+                    } else 0f
+                    val binauralR = if (active && bwMode != NeuralBrainwaveMode.OFF) {
+                        (sin(2.0 * PI * (bwMode.carrierHz + bwMode.beatHz) * t) * 0.085).toFloat()
+                    } else 0f
+
+                    val panNorm = (radarAzimuthDeg / 180f).coerceIn(-1f, 1f)
+                    val panGainL = (1f - (panNorm * 0.35f)).coerceIn(0.45f, 1.35f) *
+                        10.0.pow((-leftRightBalanceDb.coerceAtLeast(0f)) / 20.0).toFloat()
+                    val panGainR = (1f + (panNorm * 0.35f)).coerceIn(0.45f, 1.35f) *
+                        10.0.pow((leftRightBalanceDb.coerceAtMost(0f)) / 20.0).toFloat()
+
+                    var outL = ((eqSignal + sideSignal + delayedR * reverbMix + binauralL) * preampLinear) * panGainL
+                    var outR = ((eqSignal - sideSignal + delayedL * reverbMix + binauralR) * preampLinear) * panGainR
 
                     delayLineL[delayIdxL] = eqSignal + delayedL * (0.35f * reverbMix)
                     delayLineR[delayIdxR] = eqSignal + delayedR * (0.38f * reverbMix)
