@@ -121,6 +121,18 @@ class AudioDspEngine(
     @Volatile
     private var externalizerSubCoupler: Boolean = true
 
+    @Volatile
+    private var triadActive: Boolean = false
+
+    @Volatile
+    private var japanDseeNorm: Float = 0.75f
+
+    @Volatile
+    private var chinaR2rNorm: Float = 0.80f
+
+    @Volatile
+    private var usaDiracNorm: Float = 0.85f
+
     private val _isPlayingTestLoop = MutableStateFlow(false)
     val isPlayingTestLoop: StateFlow<Boolean> = _isPlayingTestLoop.asStateFlow()
 
@@ -215,7 +227,11 @@ class AudioDspEngine(
         outOfHeadDistanceM: Float = 2.8f,
         outOfHeadReflectionPct: Int = 55,
         pinnaHrtf: Boolean = true,
-        subFloorCoupler: Boolean = true
+        subFloorCoupler: Boolean = true,
+        globalTriadEnabled: Boolean = false,
+        japanDseePct: Int = 75,
+        chinaR2rPct: Int = 80,
+        usaDiracPct: Int = 85
     ) {
         neuralBrainwaveMode = brainwaveMode
         radarAzimuthDeg = azimuthDeg.coerceIn(-180f, 180f)
@@ -236,6 +252,10 @@ class AudioDspEngine(
         externalizerReflectionNorm = (outOfHeadReflectionPct.coerceIn(0, 100) / 100f)
         externalizerPinnaHrtf = pinnaHrtf
         externalizerSubCoupler = subFloorCoupler
+        triadActive = globalTriadEnabled
+        japanDseeNorm = (japanDseePct.coerceIn(0, 100) / 100f)
+        chinaR2rNorm = (chinaR2rPct.coerceIn(0, 100) / 100f)
+        usaDiracNorm = (usaDiracPct.coerceIn(0, 100) / 100f)
     }
 
     fun updateDspState(
@@ -460,6 +480,15 @@ class AudioDspEngine(
 
                     var outL = (((stemSignalL * distAtten) + stemSignalR * xfeed + skullCrossL + earlyRefL + sideSignal + delayedR * reverbMix + binauralL) * preampLinear) * panGainL
                     var outR = (((stemSignalR * distAtten) + stemSignalL * xfeed + skullCrossR + earlyRefR - sideSignal + delayedL * reverbMix + binauralR) * preampLinear) * panGainR
+
+                    // Global Triad Flagship DSP (🇯🇵 Japan DSEE Air + 🇨🇳 China R2R/Beryllium + 🇺🇸 USA Dirac Phase)
+                    if (active && triadActive) {
+                        val dseeOvertone = (hiComp * 0.22f * japanDseeNorm)
+                        val berylliumSlam = (subComp * 0.18f * chinaR2rNorm)
+                        val diracSnap = (midComp * 0.15f * usaDiracNorm)
+                        outL += dseeOvertone + berylliumSlam + diracSnap
+                        outR += dseeOvertone + berylliumSlam + diracSnap
+                    }
 
                     // Analog Vacuum Tube / Tape Harmonic Saturation
                     if (analogDriveNorm > 0.02f) {

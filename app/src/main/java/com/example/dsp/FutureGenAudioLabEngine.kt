@@ -836,6 +836,190 @@ object FutureGenAudioLabEngine {
             telemetrySummary = summary
         )
     }
+
+    /**
+     * Synthesizes the "Global Triad Flagship Hi-Fi Suite (🇯🇵 JAPAN • 🇨🇳 CHINA • 🇺🇸 USA)"
+     * combining:
+     * - 🇯🇵 Japan: Sony DSEE Ultimate 14–20kHz Harmonic Restorer + Yamaha AFC / K2HD Silky Vocal + 360 Spherical Height
+     * - 🇨🇳 China: Holo Discrete R2R Ladder DAC Organic Body + Beryllium Dynamic Bass Slam + Electrostatic Micro-Air
+     * - 🇺🇸 USA: Las Vegas Sphere 167K LFE Sub Array + Dirac Impulse Phase Alignment + THX Fletcher-Munson Loudness Contour
+     */
+    fun synthesizeGlobalTriadSuite(
+        baseBands: List<Float>,
+        mode: GlobalTriadMode,
+        japanDseePercent: Int,
+        chinaR2rBerylliumPercent: Int,
+        usaDiracSpherePercent: Int,
+        fletcherMunsonEnabled: Boolean,
+        systemVolumePercent: Int = 70
+    ): GlobalTriadSynthesisResult {
+        if (mode == GlobalTriadMode.OFF) {
+            return GlobalTriadSynthesisResult(
+                sculptedBands31 = EqPresetEntity.interpolateTo31Bands(baseBands),
+                effectiveBassBoost = 76,
+                effectiveSpatial3D = 42,
+                effectiveReverbLevel = 16,
+                effectiveReverbRoom = "Small Room",
+                effectiveCrossfeedPct = 28,
+                effectiveAnalogDrivePct = 25,
+                telemetrySummary = "GLOBAL TRIAD STANDBY • Select 🇯🇵 Japan, 🇨🇳 China, 🇺🇸 USA or 🌐 Triad Omega Fusion"
+            )
+        }
+
+        val cleanBase = EqPresetEntity.interpolateTo31Bands(baseBands)
+        val jpNorm = (japanDseePercent.coerceIn(0, 100) / 100f) * mode.jpWeight
+        val cnNorm = (chinaR2rBerylliumPercent.coerceIn(0, 100) / 100f) * mode.cnWeight
+        val usNorm = (usaDiracSpherePercent.coerceIn(0, 100) / 100f) * mode.usWeight
+
+        // ISO 226 Fletcher-Munson Equal-Loudness low-volume compensation (stronger when volume < 60%)
+        val lowVolDeficit = if (fletcherMunsonEnabled) {
+            ((68 - systemVolumePercent.coerceIn(15, 100)).coerceAtLeast(0) / 53f).coerceIn(0f, 1f)
+        } else 0f
+
+        val outBands = List(31) { idx ->
+            var g = cleanBase.getOrElse(idx) { 0f } * 0.55f
+
+            // 🇯🇵 JAPAN TECH: Sony WM1ZM2 Gold Walkman + DSEE Ultimate 14-20kHz Upscaler + K2HD Vocal Silk
+            if (jpNorm > 0.01f) {
+                when (idx) {
+                    in 3..6 -> g += 2.2f * jpNorm     // Tight Japanese audiophile sub-bass
+                    in 15..20 -> g += 2.6f * jpNorm   // K2HD Silky Vocal & String Harmonic Bloom (800Hz-2.5kHz)
+                    in 24..26 -> g += 2.0f * jpNorm   // 360 Reality Spherical Height cue (5kHz-8kHz)
+                    in 27..30 -> g += (3.8f + (idx - 27) * 0.7f) * jpNorm // DSEE Ultimate 10kHz-20kHz Harmonic Restorer
+                }
+            }
+
+            // 🇨🇳 CHINA TECH: Holo R2R Discrete Ladder DAC + Beryllium Woofer Slam + Electrostatic Tweeter
+            if (cnNorm > 0.01f) {
+                when (idx) {
+                    in 1..5 -> g += 4.2f * cnNorm     // Beryllium Dynamic Driver ultra-fast sub-slam (25Hz-63Hz)
+                    in 6..8 -> g += 2.8f * cnNorm     // Mid-bass chest punch (80Hz-125Hz)
+                    in 10..14 -> g += 1.8f * cnNorm   // R2R Resistor-Ladder Class-A organic lower-mid warmth (200Hz-500Hz)
+                    in 21..23 -> g += 2.4f * cnNorm   // Planar Magnetic pin-point instrument separation (2.5kHz-4kHz)
+                    in 26..29 -> g += 3.4f * cnNorm   // Electrostatic (EST) Tweeter micro-detail air (8kHz-16kHz)
+                }
+            }
+
+            // 🇺🇸 USA TECH: Vegas Sphere 167K Array + Dirac Impulse Phase Alignment + Hollywood IMAX LFE
+            if (usNorm > 0.01f) {
+                when (idx) {
+                    in 0..3 -> g += 4.8f * usNorm     // Hollywood IMAX & Vegas Sphere 20Hz-40Hz Infrasonic LFE
+                    in 4..6 -> g += 3.4f * usNorm     // Meyer Sound Arena Sub-Throw (50Hz-80Hz)
+                    in 11..13 -> g -= 2.2f * usNorm   // Dirac Impulse Phase Anti-Smear Cut (250Hz-400Hz box mud)
+                    in 18..22 -> g += 3.0f * usNorm   // Zero-Smear Transient Kick & Vocal Snap (1.6kHz-3.15kHz)
+                    in 25..28 -> g += 2.2f * usNorm   // THX AAA Achromatic Studio Clarity
+                }
+            }
+
+            // Fletcher-Munson Equal-Loudness Contour (boosts sub-bass & air when listening at low/medium volume)
+            if (fletcherMunsonEnabled) {
+                val baseContour = 0.35f + lowVolDeficit * 0.65f
+                if (idx <= 5) g += (3.2f - idx * 0.35f) * baseContour
+                if (idx >= 26) g += (1.8f + (idx - 26) * 0.4f) * baseContour
+            }
+
+            (kotlin.math.round(g * 2f) / 2f).coerceIn(-15f, 15f)
+        }
+
+        val effBass = (72 + (cnNorm * 14f + usNorm * 16f).roundToInt()).coerceIn(45, 99)
+        val effSpatial = (66 + (jpNorm * 16f + usNorm * 18f).roundToInt()).coerceIn(45, 98)
+        val effReverb = when (mode) {
+            GlobalTriadMode.JAPAN_SONY_YAMAHA -> 28
+            GlobalTriadMode.CHINA_R2R_BERYLLIUM -> 20
+            GlobalTriadMode.USA_SPHERE_DIRAC_THX -> 36
+            GlobalTriadMode.TRIAD_OMEGA_FUSION -> 30
+            GlobalTriadMode.OFF -> 14
+        }
+        val effRoom = when (mode) {
+            GlobalTriadMode.JAPAN_SONY_YAMAHA -> "Large Hall"
+            GlobalTriadMode.CHINA_R2R_BERYLLIUM -> "Small Room"
+            GlobalTriadMode.USA_SPHERE_DIRAC_THX -> "Large Hall"
+            GlobalTriadMode.TRIAD_OMEGA_FUSION -> "Medium Room"
+            GlobalTriadMode.OFF -> "Small Room"
+        }
+        val effCrossfeed = (32 + (cnNorm * 22f + jpNorm * 18f).roundToInt()).coerceIn(20, 80)
+        val effAnalogDrive = (28 + (cnNorm * 45f + jpNorm * 20f).roundToInt()).coerceIn(15, 90)
+
+        val summary = buildString {
+            append("${mode.badge}: ")
+            append("🇯🇵 DSEE ${japanDseePercent}% • ")
+            append("🇨🇳 R2R+Be ${chinaR2rBerylliumPercent}% • ")
+            append("🇺🇸 Dirac+Sphere ${usaDiracSpherePercent}%")
+            if (fletcherMunsonEnabled) append(" • THX ISO Loudness ON")
+        }
+
+        return GlobalTriadSynthesisResult(
+            sculptedBands31 = outBands,
+            effectiveBassBoost = effBass,
+            effectiveSpatial3D = effSpatial,
+            effectiveReverbLevel = effReverb,
+            effectiveReverbRoom = effRoom,
+            effectiveCrossfeedPct = effCrossfeed,
+            effectiveAnalogDrivePct = effAnalogDrive,
+            telemetrySummary = summary
+        )
+    }
+}
+
+data class GlobalTriadSynthesisResult(
+    val sculptedBands31: List<Float>,
+    val effectiveBassBoost: Int,
+    val effectiveSpatial3D: Int,
+    val effectiveReverbLevel: Int,
+    val effectiveReverbRoom: String,
+    val effectiveCrossfeedPct: Int,
+    val effectiveAnalogDrivePct: Int,
+    val telemetrySummary: String
+)
+
+enum class GlobalTriadMode(
+    val title: String,
+    val badge: String,
+    val jpWeight: Float,
+    val cnWeight: Float,
+    val usWeight: Float,
+    val subtitle: String
+) {
+    OFF(
+        title = "Triad Bypass (Off)",
+        badge = "BYPASS",
+        jpWeight = 0f,
+        cnWeight = 0f,
+        usWeight = 0f,
+        subtitle = "Standard Equltra DSP path"
+    ),
+    JAPAN_SONY_YAMAHA(
+        title = "🇯🇵 Japan: Sony DSEE + K2HD + Suntory Hall",
+        badge = "🇯🇵 JAPAN HI-RES",
+        jpWeight = 1.0f,
+        cnWeight = 0.25f,
+        usWeight = 0.20f,
+        subtitle = "WM1ZM2 Gold Signature • 14–20kHz DSEE Upscaler • Yamaha AFC 360° Silky Air"
+    ),
+    CHINA_R2R_BERYLLIUM(
+        title = "🇨🇳 China: Holo R2R DAC + Beryllium + EST",
+        badge = "🇨🇳 CHINA R2R",
+        jpWeight = 0.25f,
+        cnWeight = 1.0f,
+        usWeight = 0.25f,
+        subtitle = "Discrete R2R Ladder Class-A Warmth • Beryllium Woofer Slam • Electrostatic Tweeter"
+    ),
+    USA_SPHERE_DIRAC_THX(
+        title = "🇺🇸 USA: Vegas Sphere + Dirac Phase + THX",
+        badge = "🇺🇸 USA SPHERE",
+        jpWeight = 0.20f,
+        cnWeight = 0.25f,
+        usWeight = 1.0f,
+        subtitle = "Las Vegas Sphere 167K Array • Dirac Zero-Smear Transient Phase • IMAX 20Hz LFE"
+    ),
+    TRIAD_OMEGA_FUSION(
+        title = "🌐 Triad Omega (🇯🇵 Japan + 🇨🇳 China + 🇺🇸 USA)",
+        badge = "🌐 TRIAD OMEGA",
+        jpWeight = 0.85f,
+        cnWeight = 0.90f,
+        usWeight = 0.90f,
+        subtitle = "Ultimate 3-Nation Fusion: Japan DSEE Air + China R2R Beryllium + USA Dirac Sphere LFE"
+    )
 }
 
 data class OutOfHeadSynthesisResult(

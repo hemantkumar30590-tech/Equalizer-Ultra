@@ -250,6 +250,46 @@ const HTML_PAGE = `<!DOCTYPE html>
   </header>
 
   <main>
+    <!-- Global Triad Flagship Hi-Fi Suite (Japan • China • USA) -->
+    <div class="quantum-card" style="border-color: var(--cyan);">
+      <div class="card-header">
+        <div>
+          <span class="card-title" style="color:var(--cyan);">🌐 GLOBAL TRIAD FLAGSHIP HI-FI SUITE (🇯🇵 JAPAN • 🇨🇳 CHINA • 🇺🇸 USA — NEW!)</span>
+          <div id="triadStatus" style="font-size:11.5px;color:var(--emerald);margin-top:3px;font-family:monospace;">
+            🌐 [🇯🇵🇨🇳🇺🇸 TRIAD OMEGA FUSION] • 🇯🇵 DSEE + K2HD 85% • 🇨🇳 R2R + Beryllium 85% • 🇺🇸 Dirac + Sphere 85% • ISO 226 Loudness ON
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="chip" onclick="setTriadMode('off', 'Global Triad Off', 0, 0, 0)">⏹️ Off</button>
+          <button class="chip" onclick="setTriadMode('japan', '🇯🇵 Japan: Sony DSEE + JVC K2HD + Yamaha Cinema', 88, 35, 35)">🇯🇵 Japan Sony/JVC/Yamaha</button>
+          <button class="chip" onclick="setTriadMode('china', '🇨🇳 China: R2R Ladder + Beryllium Slam + Planar Air', 35, 90, 35)">🇨🇳 China R2R + Beryllium</button>
+          <button class="chip" onclick="setTriadMode('usa', '🇺🇸 USA: Sphere 165K + Dirac Phase + THX Bass', 35, 40, 90)">🇺🇸 USA Sphere + Dirac + THX</button>
+          <button class="chip active" onclick="setTriadMode('omega', '🇯🇵🇨🇳🇺🇸 Triad Omega Fusion', 85, 85, 85)">🌐 Triad Omega Fusion</button>
+        </div>
+      </div>
+
+      <div class="quantum-grid">
+        <div class="q-box">
+          <h4><span>🇯🇵 Japan: Sony DSEE Ultimate + JVC K2HD</span><span id="jpDseeVal" style="color:#FF5252;">85%</span></h4>
+          <p>12kHz–20kHz overtone resynthesis + Yamaha Cinema DSP front presence</p>
+          <input id="jpDseeSlider" type="range" min="0" max="100" value="85" style="width:100%;accent-color:#FF5252;" oninput="updateTriadSlider('jp', this.value)" />
+        </div>
+        <div class="q-box">
+          <h4><span>🇨🇳 China: Holo R2R + Beryllium Driver</span><span id="cnR2rVal" style="color:var(--amber);">85%</span></h4>
+          <p>20–63Hz Beryllium piston slam + R2R warm vocal body + Planar ribbon air</p>
+          <input id="cnR2rSlider" type="range" min="0" max="100" value="85" style="width:100%;accent-color:var(--amber);" oninput="updateTriadSlider('cn', this.value)" />
+        </div>
+        <div class="q-box">
+          <h4><span>🇺🇸 USA: Sphere 165K + Dirac + THX AAA</span><span id="usDiracVal" style="color:var(--cyan);">85%</span></h4>
+          <p>Dirac Impulse Phase Alignment + Vegas Sphere Holography + ISO 226 Loudness</p>
+          <input id="usDiracSlider" type="range" min="0" max="100" value="85" style="width:100%;accent-color:var(--cyan);" oninput="updateTriadSlider('us', this.value)" />
+          <div style="margin-top:6px;">
+            <button class="chip active" id="isoLoudnessBtn" onclick="toggleIsoLoudness()">📈 ISO 226 Dynamic Equal-Loudness: ON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Out-Of-Head Room Externalizer (Smyth A16 / OOHL Style) -->
     <div class="quantum-card" style="border-color: var(--amber);">
       <div class="card-header">
@@ -1157,6 +1197,60 @@ const HTML_PAGE = `<!DOCTYPE html>
       oohFloorSub = !oohFloorSub;
       document.getElementById("floorSubBtn").textContent = "🔊 Floor Sub-Wave: " + (oohFloorSub ? "ON" : "OFF");
       applyOohCurve('custom');
+    }
+
+    let triadJp = 85;
+    let triadCn = 85;
+    let triadUs = 85;
+    let triadIso = true;
+    let triadLabel = "🇯🇵🇨🇳🇺🇸 Triad Omega Fusion";
+
+    function applyTriadCurve() {
+      const jp = triadJp / 100.0;
+      const cn = triadCn / 100.0;
+      const us = triadUs / 100.0;
+      for (let i = 0; i < 31; i++) {
+        let g = gains[i] * 0.45;
+        if (i <= 5) g += cn * 4.8 + us * 3.8 + (triadIso ? 2.2 : 0);
+        if (i >= 6 && i <= 9) g += cn * 2.4 - us * 1.1;
+        if (i >= 11 && i <= 15) g += cn * 2.1 + jp * 0.8;
+        if (i >= 18 && i <= 22) g += jp * 2.8 + us * 2.5;
+        if (i >= 24 && i <= 27) g += jp * 3.8 + cn * 2.4;
+        if (i >= 28) g += jp * 5.2 + cn * 4.0 + us * 2.2 + (triadIso ? 1.5 : 0);
+        gains[i] = Math.max(-15, Math.min(15, Math.round(g * 2) / 2));
+      }
+      document.getElementById("triadStatus").textContent =
+        "🌐 [" + triadLabel.toUpperCase() + "] • 🇯🇵 DSEE " + triadJp + "% • 🇨🇳 R2R+Be " + triadCn +
+        "% • 🇺🇸 Dirac+Sphere " + triadUs + "% • " + (triadIso ? "ISO 226 Loudness ON" : "ISO 226 OFF");
+      renderBands();
+    }
+
+    function setTriadMode(key, label, jp, cn, us) {
+      triadLabel = label;
+      triadJp = jp;
+      triadCn = cn;
+      triadUs = us;
+      document.getElementById("jpDseeVal").textContent = jp + "%";
+      document.getElementById("jpDseeSlider").value = jp;
+      document.getElementById("cnR2rVal").textContent = cn + "%";
+      document.getElementById("cnR2rSlider").value = cn;
+      document.getElementById("usDiracVal").textContent = us + "%";
+      document.getElementById("usDiracSlider").value = us;
+      applyTriadCurve();
+    }
+
+    function updateTriadSlider(which, val) {
+      const v = parseInt(val, 10);
+      if (which === 'jp') { triadJp = v; document.getElementById("jpDseeVal").textContent = v + "%"; }
+      if (which === 'cn') { triadCn = v; document.getElementById("cnR2rVal").textContent = v + "%"; }
+      if (which === 'us') { triadUs = v; document.getElementById("usDiracVal").textContent = v + "%"; }
+      applyTriadCurve();
+    }
+
+    function toggleIsoLoudness() {
+      triadIso = !triadIso;
+      document.getElementById("isoLoudnessBtn").textContent = "📈 ISO 226 Dynamic Equal-Loudness: " + (triadIso ? "ON" : "OFF");
+      applyTriadCurve();
     }
 
     renderPresets();

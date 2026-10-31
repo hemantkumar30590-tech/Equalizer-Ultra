@@ -72,6 +72,7 @@ import com.example.dsp.AcousticVenueClone
 import com.example.dsp.AnalogSaturationMode
 import com.example.dsp.EsportsThreatRadarState
 import com.example.dsp.FutureGenAudioLabEngine
+import com.example.dsp.GlobalTriadMode
 import com.example.dsp.GyroHeadTrackingMode
 import com.example.dsp.HolographicVibeProfile
 import com.example.dsp.NeuralBrainwaveMode
@@ -881,6 +882,11 @@ fun FutureGenQuantumLabDialog(
     onUpdateOutOfHeadReflection: (Int) -> Unit = {},
     onTogglePinnaChestHrtf: () -> Unit = {},
     onToggleSubFloorCoupler: () -> Unit = {},
+    onSelectGlobalTriadMode: (GlobalTriadMode) -> Unit = {},
+    onUpdateJapanDsee: (Int) -> Unit = {},
+    onUpdateChinaR2r: (Int) -> Unit = {},
+    onUpdateUsaDirac: (Int) -> Unit = {},
+    onToggleFletcherMunson: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -916,13 +922,13 @@ fun FutureGenQuantumLabDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = "EQULTRA QUANTUM LAB & OUT-OF-HEAD 3D",
+                                text = "EQULTRA QUANTUM LAB & GLOBAL TRIAD",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
-                                text = "Out-Of-Head Room Externalizer + 3D Stage + 2030 Hyper-Matrix",
+                                text = "🇯🇵 Japan DSEE • 🇨🇳 China R2R • 🇺🇸 USA Sphere • Out-Of-Head 3D",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ElectricCyan
                             )
@@ -945,6 +951,16 @@ fun FutureGenQuantumLabDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // 000. GLOBAL TRIAD FLAGSHIP HI-FI SUITE (🇯🇵 JAPAN • 🇨🇳 CHINA • 🇺🇸 USA)
+                    GlobalTriadHiFiCard(
+                        uiState = uiState,
+                        onSelectTriadMode = onSelectGlobalTriadMode,
+                        onUpdateJapanDsee = onUpdateJapanDsee,
+                        onUpdateChinaR2r = onUpdateChinaR2r,
+                        onUpdateUsaDirac = onUpdateUsaDirac,
+                        onToggleFletcherMunson = onToggleFletcherMunson
+                    )
+
                     // 00. OUT-OF-HEAD ROOM EXTERNALIZER (SMYTH A16 / OOHL STYLE)
                     OutOfHeadRoomExternalizerCard(
                         uiState = uiState,
@@ -2223,5 +2239,235 @@ fun OutOfHeadRoomExternalizerCard(
         }
     }
 }
+
+@Composable
+fun GlobalTriadHiFiCard(
+    uiState: EqUiState,
+    onSelectTriadMode: (GlobalTriadMode) -> Unit,
+    onUpdateJapanDsee: (Int) -> Unit,
+    onUpdateChinaR2r: (Int) -> Unit,
+    onUpdateUsaDirac: (Int) -> Unit,
+    onToggleFletcherMunson: () -> Unit
+) {
+    val isActive = uiState.globalTriadMode != GlobalTriadMode.OFF
+    Surface(
+        color = ObsidianCard,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            width = 1.6.dp,
+            brush = Brush.horizontalGradient(
+                listOf(NeonMagenta, StudioAmber, ElectricCyan, SignalEmerald)
+            )
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = "Global Triad Hi-Fi",
+                            tint = StudioAmber,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "🇯🇵 JAPAN • 🇨🇳 CHINA • 🇺🇸 USA FLAGSHIP HI-FI SUITE",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Sony DSEE + K2HD (JP) • Holo R2R DAC + Beryllium (CN) • Vegas Sphere + Dirac Phase (US)",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = ElectricCyan
+                    )
+                }
+                Text(
+                    text = uiState.globalTriadMode.badge,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = AmoledBlack,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier
+                        .background(
+                            if (isActive) StudioAmber else TextSecondary,
+                            RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+
+            // Live Telemetry Banner
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, if (isActive) StudioAmber.copy(alpha = 0.65f) else ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = uiState.globalTriadTelemetryText,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = if (isActive) StudioAmber else TextSecondary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                )
+            }
+
+            // 1-Tap Country & Omega Fusion Selector Chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                GlobalTriadMode.entries.forEach { mode ->
+                    val selected = uiState.globalTriadMode == mode
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectTriadMode(mode) },
+                        label = {
+                            Text(
+                                text = mode.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = StudioAmber,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        )
+                    )
+                }
+            }
+
+            // 3 National Flagship Sliders (Japan DSEE, China R2R+Beryllium, USA Dirac+Sphere)
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🇯🇵 Japan: Sony DSEE 14–20kHz Upscaler & K2HD Silk",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.japanDseePercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.japanDseePercent.toFloat(),
+                        onValueChange = { onUpdateJapanDsee(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = ElectricCyan,
+                            activeTrackColor = ElectricCyan
+                        )
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🇨🇳 China: Holo R2R Ladder DAC + Beryllium Bass + EST Air",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.chinaR2rBerylliumPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.chinaR2rBerylliumPercent.toFloat(),
+                        onValueChange = { onUpdateChinaR2r(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = NeonMagenta,
+                            activeTrackColor = NeonMagenta
+                        )
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🇺🇸 USA: Vegas Sphere 167K LFE + Dirac Transient Phase",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.usaDiracSpherePercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.usaDiracSpherePercent.toFloat(),
+                        onValueChange = { onUpdateUsaDirac(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = SignalEmerald,
+                            activeTrackColor = SignalEmerald
+                        )
+                    )
+                }
+            }
+
+            // THX Fletcher-Munson Equal-Loudness Switch
+            FilterChip(
+                selected = uiState.isFletcherMunsonEnabled,
+                onClick = onToggleFletcherMunson,
+                label = {
+                    Text(
+                        text = if (uiState.isFletcherMunsonEnabled) {
+                            "🇺🇸 THX ISO 226 Fletcher-Munson Equal-Loudness (Full Sub-Bass at Low Volume): ON"
+                        } else {
+                            "🇺🇸 THX ISO 226 Fletcher-Munson Equal-Loudness: OFF"
+                        },
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = StudioAmber,
+                    selectedLabelColor = AmoledBlack,
+                    containerColor = AmoledBlack,
+                    labelColor = TextSecondary
+                )
+            )
+        }
+    }
+}
+
 
 

@@ -478,7 +478,15 @@ fun EqultraScreen(
                         onUpdateOutOfHeadDistance = viewModel::updateOutOfHeadDistanceMeters,
                         onUpdateOutOfHeadReflection = viewModel::updateOutOfHeadEarlyReflection,
                         onTogglePinnaChestHrtf = viewModel::togglePinnaChestHrtf,
-                        onToggleSubFloorCoupler = viewModel::toggleSubFloorCoupler
+                        onToggleSubFloorCoupler = viewModel::toggleSubFloorCoupler,
+                        onSelectGlobalTriadMode = { mode ->
+                            viewModel.setGlobalTriadMode(mode)
+                            Toast.makeText(context, "Global Triad: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdateJapanDsee = viewModel::updateJapanDseePercent,
+                        onUpdateChinaR2r = viewModel::updateChinaR2rPercent,
+                        onUpdateUsaDirac = viewModel::updateUsaDiracPercent,
+                        onToggleFletcherMunson = viewModel::toggleFletcherMunsonLoudness
                     )
 
                     2 -> DevicePresetsTab(
@@ -775,6 +783,14 @@ fun EqultraScreen(
             onUpdateOutOfHeadReflection = viewModel::updateOutOfHeadEarlyReflection,
             onTogglePinnaChestHrtf = viewModel::togglePinnaChestHrtf,
             onToggleSubFloorCoupler = viewModel::toggleSubFloorCoupler,
+            onSelectGlobalTriadMode = { mode ->
+                viewModel.setGlobalTriadMode(mode)
+                Toast.makeText(context, "Global Triad: ${mode.title}", Toast.LENGTH_SHORT).show()
+            },
+            onUpdateJapanDsee = viewModel::updateJapanDseePercent,
+            onUpdateChinaR2r = viewModel::updateChinaR2rPercent,
+            onUpdateUsaDirac = viewModel::updateUsaDiracPercent,
+            onToggleFletcherMunson = viewModel::toggleFletcherMunsonLoudness,
             onDismiss = { viewModel.setFutureLabDialogVisible(false) }
         )
     }
@@ -1420,7 +1436,12 @@ private fun BassAndSpatialDspTab(
     onUpdateOutOfHeadDistance: (Float) -> Unit,
     onUpdateOutOfHeadReflection: (Int) -> Unit,
     onTogglePinnaChestHrtf: () -> Unit,
-    onToggleSubFloorCoupler: () -> Unit
+    onToggleSubFloorCoupler: () -> Unit,
+    onSelectGlobalTriadMode: (com.example.dsp.GlobalTriadMode) -> Unit,
+    onUpdateJapanDsee: (Int) -> Unit,
+    onUpdateChinaR2r: (Int) -> Unit,
+    onUpdateUsaDirac: (Int) -> Unit,
+    onToggleFletcherMunson: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -1437,6 +1458,18 @@ private fun BassAndSpatialDspTab(
             peakDb = peakDb,
             bassBoostPercent = uiState.bassBoostStrength,
             spatialPercent = uiState.spatialLevel
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Global Triad Hi-Fi Suite (Japan • China • USA) directly at top of Bass & 3D Tab
+        GlobalTriadHiFiCard(
+            uiState = uiState,
+            onSelectTriadMode = onSelectGlobalTriadMode,
+            onUpdateJapanDsee = onUpdateJapanDsee,
+            onUpdateChinaR2r = onUpdateChinaR2r,
+            onUpdateUsaDirac = onUpdateUsaDirac,
+            onToggleFletcherMunson = onToggleFletcherMunson
         )
 
         Spacer(modifier = Modifier.height(12.dp))

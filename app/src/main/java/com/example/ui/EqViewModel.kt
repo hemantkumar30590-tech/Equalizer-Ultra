@@ -20,6 +20,7 @@ import com.example.dsp.AcousticVenueClone
 import com.example.dsp.AnalogSaturationMode
 import com.example.dsp.EsportsThreatRadarState
 import com.example.dsp.FutureGenAudioLabEngine
+import com.example.dsp.GlobalTriadMode
 import com.example.dsp.GyroHeadTrackingMode
 import com.example.dsp.HolographicVibeProfile
 import com.example.dsp.NeuralBrainwaveMode
@@ -126,7 +127,14 @@ data class EqUiState(
     val outOfHeadEarlyReflectionPercent: Int = 58,
     val isPinnaChestHrtfEnabled: Boolean = true,
     val isSubFloorCouplerEnabled: Boolean = true,
-    val outOfHeadTelemetryText: String = "OUT-OF-HEAD EXTERNALIZER READY • Tap any Room Speaker Mode to move sound outside your ears!"
+    val outOfHeadTelemetryText: String = "OUT-OF-HEAD EXTERNALIZER READY • Tap any Room Speaker Mode to move sound outside your ears!",
+    // Global Triad Flagship Hi-Fi Suite (🇯🇵 JAPAN • 🇨🇳 CHINA • 🇺🇸 USA)
+    val globalTriadMode: GlobalTriadMode = GlobalTriadMode.OFF,
+    val japanDseePercent: Int = 78,
+    val chinaR2rBerylliumPercent: Int = 82,
+    val usaDiracSpherePercent: Int = 85,
+    val isFletcherMunsonEnabled: Boolean = true,
+    val globalTriadTelemetryText: String = "GLOBAL TRIAD READY • Tap 🇯🇵 Japan DSEE, 🇨🇳 China R2R+Beryllium, 🇺🇸 USA Vegas Sphere or 🌐 Triad Omega"
 )
 
 class EqViewModel(application: Application) : AndroidViewModel(application) {
@@ -1519,6 +1527,92 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         recomputeAndApplyOutOfHeadExternalizer()
     }
 
+    // =========================================================================
+    // GLOBAL TRIAD FLAGSHIP HI-FI SUITE (🇯🇵 JAPAN • 🇨🇳 CHINA • 🇺🇸 USA)
+    // =========================================================================
+
+    private fun recomputeAndApplyGlobalTriad() {
+        _uiState.update { s ->
+            val result = FutureGenAudioLabEngine.synthesizeGlobalTriadSuite(
+                baseBands = s.bandGainsDb,
+                mode = s.globalTriadMode,
+                japanDseePercent = s.japanDseePercent,
+                chinaR2rBerylliumPercent = s.chinaR2rBerylliumPercent,
+                usaDiracSpherePercent = s.usaDiracSpherePercent,
+                fletcherMunsonEnabled = s.isFletcherMunsonEnabled,
+                systemVolumePercent = systemVolumePercent.value
+            )
+            if (s.globalTriadMode == GlobalTriadMode.OFF) {
+                s.copy(globalTriadTelemetryText = result.telemetrySummary)
+            } else {
+                s.copy(
+                    isMasterEnabled = true,
+                    activePresetName = s.globalTriadMode.title,
+                    bandGainsDb = result.sculptedBands31,
+                    bassBoostStrength = result.effectiveBassBoost,
+                    spatialLevel = result.effectiveSpatial3D,
+                    reverbLevel = result.effectiveReverbLevel,
+                    reverbRoom = result.effectiveReverbRoom,
+                    crossfeedStrengthPercent = result.effectiveCrossfeedPct,
+                    analogDrivePercent = result.effectiveAnalogDrivePct,
+                    globalTriadTelemetryText = result.telemetrySummary
+                )
+            }
+        }
+        syncDspEngine()
+    }
+
+    fun setGlobalTriadMode(mode: GlobalTriadMode) {
+        _uiState.update { it.copy(globalTriadMode = mode) }
+        hapticManager.onAiPresetApplied("Triad ${mode.badge}")
+        recomputeAndApplyGlobalTriad()
+    }
+
+    fun updateJapanDseePercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.globalTriadMode == GlobalTriadMode.OFF) {
+                GlobalTriadMode.JAPAN_SONY_YAMAHA
+            } else state.globalTriadMode
+            state.copy(
+                globalTriadMode = nextMode,
+                japanDseePercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyGlobalTriad()
+    }
+
+    fun updateChinaR2rPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.globalTriadMode == GlobalTriadMode.OFF) {
+                GlobalTriadMode.CHINA_R2R_BERYLLIUM
+            } else state.globalTriadMode
+            state.copy(
+                globalTriadMode = nextMode,
+                chinaR2rBerylliumPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyGlobalTriad()
+    }
+
+    fun updateUsaDiracPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.globalTriadMode == GlobalTriadMode.OFF) {
+                GlobalTriadMode.USA_SPHERE_DIRAC_THX
+            } else state.globalTriadMode
+            state.copy(
+                globalTriadMode = nextMode,
+                usaDiracSpherePercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyGlobalTriad()
+    }
+
+    fun toggleFletcherMunsonLoudness() {
+        _uiState.update { it.copy(isFletcherMunsonEnabled = !it.isFletcherMunsonEnabled) }
+        hapticManager.onControlTick("THX ISO Equal-Loudness")
+        recomputeAndApplyGlobalTriad()
+    }
+
     private fun startFutureGenCoordinator() {
         viewModelScope.launch {
             var tickCount = 0
@@ -1556,7 +1650,11 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                         outOfHeadDistanceM = s.outOfHeadDistanceMeters,
                         outOfHeadReflectionPct = s.outOfHeadEarlyReflectionPercent,
                         pinnaHrtf = s.isPinnaChestHrtfEnabled,
-                        subFloorCoupler = s.isSubFloorCouplerEnabled
+                        subFloorCoupler = s.isSubFloorCouplerEnabled,
+                        globalTriadEnabled = s.globalTriadMode != GlobalTriadMode.OFF,
+                        japanDseePct = s.japanDseePercent,
+                        chinaR2rPct = s.chinaR2rBerylliumPercent,
+                        usaDiracPct = s.usaDiracSpherePercent
                     )
                 }
                 // Bass-to-Haptic Sub-Woofer Tactile Engine: pulse phone vibrator on sub-bass hits
@@ -1636,7 +1734,11 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             outOfHeadDistanceM = s.outOfHeadDistanceMeters,
             outOfHeadReflectionPct = s.outOfHeadEarlyReflectionPercent,
             pinnaHrtf = s.isPinnaChestHrtfEnabled,
-            subFloorCoupler = s.isSubFloorCouplerEnabled
+            subFloorCoupler = s.isSubFloorCouplerEnabled,
+            globalTriadEnabled = s.globalTriadMode != GlobalTriadMode.OFF,
+            japanDseePct = s.japanDseePercent,
+            chinaR2rPct = s.chinaR2rBerylliumPercent,
+            usaDiracPct = s.usaDiracSpherePercent
         )
         dspEngine.updateDspState(
             enabled = s.isMasterEnabled,
