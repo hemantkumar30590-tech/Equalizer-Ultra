@@ -214,6 +214,27 @@ class AudioDspEngine(
     @Volatile
     private var woodenUnpluggedFloorOn: Boolean = true
 
+    @Volatile
+    private var chronoNeuralActive: Boolean = false
+
+    @Volatile
+    private var cochlearSyncNorm: Float = 0.94f
+
+    @Volatile
+    private var gammaTimeDilationNorm: Float = 0.90f
+
+    @Volatile
+    private var stapediusSilkNorm: Float = 0.92f
+
+    @Volatile
+    private var tartiniSubNorm: Float = 0.92f
+
+    @Volatile
+    private var microSaccadicSwayOn: Boolean = true
+
+    @Volatile
+    private var fibonacciTapeSilkOn: Boolean = true
+
     private val _isPlayingTestLoop = MutableStateFlow(false)
     val isPlayingTestLoop: StateFlow<Boolean> = _isPlayingTestLoop.asStateFlow()
 
@@ -339,7 +360,14 @@ class AudioDspEngine(
         sympatheticStringBleedPct: Int = 88,
         singerBreathProximityPct: Int = 92,
         haasStageSeparation: Boolean = true,
-        woodenUnpluggedFloor: Boolean = true
+        woodenUnpluggedFloor: Boolean = true,
+        chronoNeuralEnabled: Boolean = false,
+        cochlearDispersionSyncPct: Int = 94,
+        gamma40HzTimeDilationPct: Int = 90,
+        stapediusReflexDisarmerPct: Int = 92,
+        tartiniOtoacousticSubPct: Int = 92,
+        microSaccadicStageSway: Boolean = true,
+        fibonacciGoldenTapeSilk: Boolean = true
     ) {
         neuralBrainwaveMode = brainwaveMode
         radarAzimuthDeg = azimuthDeg.coerceIn(-180f, 180f)
@@ -391,6 +419,13 @@ class AudioDspEngine(
         singerBreathNorm = (singerBreathProximityPct.coerceIn(0, 100) / 100f)
         haasStageSeparationOn = haasStageSeparation
         woodenUnpluggedFloorOn = woodenUnpluggedFloor
+        chronoNeuralActive = chronoNeuralEnabled
+        cochlearSyncNorm = (cochlearDispersionSyncPct.coerceIn(0, 100) / 100f)
+        gammaTimeDilationNorm = (gamma40HzTimeDilationPct.coerceIn(0, 100) / 100f)
+        stapediusSilkNorm = (stapediusReflexDisarmerPct.coerceIn(0, 100) / 100f)
+        tartiniSubNorm = (tartiniOtoacousticSubPct.coerceIn(0, 100) / 100f)
+        microSaccadicSwayOn = microSaccadicStageSway
+        fibonacciTapeSilkOn = fibonacciGoldenTapeSilk
     }
 
     fun updateDspState(
@@ -717,6 +752,38 @@ class AudioDspEngine(
 
                         outL += pluckSnap + woodResonance + sympatheticShimmer + liveVocalProximity + haasSpreadL + unpluggedClubL
                         outR += pluckSnap + woodResonance + sympatheticShimmer + liveVocalProximity + haasSpreadR + unpluggedClubR
+                    }
+
+                    // 🧠 Chrono-Neural & Sub-Quantum Biomimetic Engine (6-in-1 Neuro-Acoustic Suite)
+                    if (active && chronoNeuralActive) {
+                        // 1. 🌀 Cochlear Basilar-Membrane 6ms Dispersion Corrector (aligns sub-bass & high transient nerve firing)
+                        val cochlearAlign = ((subComp * 0.22f) + (kickEnv.toFloat() * hiComp * 0.20f)) * cochlearSyncNorm
+                        // 2. ⚡ 40Hz Gamma-Wave Auditory Cortex Time-Dilation (phase-locked 40Hz micro-envelope resolution)
+                        val gammaMod = (1.0f + (sin(2.0 * PI * 40.0 * t) * 0.14).toFloat() * gammaTimeDilationNorm)
+                        val slowMoDetail = (midComp * 0.16f + hiComp * 0.18f) * (gammaMod - 1.0f)
+                        // 3. 🛡️ Stapedius & Tensor-Tympani Reflex Disarmer (soft-vacuum silk curve on sharp highs)
+                        val stapediusSilk = if (abs(hiComp) > 0.20f) {
+                            (-hiComp * 0.19f + lpMid * 0.12f) * stapediusSilkNorm
+                        } else {
+                            (lpMid * 0.10f) * stapediusSilkNorm
+                        }
+                        // 4. 💎 Tartini Otoacoustic 24Hz Phantom Sub-Bass Weaver (2f1 - f2 cubic difference tone: 2*60Hz - 90Hz = 30Hz)
+                        val tartiniWave = (
+                            (sin(2.0 * PI * 60.0 * t) * 0.52 +
+                                sin(2.0 * PI * 90.0 * t) * 0.34 +
+                                cos(2.0 * PI * 30.0 * t) * 0.24) * 0.18 * tartiniSubNorm
+                            ).toFloat()
+                        // 5. 🦢 0.18Hz Micro-Saccadic Musician Breathing & Golden-Ratio Stage-Sway Drift
+                        val bioSway = if (microSaccadicSwayOn) {
+                            (sin(2.0 * PI * 0.18 * t) * 0.032 + cos(2.0 * PI * (0.18 * 1.618) * t) * 0.020).toFloat()
+                        } else 0f
+                        // 6. 🌌 Fibonacci Golden-Ratio Analog Tape & Tube Silk (1 : 0.618 : 0.382 even-order warmth)
+                        val fibSilk = if (fibonacciTapeSilkOn) {
+                            ((eqSignal * eqSignal * 0.09f) * 0.618f + (subComp * 0.08f) * 0.382f)
+                        } else 0f
+
+                        outL = (outL * (1f + bioSway)) + cochlearAlign + slowMoDetail + stapediusSilk + tartiniWave + fibSilk
+                        outR = (outR * (1f - bioSway)) + cochlearAlign + slowMoDetail + stapediusSilk + tartiniWave + fibSilk
                     }
 
                     // Analog Vacuum Tube / Tape Harmonic Saturation

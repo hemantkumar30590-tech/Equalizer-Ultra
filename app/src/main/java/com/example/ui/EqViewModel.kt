@@ -18,6 +18,7 @@ import com.example.dsp.AudioDspEngine
 import com.example.dsp.EqHapticFeedbackManager
 import com.example.dsp.AcousticVenueClone
 import com.example.dsp.AnalogSaturationMode
+import com.example.dsp.ChronoNeuralBiomimeticMode
 import com.example.dsp.EsportsThreatRadarState
 import com.example.dsp.FutureGenAudioLabEngine
 import com.example.dsp.GlobalTriadMode
@@ -175,7 +176,16 @@ data class EqUiState(
     val singerBreathProximityPercent: Int = 92,
     val isHaasStageSeparationEnabled: Boolean = true,
     val isWoodenUnpluggedFloorEnabled: Boolean = true,
-    val liveInstrumentTelemetryText: String = "🎻 LIVE INSTRUMENT ENGINE READY • Tap 🎸 MTV/Coke Studio Unplugged, 🥁 Live Drum Kit or 🔥 Live Concert Omega"
+    val liveInstrumentTelemetryText: String = "🎻 LIVE INSTRUMENT ENGINE READY • Tap 🎸 MTV/Coke Studio Unplugged, 🥁 Live Drum Kit or 🔥 Live Concert Omega",
+    // 🧠 Chrono-Neural & Sub-Quantum Biomimetic Engine (6-in-1 Neuro-Acoustic Suite)
+    val chronoNeuralMode: ChronoNeuralBiomimeticMode = ChronoNeuralBiomimeticMode.OFF,
+    val cochlearDispersionSyncPercent: Int = 94,
+    val gamma40HzTimeDilationPercent: Int = 90,
+    val stapediusReflexDisarmerPercent: Int = 92,
+    val tartiniOtoacousticSubPercent: Int = 92,
+    val isMicroSaccadicStageSwayEnabled: Boolean = true,
+    val isFibonacciGoldenTapeSilkEnabled: Boolean = true,
+    val chronoNeuralTelemetryText: String = "🧠 CHRONO-NEURAL BIOMIMETIC READY • Tap 🌀 Cochlear 6ms Sync, ⚡ 40Hz Slow-Mo HD, 🛡️ Eardrum Silk or 🧠 Neuro-Omega"
 )
 
 class EqViewModel(application: Application) : AndroidViewModel(application) {
@@ -2089,6 +2099,113 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         recomputeAndApplyLiveInstrument()
     }
 
+    // =========================================================================
+    // 🧠 CHRONO-NEURAL & SUB-QUANTUM BIOMIMETIC ENGINE (6-IN-1 NEURO-ACOUSTIC)
+    // =========================================================================
+
+    private fun recomputeAndApplyChronoNeural() {
+        _uiState.update { s ->
+            val result = FutureGenAudioLabEngine.synthesizeChronoNeuralBiomimeticSuite(
+                baseBands = s.bandGainsDb,
+                mode = s.chronoNeuralMode,
+                cochlearDispersionSyncPercent = s.cochlearDispersionSyncPercent,
+                gamma40HzTimeDilationPercent = s.gamma40HzTimeDilationPercent,
+                stapediusReflexDisarmerPercent = s.stapediusReflexDisarmerPercent,
+                tartiniOtoacousticSubPercent = s.tartiniOtoacousticSubPercent,
+                microSaccadicStageSwayEnabled = s.isMicroSaccadicStageSwayEnabled,
+                fibonacciGoldenTapeSilkEnabled = s.isFibonacciGoldenTapeSilkEnabled
+            )
+            if (s.chronoNeuralMode == ChronoNeuralBiomimeticMode.OFF) {
+                s.copy(chronoNeuralTelemetryText = result.telemetrySummary)
+            } else {
+                s.copy(
+                    isMasterEnabled = true,
+                    activePresetName = s.chronoNeuralMode.title,
+                    bandGainsDb = result.sculptedBands31,
+                    bassBoostStrength = result.effectiveBassBoost,
+                    spatialLevel = result.effectiveSpatial3D,
+                    reverbLevel = result.effectiveReverbLevel,
+                    reverbRoom = result.effectiveReverbRoom,
+                    crossfeedStrengthPercent = result.effectiveCrossfeedPct,
+                    analogDrivePercent = result.effectiveAnalogDrivePct,
+                    preampDb = result.effectivePreampDb,
+                    chronoNeuralTelemetryText = result.telemetrySummary
+                )
+            }
+        }
+        syncDspEngine()
+    }
+
+    fun setChronoNeuralMode(mode: ChronoNeuralBiomimeticMode) {
+        _uiState.update { it.copy(chronoNeuralMode = mode) }
+        hapticManager.onAiPresetApplied("Chrono-Neural ${mode.badge}")
+        recomputeAndApplyChronoNeural()
+    }
+
+    fun updateCochlearDispersionSyncPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.chronoNeuralMode == ChronoNeuralBiomimeticMode.OFF) {
+                ChronoNeuralBiomimeticMode.COCHLEAR_ZERO_SMEAR_SYNC
+            } else state.chronoNeuralMode
+            state.copy(
+                chronoNeuralMode = nextMode,
+                cochlearDispersionSyncPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyChronoNeural()
+    }
+
+    fun updateGamma40HzTimeDilationPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.chronoNeuralMode == ChronoNeuralBiomimeticMode.OFF) {
+                ChronoNeuralBiomimeticMode.GAMMA_40HZ_SLOW_MO_HD
+            } else state.chronoNeuralMode
+            state.copy(
+                chronoNeuralMode = nextMode,
+                gamma40HzTimeDilationPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyChronoNeural()
+    }
+
+    fun updateStapediusReflexDisarmerPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.chronoNeuralMode == ChronoNeuralBiomimeticMode.OFF) {
+                ChronoNeuralBiomimeticMode.STAPEDIUS_SILK_EARDRUM
+            } else state.chronoNeuralMode
+            state.copy(
+                chronoNeuralMode = nextMode,
+                stapediusReflexDisarmerPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyChronoNeural()
+    }
+
+    fun updateTartiniOtoacousticSubPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.chronoNeuralMode == ChronoNeuralBiomimeticMode.OFF) {
+                ChronoNeuralBiomimeticMode.TARTINI_PHANTOM_24HZ_SUB
+            } else state.chronoNeuralMode
+            state.copy(
+                chronoNeuralMode = nextMode,
+                tartiniOtoacousticSubPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyChronoNeural()
+    }
+
+    fun toggleMicroSaccadicStageSway() {
+        _uiState.update { it.copy(isMicroSaccadicStageSwayEnabled = !it.isMicroSaccadicStageSwayEnabled) }
+        hapticManager.onControlTick("0.18Hz Micro-Saccadic Stage Sway")
+        recomputeAndApplyChronoNeural()
+    }
+
+    fun toggleFibonacciGoldenTapeSilk() {
+        _uiState.update { it.copy(isFibonacciGoldenTapeSilkEnabled = !it.isFibonacciGoldenTapeSilkEnabled) }
+        hapticManager.onControlTick("Fibonacci Golden-Ratio Tape Silk")
+        recomputeAndApplyChronoNeural()
+    }
+
     private fun startFutureGenCoordinator() {
         viewModelScope.launch {
             var tickCount = 0
@@ -2157,7 +2274,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                         sympatheticStringBleedPct = s.sympatheticStringBleedPercent,
                         singerBreathProximityPct = s.singerBreathProximityPercent,
                         haasStageSeparation = s.isHaasStageSeparationEnabled,
-                        woodenUnpluggedFloor = s.isWoodenUnpluggedFloorEnabled
+                        woodenUnpluggedFloor = s.isWoodenUnpluggedFloorEnabled,
+                        chronoNeuralEnabled = s.chronoNeuralMode != ChronoNeuralBiomimeticMode.OFF,
+                        cochlearDispersionSyncPct = s.cochlearDispersionSyncPercent,
+                        gamma40HzTimeDilationPct = s.gamma40HzTimeDilationPercent,
+                        stapediusReflexDisarmerPct = s.stapediusReflexDisarmerPercent,
+                        tartiniOtoacousticSubPct = s.tartiniOtoacousticSubPercent,
+                        microSaccadicStageSway = s.isMicroSaccadicStageSwayEnabled,
+                        fibonacciGoldenTapeSilk = s.isFibonacciGoldenTapeSilkEnabled
                     )
                 }
                 // Bass-to-Haptic Sub-Woofer Tactile Engine: pulse phone vibrator on sub-bass hits
@@ -2268,7 +2392,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             sympatheticStringBleedPct = s.sympatheticStringBleedPercent,
             singerBreathProximityPct = s.singerBreathProximityPercent,
             haasStageSeparation = s.isHaasStageSeparationEnabled,
-            woodenUnpluggedFloor = s.isWoodenUnpluggedFloorEnabled
+            woodenUnpluggedFloor = s.isWoodenUnpluggedFloorEnabled,
+            chronoNeuralEnabled = s.chronoNeuralMode != ChronoNeuralBiomimeticMode.OFF,
+            cochlearDispersionSyncPct = s.cochlearDispersionSyncPercent,
+            gamma40HzTimeDilationPct = s.gamma40HzTimeDilationPercent,
+            stapediusReflexDisarmerPct = s.stapediusReflexDisarmerPercent,
+            tartiniOtoacousticSubPct = s.tartiniOtoacousticSubPercent,
+            microSaccadicStageSway = s.isMicroSaccadicStageSwayEnabled,
+            fibonacciGoldenTapeSilk = s.isFibonacciGoldenTapeSilkEnabled
         )
         dspEngine.updateDspState(
             enabled = s.isMasterEnabled,

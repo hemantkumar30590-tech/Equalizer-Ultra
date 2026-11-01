@@ -529,7 +529,17 @@ fun EqultraScreen(
                         onUpdateSympatheticStringBleed = viewModel::updateSympatheticStringBleedPercent,
                         onUpdateSingerBreathProximity = viewModel::updateSingerBreathProximityPercent,
                         onToggleHaasStageSeparation = viewModel::toggleHaasStageSeparation,
-                        onToggleWoodenUnpluggedFloor = viewModel::toggleWoodenUnpluggedFloorBounce
+                        onToggleWoodenUnpluggedFloor = viewModel::toggleWoodenUnpluggedFloorBounce,
+                        onSelectChronoNeuralMode = { mode ->
+                            viewModel.setChronoNeuralMode(mode)
+                            Toast.makeText(context, "Chrono-Neural: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdateCochlearDispersionSync = viewModel::updateCochlearDispersionSyncPercent,
+                        onUpdateGamma40HzTimeDilation = viewModel::updateGamma40HzTimeDilationPercent,
+                        onUpdateStapediusReflexDisarmer = viewModel::updateStapediusReflexDisarmerPercent,
+                        onUpdateTartiniOtoacousticSub = viewModel::updateTartiniOtoacousticSubPercent,
+                        onToggleMicroSaccadicStageSway = viewModel::toggleMicroSaccadicStageSway,
+                        onToggleFibonacciGoldenTapeSilk = viewModel::toggleFibonacciGoldenTapeSilk
                     )
 
                     2 -> DevicePresetsTab(
@@ -877,6 +887,16 @@ fun EqultraScreen(
             onUpdateSingerBreathProximity = viewModel::updateSingerBreathProximityPercent,
             onToggleHaasStageSeparation = viewModel::toggleHaasStageSeparation,
             onToggleWoodenUnpluggedFloor = viewModel::toggleWoodenUnpluggedFloorBounce,
+            onSelectChronoNeuralMode = { mode ->
+                viewModel.setChronoNeuralMode(mode)
+                Toast.makeText(context, "Chrono-Neural: ${mode.title}", Toast.LENGTH_SHORT).show()
+            },
+            onUpdateCochlearDispersionSync = viewModel::updateCochlearDispersionSyncPercent,
+            onUpdateGamma40HzTimeDilation = viewModel::updateGamma40HzTimeDilationPercent,
+            onUpdateStapediusReflexDisarmer = viewModel::updateStapediusReflexDisarmerPercent,
+            onUpdateTartiniOtoacousticSub = viewModel::updateTartiniOtoacousticSubPercent,
+            onToggleMicroSaccadicStageSway = viewModel::toggleMicroSaccadicStageSway,
+            onToggleFibonacciGoldenTapeSilk = viewModel::toggleFibonacciGoldenTapeSilk,
             onDismiss = { viewModel.setFutureLabDialogVisible(false) }
         )
     }
@@ -1555,7 +1575,14 @@ private fun BassAndSpatialDspTab(
     onUpdateSympatheticStringBleed: (Int) -> Unit,
     onUpdateSingerBreathProximity: (Int) -> Unit,
     onToggleHaasStageSeparation: () -> Unit,
-    onToggleWoodenUnpluggedFloor: () -> Unit
+    onToggleWoodenUnpluggedFloor: () -> Unit,
+    onSelectChronoNeuralMode: (com.example.dsp.ChronoNeuralBiomimeticMode) -> Unit,
+    onUpdateCochlearDispersionSync: (Int) -> Unit,
+    onUpdateGamma40HzTimeDilation: (Int) -> Unit,
+    onUpdateStapediusReflexDisarmer: (Int) -> Unit,
+    onUpdateTartiniOtoacousticSub: (Int) -> Unit,
+    onToggleMicroSaccadicStageSway: () -> Unit,
+    onToggleFibonacciGoldenTapeSilk: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -1572,6 +1599,20 @@ private fun BassAndSpatialDspTab(
             peakDb = peakDb,
             bassBoostPercent = uiState.bassBoostStrength,
             spatialPercent = uiState.spatialLevel
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 🧠 Chrono-Neural & Sub-Quantum Biomimetic Engine (6-in-1 Neuro-Acoustic Suite) directly at top of Bass & 3D Tab
+        ChronoNeuralBiomimeticCard(
+            uiState = uiState,
+            onSelectMode = onSelectChronoNeuralMode,
+            onUpdateCochlearDispersionSync = onUpdateCochlearDispersionSync,
+            onUpdateGamma40HzTimeDilation = onUpdateGamma40HzTimeDilation,
+            onUpdateStapediusReflexDisarmer = onUpdateStapediusReflexDisarmer,
+            onUpdateTartiniOtoacousticSub = onUpdateTartiniOtoacousticSub,
+            onToggleMicroSaccadicStageSway = onToggleMicroSaccadicStageSway,
+            onToggleFibonacciGoldenTapeSilk = onToggleFibonacciGoldenTapeSilk
         )
 
         Spacer(modifier = Modifier.height(12.dp))

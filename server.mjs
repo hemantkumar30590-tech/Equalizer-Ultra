@@ -250,6 +250,49 @@ const HTML_PAGE = `<!DOCTYPE html>
   </header>
 
   <main>
+    <!-- 🧠 Chrono-Neural & Sub-Quantum Biomimetic Engine (6-in-1 Neuro-Physics Suite) -->
+    <div class="quantum-card" style="border-color: var(--cyan);">
+      <div class="card-header">
+        <div>
+          <span class="card-title" style="color:var(--cyan);">🧠 CHRONO-NEURAL &amp; SUB-QUANTUM BIOMIMETIC ENGINE (6-IN-1 NEURO-PHYSICS — NEW!)</span>
+          <div id="chronoNeuralStatus" style="font-size:11.5px;color:var(--emerald);margin-top:3px;font-family:monospace;">
+            🧠 [🧠 NEURO-OMEGA]: Cochlear 6ms Sync 94% • 40Hz Slow-Mo HD 90% • Stapedius Silk 92% • Tartini 24Hz Sub 92% • 0.18Hz Sway ON • φ-Tape Silk ON
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="chip" onclick="setChronoMode('off', 'Standard Acoustic Path (Off)', 0, 0, 0, 0)">⏹️ Standard (Off)</button>
+          <button class="chip" onclick="setChronoMode('cochlear', '🌀 Cochlear 6ms Fluid Phase-Sync', 100, 82, 80, 85)">🌀 Cochlear 6ms Sync</button>
+          <button class="chip" onclick="setChronoMode('gamma', '⚡ 40Hz Gamma Slow-Mo HD Hearing', 88, 100, 85, 78)">⚡ 40Hz Slow-Mo HD</button>
+          <button class="chip" onclick="setChronoMode('stapedius', '🛡️ Stapedius Eardrum Muscle Silk', 80, 78, 100, 86)">🛡️ Eardrum Muscle Silk</button>
+          <button class="chip" onclick="setChronoMode('tartini', '💎 Tartini 24Hz Sub + φ-Tape Silk', 86, 80, 88, 100)">💎 Tartini 24Hz Sub</button>
+          <button class="chip active" onclick="setChronoMode('omega', '🧠 Chrono-Neural Biomimetic Omega (All 6)', 94, 90, 92, 92)">🧠 Neuro-Omega (All 6)</button>
+        </div>
+      </div>
+
+      <div class="quantum-grid">
+        <div class="q-box">
+          <h4><span>🌀 Cochlear 6ms Fluid Phase-Sync</span><span id="cnCochVal" style="color:var(--cyan);">94%</span></h4>
+          <p>Pre-aligns 31.5–100Hz bass with 2–8kHz transients so inner-ear hair cells fire at the exact microsecond</p>
+          <input id="cnCochSlider" type="range" min="0" max="100" value="94" style="width:100%;accent-color:var(--cyan);" oninput="updateChronoSlider('coch', this.value)" />
+        </div>
+        <div class="q-box">
+          <h4><span>⚡ 40Hz Gamma Slow-Mo HD Hearing</span><span id="cnGamVal" style="color:var(--amber);">90%</span></h4>
+          <p>Phase-locked 40Hz thalamocortical modulation expands temporal resolution for fast solos &amp; drum rolls</p>
+          <input id="cnGamSlider" type="range" min="0" max="100" value="90" style="width:100%;accent-color:var(--amber);" oninput="updateChronoSlider('gam', this.value)" />
+        </div>
+        <div class="q-box">
+          <h4><span>🛡️ Stapedius Silk &amp; 💎 Tartini 24Hz Sub</span><span id="cnStapVal" style="color:var(--emerald);">92% | Sub 92%</span></h4>
+          <p>Disarms 3.15kHz eardrum reflex tension + 2f1-f2 Tartini self-generated 24Hz cochlear sub-bass</p>
+          <input id="cnStapSlider" type="range" min="0" max="100" value="92" style="width:100%;accent-color:var(--emerald);" oninput="updateChronoSlider('stap', this.value)" />
+          <input id="cnTartSlider" type="range" min="0" max="100" value="92" style="width:100%;accent-color:var(--magenta);margin-top:6px;" oninput="updateChronoSlider('tart', this.value)" />
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">
+            <button class="chip active" id="cnSwayBtn" onclick="toggleChronoSway()">🦢 0.18Hz Musician Sway: ON</button>
+            <button class="chip active" id="cnFibBtn" onclick="toggleChronoFib()">🌌 φ-Fibonacci Tape Silk: ON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 🎻 Holographic Live Instrument Realism Engine (6-in-1 Live Stage Physics Suite) -->
     <div class="quantum-card" style="border-color: var(--amber);">
       <div class="card-header">
@@ -1708,6 +1751,79 @@ const HTML_PAGE = `<!DOCTYPE html>
       liFloor = !liFloor;
       document.getElementById("liFloorBtn").textContent = "🕯️ Unplugged Club Floor: " + (liFloor ? "ON" : "OFF");
       applyLiveInstCurve();
+    }
+
+    let cnCoch = 94;
+    let cnGam = 90;
+    let cnStap = 92;
+    let cnTart = 92;
+    let cnSway = true;
+    let cnFib = true;
+    let cnLabel = "🧠 Neuro-Omega";
+
+    function applyChronoCurve() {
+      const ch = cnCoch / 100.0;
+      const gm = cnGam / 100.0;
+      const st = cnStap / 100.0;
+      const tr = cnTart / 100.0;
+      for (let i = 0; i < 31; i++) {
+        let g = gains[i] * 0.40;
+        if (i <= 2) g += tr * 3.8;
+        if (i >= 3 && i <= 6) g += ch * 3.2 + gm * 1.4 + tr * 3.6;
+        if (i >= 7 && i <= 8) g += st * 2.0 + tr * 2.4;
+        if (i >= 9 && i <= 10) g -= ch * 2.2;
+        if (cnFib && i >= 11 && i <= 13) g += 1.6;
+        if (cnSway && i >= 14 && i <= 17) g += 1.3;
+        if (i >= 18 && i <= 21) g += gm * 2.7 + ch * 1.6;
+        if (i === 22 || i === 23) g += ch * 2.2 - st * 1.9 + gm * 1.8;
+        if (i >= 24 && i <= 28) g += gm * 3.0 + ch * 1.5;
+        if (i >= 29) g += st * 3.0 + (cnFib ? 1.5 : 0);
+        gains[i] = Math.max(-15, Math.min(15, Math.round(g * 2) / 2));
+      }
+      document.getElementById("cnStapVal").textContent = cnStap + "% | Sub " + cnTart + "%";
+      document.getElementById("chronoNeuralStatus").textContent =
+        "🧠 [" + cnLabel.toUpperCase() + "]: Cochlear 6ms Sync " + cnCoch +
+        "% • 40Hz Slow-Mo HD " + cnGam + "% • Stapedius Silk " + cnStap +
+        "% • Tartini 24Hz Sub " + cnTart + "% • " +
+        (cnSway ? "0.18Hz Sway ON" : "Sway OFF") + " • " +
+        (cnFib ? "φ-Tape Silk ON" : "Tape Silk OFF");
+      renderBands();
+    }
+
+    function setChronoMode(key, label, coch, gam, stap, tart) {
+      cnLabel = label;
+      cnCoch = coch;
+      cnGam = gam;
+      cnStap = stap;
+      cnTart = tart;
+      document.getElementById("cnCochVal").textContent = coch + "%";
+      document.getElementById("cnCochSlider").value = coch;
+      document.getElementById("cnGamVal").textContent = gam + "%";
+      document.getElementById("cnGamSlider").value = gam;
+      document.getElementById("cnStapSlider").value = stap;
+      document.getElementById("cnTartSlider").value = tart;
+      applyChronoCurve();
+    }
+
+    function updateChronoSlider(which, val) {
+      const v = parseInt(val, 10);
+      if (which === 'coch') { cnCoch = v; document.getElementById("cnCochVal").textContent = v + "%"; }
+      if (which === 'gam') { cnGam = v; document.getElementById("cnGamVal").textContent = v + "%"; }
+      if (which === 'stap') { cnStap = v; }
+      if (which === 'tart') { cnTart = v; }
+      applyChronoCurve();
+    }
+
+    function toggleChronoSway() {
+      cnSway = !cnSway;
+      document.getElementById("cnSwayBtn").textContent = "🦢 0.18Hz Musician Sway: " + (cnSway ? "ON" : "OFF");
+      applyChronoCurve();
+    }
+
+    function toggleChronoFib() {
+      cnFib = !cnFib;
+      document.getElementById("cnFibBtn").textContent = "🌌 φ-Fibonacci Tape Silk: " + (cnFib ? "ON" : "OFF");
+      applyChronoCurve();
     }
 
     renderPresets();

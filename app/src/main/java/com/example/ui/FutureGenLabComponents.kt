@@ -70,6 +70,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.dsp.AcousticVenueClone
 import com.example.dsp.AnalogSaturationMode
+import com.example.dsp.ChronoNeuralBiomimeticMode
 import com.example.dsp.EsportsThreatRadarState
 import com.example.dsp.FutureGenAudioLabEngine
 import com.example.dsp.GlobalTriadMode
@@ -920,6 +921,13 @@ fun FutureGenQuantumLabDialog(
     onUpdateSingerBreathProximity: (Int) -> Unit = {},
     onToggleHaasStageSeparation: () -> Unit = {},
     onToggleWoodenUnpluggedFloor: () -> Unit = {},
+    onSelectChronoNeuralMode: (ChronoNeuralBiomimeticMode) -> Unit = {},
+    onUpdateCochlearDispersionSync: (Int) -> Unit = {},
+    onUpdateGamma40HzTimeDilation: (Int) -> Unit = {},
+    onUpdateStapediusReflexDisarmer: (Int) -> Unit = {},
+    onUpdateTartiniOtoacousticSub: (Int) -> Unit = {},
+    onToggleMicroSaccadicStageSway: () -> Unit = {},
+    onToggleFibonacciGoldenTapeSilk: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -955,13 +963,13 @@ fun FutureGenQuantumLabDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = "EQULTRA LIVE STAGE & ZERO-EARBUD LAB",
+                                text = "EQULTRA CHRONO-NEURAL & LIVE STAGE LAB",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
-                                text = "🎻 Live Instruments • 🌬️ Zero-Earbud • 🧬 Omega-Prime AI • 🛸 2030 R&D",
+                                text = "🧠 Chrono-Neural • 🎻 Live Instruments • 🌬️ Zero-Earbud • 🧬 Omega-Prime",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ElectricCyan
                             )
@@ -984,6 +992,18 @@ fun FutureGenQuantumLabDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // 00000000. 🧠 CHRONO-NEURAL & SUB-QUANTUM BIOMIMETIC ENGINE (6-IN-1 NEURO-ACOUSTIC SUITE)
+                    ChronoNeuralBiomimeticCard(
+                        uiState = uiState,
+                        onSelectMode = onSelectChronoNeuralMode,
+                        onUpdateCochlearDispersionSync = onUpdateCochlearDispersionSync,
+                        onUpdateGamma40HzTimeDilation = onUpdateGamma40HzTimeDilation,
+                        onUpdateStapediusReflexDisarmer = onUpdateStapediusReflexDisarmer,
+                        onUpdateTartiniOtoacousticSub = onUpdateTartiniOtoacousticSub,
+                        onToggleMicroSaccadicStageSway = onToggleMicroSaccadicStageSway,
+                        onToggleFibonacciGoldenTapeSilk = onToggleFibonacciGoldenTapeSilk
+                    )
+
                     // 0000000. 🎻 HOLOGRAPHIC LIVE INSTRUMENT REALISM ENGINE (6-IN-1 LIVE STAGE PHYSICS)
                     HolographicLiveInstrumentCard(
                         uiState = uiState,
@@ -3719,3 +3739,295 @@ fun HolographicLiveInstrumentCard(
         }
     }
 }
+
+@Composable
+fun ChronoNeuralBiomimeticCard(
+    uiState: EqUiState,
+    onSelectMode: (ChronoNeuralBiomimeticMode) -> Unit,
+    onUpdateCochlearDispersionSync: (Int) -> Unit,
+    onUpdateGamma40HzTimeDilation: (Int) -> Unit,
+    onUpdateStapediusReflexDisarmer: (Int) -> Unit,
+    onUpdateTartiniOtoacousticSub: (Int) -> Unit,
+    onToggleMicroSaccadicStageSway: () -> Unit,
+    onToggleFibonacciGoldenTapeSilk: () -> Unit
+) {
+    val isActive = uiState.chronoNeuralMode != ChronoNeuralBiomimeticMode.OFF
+    Surface(
+        color = ObsidianCard,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            width = 2.0.dp,
+            brush = Brush.horizontalGradient(
+                listOf(HyperViolet, ElectricCyan, SignalEmerald, StudioAmber, NeonMagenta)
+            )
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Psychology,
+                            contentDescription = "Chrono-Neural & Sub-Quantum Biomimetic Engine",
+                            tint = ElectricCyan,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "🧠 CHRONO-NEURAL & BIOMIMETIC ENGINE (6-IN-1 NEURO-PHYSICS)",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Cochlear 6ms Fluid Sync • 40Hz Slow-Mo HD Hearing • Stapedius Eardrum Silk • Tartini 24Hz Sub",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = ElectricCyan
+                    )
+                }
+                Text(
+                    text = uiState.chronoNeuralMode.badge,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = AmoledBlack,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier
+                        .background(
+                            if (isActive) ElectricCyan else TextSecondary,
+                            RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+
+            // Live Telemetry Banner
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, if (isActive) ElectricCyan.copy(alpha = 0.7f) else ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = uiState.chronoNeuralTelemetryText,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = if (isActive) ElectricCyan else TextSecondary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                )
+            }
+
+            // 1-Tap Chrono-Neural Biomimetic Mode Chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ChronoNeuralBiomimeticMode.entries.forEach { mode ->
+                    val selected = uiState.chronoNeuralMode == mode
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectMode(mode) },
+                        label = {
+                            Text(
+                                text = mode.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ElectricCyan,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        )
+                    )
+                }
+            }
+
+            // 4 Chrono-Neural Biophysics Sliders
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    // 1. 🌀 Cochlear Basilar-Membrane 6ms Dispersion Corrector
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🌀 Cochlear Basilar-Membrane 6ms Fluid Phase-Sync",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.cochlearDispersionSyncPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.cochlearDispersionSyncPercent.toFloat(),
+                        onValueChange = { onUpdateCochlearDispersionSync(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = ElectricCyan,
+                            activeTrackColor = ElectricCyan
+                        )
+                    )
+
+                    // 2. ⚡ 40Hz Gamma-Wave Thalamocortical Time-Dilation
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "⚡ 40Hz Gamma Auditory Cortex Time-Dilation (Slow-Mo HD)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.gamma40HzTimeDilationPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.gamma40HzTimeDilationPercent.toFloat(),
+                        onValueChange = { onUpdateGamma40HzTimeDilation(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = StudioAmber,
+                            activeTrackColor = StudioAmber
+                        )
+                    )
+
+                    // 3. 🛡️ Stapedius & Tensor-Tympani Reflex Disarmer
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🛡️ Stapedius & Tensor-Tympani Eardrum Muscle Relaxation Silk",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.stapediusReflexDisarmerPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.stapediusReflexDisarmerPercent.toFloat(),
+                        onValueChange = { onUpdateStapediusReflexDisarmer(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = SignalEmerald,
+                            activeTrackColor = SignalEmerald
+                        )
+                    )
+
+                    // 4. 💎 Tartini Otoacoustic 24Hz Phantom Sub-Bass Weaver
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "💎 Tartini Otoacoustic 24Hz–32Hz Self-Generated Sub Weaver",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.tartiniOtoacousticSubPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.tartiniOtoacousticSubPercent.toFloat(),
+                        onValueChange = { onUpdateTartiniOtoacousticSub(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = NeonMagenta,
+                            activeTrackColor = NeonMagenta
+                        )
+                    )
+                }
+            }
+
+            // 5 & 6. 🦢 0.18Hz Micro-Saccadic Stage Sway + 🌌 Fibonacci Golden-Ratio Tape Silk
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = uiState.isMicroSaccadicStageSwayEnabled,
+                    onClick = onToggleMicroSaccadicStageSway,
+                    label = {
+                        Text(
+                            text = if (uiState.isMicroSaccadicStageSwayEnabled) {
+                                "🦢 0.18Hz Musician Breathing & Golden-Ratio Stage Sway: ON"
+                            } else {
+                                "🦢 0.18Hz Musician Breathing & Stage Sway: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = ElectricCyan,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+
+                FilterChip(
+                    selected = uiState.isFibonacciGoldenTapeSilkEnabled,
+                    onClick = onToggleFibonacciGoldenTapeSilk,
+                    label = {
+                        Text(
+                            text = if (uiState.isFibonacciGoldenTapeSilkEnabled) {
+                                "🌌 Fibonacci (1:0.618:0.382) Zero-Grain Analog Tape Silk: ON"
+                            } else {
+                                "🌌 Fibonacci Golden-Ratio Tape Silk: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = StudioAmber,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+            }
+        }
+    }
+}
+
