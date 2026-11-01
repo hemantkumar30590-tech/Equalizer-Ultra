@@ -193,6 +193,27 @@ class AudioDspEngine(
     @Volatile
     private var vestibularDriftOn: Boolean = true
 
+    @Volatile
+    private var liveInstrumentActive: Boolean = false
+
+    @Volatile
+    private var pluckDrumTransientNorm: Float = 0.92f
+
+    @Volatile
+    private var woodHelmholtzNorm: Float = 0.90f
+
+    @Volatile
+    private var sympatheticBleedNorm: Float = 0.88f
+
+    @Volatile
+    private var singerBreathNorm: Float = 0.92f
+
+    @Volatile
+    private var haasStageSeparationOn: Boolean = true
+
+    @Volatile
+    private var woodenUnpluggedFloorOn: Boolean = true
+
     private val _isPlayingTestLoop = MutableStateFlow(false)
     val isPlayingTestLoop: StateFlow<Boolean> = _isPlayingTestLoop.asStateFlow()
 
@@ -311,7 +332,14 @@ class AudioDspEngine(
         airCushion25mPct: Int = 88,
         openBackElectrostaticPct: Int = 90,
         antiVacuumBreeze: Boolean = true,
-        vestibularMicroDrift: Boolean = true
+        vestibularMicroDrift: Boolean = true,
+        liveInstrumentEnabled: Boolean = false,
+        pluckDrumTransientPct: Int = 92,
+        woodHelmholtzBodyPct: Int = 90,
+        sympatheticStringBleedPct: Int = 88,
+        singerBreathProximityPct: Int = 92,
+        haasStageSeparation: Boolean = true,
+        woodenUnpluggedFloor: Boolean = true
     ) {
         neuralBrainwaveMode = brainwaveMode
         radarAzimuthDeg = azimuthDeg.coerceIn(-180f, 180f)
@@ -356,6 +384,13 @@ class AudioDspEngine(
         openBackVentNorm = (openBackElectrostaticPct.coerceIn(0, 100) / 100f)
         antiVacuumBreezeOn = antiVacuumBreeze
         vestibularDriftOn = vestibularMicroDrift
+        liveInstrumentActive = liveInstrumentEnabled
+        pluckDrumTransientNorm = (pluckDrumTransientPct.coerceIn(0, 100) / 100f)
+        woodHelmholtzNorm = (woodHelmholtzBodyPct.coerceIn(0, 100) / 100f)
+        sympatheticBleedNorm = (sympatheticStringBleedPct.coerceIn(0, 100) / 100f)
+        singerBreathNorm = (singerBreathProximityPct.coerceIn(0, 100) / 100f)
+        haasStageSeparationOn = haasStageSeparation
+        woodenUnpluggedFloorOn = woodenUnpluggedFloor
     }
 
     fun updateDspState(
@@ -657,6 +692,31 @@ class AudioDspEngine(
 
                         outL = (outL * (1f + sway)) + occlusionRelief + openCanalAir + airVelvetL + he1OpenVentL + roomBreezeL
                         outR = (outR * (1f - sway)) + occlusionRelief + openCanalAir + airVelvetR + he1OpenVentR + roomBreezeR
+                    }
+
+                    // 🎻 Holographic Live Instrument Realism Engine (6-in-1 Live Stage Physics Suite)
+                    if (active && liveInstrumentActive) {
+                        // 1. ⚡ 2ms Pluck, Bow & Drum-Skin Transient Restorer (sharp attack on drum skin & string pluck)
+                        val pluckSnap = ((kickEnv.toFloat() * subComp * 0.24f) + (stepEnv.toFloat() * hiComp * 0.26f)) * pluckDrumTransientNorm
+                        // 2. 🪵 Spruce-Wood & Hollow-Body Helmholtz Resonator (110Hz/220Hz/440Hz wooden cavity bloom)
+                        val woodResonance = (
+                            (sin(2.0 * PI * 110.0 * t) * 0.45 +
+                                sin(2.0 * PI * 220.0 * t) * 0.35 +
+                                sin(2.0 * PI * 440.0 * t) * 0.20) * stepEnv * 0.14 * woodHelmholtzNorm
+                            ).toFloat()
+                        // 3. 🔗 Sympathetic String & Snare-Wire Stage Bleed (kick energy excites open strings & snare wires)
+                        val sympatheticShimmer = (kickEnv.toFloat() * hiComp * 0.22f + tapDeskR * 0.14f) * sympatheticBleedNorm
+                        // 4. 👄 Singer Breath, Lip-Articulation & Un-Mic'd Proximity (4ft front vocal projection)
+                        val liveVocalProximity = (midComp * 0.21f + hiComp * 0.11f) * singerBreathNorm
+                        // 5. 🧭 Haas 18ms Acoustic Stage Separation Matrix (distinct left/right instrument chairs)
+                        val haasSpreadL = if (haasStageSeparationOn) (tapDeskR * 0.18f - tapWallL * 0.10f) else 0f
+                        val haasSpreadR = if (haasStageSeparationOn) (tapFloorL * 0.18f - tapWallR * 0.10f) else 0f
+                        // 6. 🕯️ Tiny Unplugged Wooden Club & First-Reflection Floor Bounce (9–14ms intimate wood floor)
+                        val unpluggedClubL = if (woodenUnpluggedFloorOn) tapFloorL * 0.19f else 0f
+                        val unpluggedClubR = if (woodenUnpluggedFloorOn) tapDeskR * 0.19f else 0f
+
+                        outL += pluckSnap + woodResonance + sympatheticShimmer + liveVocalProximity + haasSpreadL + unpluggedClubL
+                        outR += pluckSnap + woodResonance + sympatheticShimmer + liveVocalProximity + haasSpreadR + unpluggedClubR
                     }
 
                     // Analog Vacuum Tube / Tape Harmonic Saturation

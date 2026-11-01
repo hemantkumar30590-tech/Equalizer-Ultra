@@ -519,7 +519,17 @@ fun EqultraScreen(
                         onUpdateAirCushion25m = viewModel::updateAirCushion25mPercent,
                         onUpdateOpenBackElectrostatic = viewModel::updateOpenBackElectrostaticPercent,
                         onToggleAntiVacuumBreeze = viewModel::toggleAntiVacuumBreeze,
-                        onToggleVestibularMicroDrift = viewModel::toggleVestibularMicroDrift
+                        onToggleVestibularMicroDrift = viewModel::toggleVestibularMicroDrift,
+                        onSelectLiveInstrumentMode = { mode ->
+                            viewModel.setLiveInstrumentMode(mode)
+                            Toast.makeText(context, "Live Stage: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdatePluckDrumTransient = viewModel::updatePluckDrumTransientPercent,
+                        onUpdateWoodHelmholtzBody = viewModel::updateWoodHelmholtzBodyPercent,
+                        onUpdateSympatheticStringBleed = viewModel::updateSympatheticStringBleedPercent,
+                        onUpdateSingerBreathProximity = viewModel::updateSingerBreathProximityPercent,
+                        onToggleHaasStageSeparation = viewModel::toggleHaasStageSeparation,
+                        onToggleWoodenUnpluggedFloor = viewModel::toggleWoodenUnpluggedFloorBounce
                     )
 
                     2 -> DevicePresetsTab(
@@ -857,6 +867,16 @@ fun EqultraScreen(
             onUpdateOpenBackElectrostatic = viewModel::updateOpenBackElectrostaticPercent,
             onToggleAntiVacuumBreeze = viewModel::toggleAntiVacuumBreeze,
             onToggleVestibularMicroDrift = viewModel::toggleVestibularMicroDrift,
+            onSelectLiveInstrumentMode = { mode ->
+                viewModel.setLiveInstrumentMode(mode)
+                Toast.makeText(context, "Live Stage: ${mode.title}", Toast.LENGTH_SHORT).show()
+            },
+            onUpdatePluckDrumTransient = viewModel::updatePluckDrumTransientPercent,
+            onUpdateWoodHelmholtzBody = viewModel::updateWoodHelmholtzBodyPercent,
+            onUpdateSympatheticStringBleed = viewModel::updateSympatheticStringBleedPercent,
+            onUpdateSingerBreathProximity = viewModel::updateSingerBreathProximityPercent,
+            onToggleHaasStageSeparation = viewModel::toggleHaasStageSeparation,
+            onToggleWoodenUnpluggedFloor = viewModel::toggleWoodenUnpluggedFloorBounce,
             onDismiss = { viewModel.setFutureLabDialogVisible(false) }
         )
     }
@@ -1528,7 +1548,14 @@ private fun BassAndSpatialDspTab(
     onUpdateAirCushion25m: (Int) -> Unit,
     onUpdateOpenBackElectrostatic: (Int) -> Unit,
     onToggleAntiVacuumBreeze: () -> Unit,
-    onToggleVestibularMicroDrift: () -> Unit
+    onToggleVestibularMicroDrift: () -> Unit,
+    onSelectLiveInstrumentMode: (com.example.dsp.HolographicLiveInstrumentMode) -> Unit,
+    onUpdatePluckDrumTransient: (Int) -> Unit,
+    onUpdateWoodHelmholtzBody: (Int) -> Unit,
+    onUpdateSympatheticStringBleed: (Int) -> Unit,
+    onUpdateSingerBreathProximity: (Int) -> Unit,
+    onToggleHaasStageSeparation: () -> Unit,
+    onToggleWoodenUnpluggedFloor: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -1545,6 +1572,20 @@ private fun BassAndSpatialDspTab(
             peakDb = peakDb,
             bassBoostPercent = uiState.bassBoostStrength,
             spatialPercent = uiState.spatialLevel
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 🎻 Holographic Live Instrument Realism Engine (6-in-1 Live Stage Physics Suite) directly at top of Bass & 3D Tab
+        HolographicLiveInstrumentCard(
+            uiState = uiState,
+            onSelectMode = onSelectLiveInstrumentMode,
+            onUpdatePluckDrumTransient = onUpdatePluckDrumTransient,
+            onUpdateWoodHelmholtzBody = onUpdateWoodHelmholtzBody,
+            onUpdateSympatheticStringBleed = onUpdateSympatheticStringBleed,
+            onUpdateSingerBreathProximity = onUpdateSingerBreathProximity,
+            onToggleHaasStageSeparation = onToggleHaasStageSeparation,
+            onToggleWoodenUnpluggedFloor = onToggleWoodenUnpluggedFloor
         )
 
         Spacer(modifier = Modifier.height(12.dp))

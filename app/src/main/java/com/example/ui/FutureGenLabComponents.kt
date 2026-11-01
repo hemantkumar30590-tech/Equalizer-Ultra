@@ -74,6 +74,7 @@ import com.example.dsp.EsportsThreatRadarState
 import com.example.dsp.FutureGenAudioLabEngine
 import com.example.dsp.GlobalTriadMode
 import com.example.dsp.GyroHeadTrackingMode
+import com.example.dsp.HolographicLiveInstrumentMode
 import com.example.dsp.HolographicVibeProfile
 import com.example.dsp.NeuralBrainwaveMode
 import com.example.dsp.OmegaPrimeMode
@@ -912,6 +913,13 @@ fun FutureGenQuantumLabDialog(
     onUpdateOpenBackElectrostatic: (Int) -> Unit = {},
     onToggleAntiVacuumBreeze: () -> Unit = {},
     onToggleVestibularMicroDrift: () -> Unit = {},
+    onSelectLiveInstrumentMode: (HolographicLiveInstrumentMode) -> Unit = {},
+    onUpdatePluckDrumTransient: (Int) -> Unit = {},
+    onUpdateWoodHelmholtzBody: (Int) -> Unit = {},
+    onUpdateSympatheticStringBleed: (Int) -> Unit = {},
+    onUpdateSingerBreathProximity: (Int) -> Unit = {},
+    onToggleHaasStageSeparation: () -> Unit = {},
+    onToggleWoodenUnpluggedFloor: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -947,13 +955,13 @@ fun FutureGenQuantumLabDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = "EQULTRA ZERO-EARBUD & OMEGA-PRIME LAB",
+                                text = "EQULTRA LIVE STAGE & ZERO-EARBUD LAB",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
-                                text = "🌬️ Zero-Earbud Open-Air • 🧬 Omega-Prime AI • 🛸 2030 R&D • 🌐 Triad",
+                                text = "🎻 Live Instruments • 🌬️ Zero-Earbud • 🧬 Omega-Prime AI • 🛸 2030 R&D",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ElectricCyan
                             )
@@ -976,6 +984,18 @@ fun FutureGenQuantumLabDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // 0000000. 🎻 HOLOGRAPHIC LIVE INSTRUMENT REALISM ENGINE (6-IN-1 LIVE STAGE PHYSICS)
+                    HolographicLiveInstrumentCard(
+                        uiState = uiState,
+                        onSelectMode = onSelectLiveInstrumentMode,
+                        onUpdatePluckDrumTransient = onUpdatePluckDrumTransient,
+                        onUpdateWoodHelmholtzBody = onUpdateWoodHelmholtzBody,
+                        onUpdateSympatheticStringBleed = onUpdateSympatheticStringBleed,
+                        onUpdateSingerBreathProximity = onUpdateSingerBreathProximity,
+                        onToggleHaasStageSeparation = onToggleHaasStageSeparation,
+                        onToggleWoodenUnpluggedFloor = onToggleWoodenUnpluggedFloor
+                    )
+
                     // 000000. 🌬️ ZERO-EARBUD INVISIBLE OPEN-AIR ENGINE (6-IN-1 ANTI-OCCLUSION SUITE)
                     ZeroEarbudInvisibleOpenAirCard(
                         uiState = uiState,
@@ -3399,6 +3419,297 @@ fun ZeroEarbudInvisibleOpenAirCard(
                     },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = ElectricCyan,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun HolographicLiveInstrumentCard(
+    uiState: EqUiState,
+    onSelectMode: (HolographicLiveInstrumentMode) -> Unit,
+    onUpdatePluckDrumTransient: (Int) -> Unit,
+    onUpdateWoodHelmholtzBody: (Int) -> Unit,
+    onUpdateSympatheticStringBleed: (Int) -> Unit,
+    onUpdateSingerBreathProximity: (Int) -> Unit,
+    onToggleHaasStageSeparation: () -> Unit,
+    onToggleWoodenUnpluggedFloor: () -> Unit
+) {
+    val isActive = uiState.liveInstrumentMode != HolographicLiveInstrumentMode.OFF
+    Surface(
+        color = ObsidianCard,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            width = 2.0.dp,
+            brush = Brush.horizontalGradient(
+                listOf(StudioAmber, SignalEmerald, ElectricCyan, NeonMagenta, HyperViolet)
+            )
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.SpeakerGroup,
+                            contentDescription = "Holographic Live Instrument Realism Engine",
+                            tint = StudioAmber,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "🎻 HOLOGRAPHIC LIVE INSTRUMENT REALISM (6-IN-1 STAGE)",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Makes Every Instrument Sound 100% Live! 2ms Pluck/Skin Snap • Wood Body • Sympathetic Bleed",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = StudioAmber
+                    )
+                }
+                Text(
+                    text = uiState.liveInstrumentMode.badge,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = AmoledBlack,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier
+                        .background(
+                            if (isActive) StudioAmber else TextSecondary,
+                            RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+
+            // Live Telemetry Banner
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, if (isActive) StudioAmber.copy(alpha = 0.7f) else ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = uiState.liveInstrumentTelemetryText,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = if (isActive) StudioAmber else TextSecondary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                )
+            }
+
+            // 1-Tap Live Instrument Mode Chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                HolographicLiveInstrumentMode.entries.forEach { mode ->
+                    val selected = uiState.liveInstrumentMode == mode
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectMode(mode) },
+                        label = {
+                            Text(
+                                text = mode.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = StudioAmber,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        )
+                    )
+                }
+            }
+
+            // 4 Live Instrument Physics Sliders
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    // 1. ⚡ 2ms Pluck, Bow & Drum-Skin Transient Restorer
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "⚡ 2ms String-Pluck, Bow-Rosin & Drum-Skin Attack Restorer",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.pluckDrumTransientPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.pluckDrumTransientPercent.toFloat(),
+                        onValueChange = { onUpdatePluckDrumTransient(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = StudioAmber,
+                            activeTrackColor = StudioAmber
+                        )
+                    )
+
+                    // 2. 🪵 Spruce-Wood & Hollow-Body Helmholtz Resonator
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🪵 Spruce-Wood & Hollow-Body Helmholtz Cavity (110/220/440Hz)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.woodHelmholtzBodyPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.woodHelmholtzBodyPercent.toFloat(),
+                        onValueChange = { onUpdateWoodHelmholtzBody(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = SignalEmerald,
+                            activeTrackColor = SignalEmerald
+                        )
+                    )
+
+                    // 3. 🔗 Sympathetic String & Snare-Wire Stage Bleed
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🔗 Sympathetic String & Snare-Wire Live Stage Bleed",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.sympatheticStringBleedPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.sympatheticStringBleedPercent.toFloat(),
+                        onValueChange = { onUpdateSympatheticStringBleed(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = ElectricCyan,
+                            activeTrackColor = ElectricCyan
+                        )
+                    )
+
+                    // 4. 👄 Singer Breath, Lip-Articulation & Un-Mic'd Proximity
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "👄 Live Singer Breath & Un-Mic'd 4ft Front-Row Projection",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.singerBreathProximityPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.singerBreathProximityPercent.toFloat(),
+                        onValueChange = { onUpdateSingerBreathProximity(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = NeonMagenta,
+                            activeTrackColor = NeonMagenta
+                        )
+                    )
+                }
+            }
+
+            // 5 & 6. 🧭 Haas 18ms Acoustic Stage Separation + 🕯️ Tiny Unplugged Wooden Club Floor Bounce
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = uiState.isHaasStageSeparationEnabled,
+                    onClick = onToggleHaasStageSeparation,
+                    label = {
+                        Text(
+                            text = if (uiState.isHaasStageSeparationEnabled) {
+                                "🧭 Haas 18ms Stage Separation (Distinct Chair for Every Instrument): ON"
+                            } else {
+                                "🧭 Haas 18ms Stage Separation Matrix: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = StudioAmber,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+
+                FilterChip(
+                    selected = uiState.isWoodenUnpluggedFloorEnabled,
+                    onClick = onToggleWoodenUnpluggedFloor,
+                    label = {
+                        Text(
+                            text = if (uiState.isWoodenUnpluggedFloorEnabled) {
+                                "🕯️ Unplugged Wooden Stage Floor & 12ms First-Reflection: ON"
+                            } else {
+                                "🕯️ Unplugged Wooden Stage Floor Bounce: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = SignalEmerald,
                         selectedLabelColor = AmoledBlack,
                         containerColor = AmoledBlack,
                         labelColor = TextSecondary

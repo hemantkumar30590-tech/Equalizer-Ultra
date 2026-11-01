@@ -22,6 +22,7 @@ import com.example.dsp.EsportsThreatRadarState
 import com.example.dsp.FutureGenAudioLabEngine
 import com.example.dsp.GlobalTriadMode
 import com.example.dsp.GyroHeadTrackingMode
+import com.example.dsp.HolographicLiveInstrumentMode
 import com.example.dsp.HolographicVibeProfile
 import com.example.dsp.NeuralBrainwaveMode
 import com.example.dsp.OmegaPrimeMode
@@ -165,7 +166,16 @@ data class EqUiState(
     val openBackElectrostaticPercent: Int = 90,
     val isAntiVacuumBreezeEnabled: Boolean = true,
     val isVestibularMicroDriftEnabled: Boolean = true,
-    val zeroEarbudTelemetryText: String = "🌬️ ZERO-EARBUD ENGINE READY • Tap 👂 Bare-Ear 100%, 🎧 HE-1 Open-Back or 🧬 Bionic Open-Air Omega"
+    val zeroEarbudTelemetryText: String = "🌬️ ZERO-EARBUD ENGINE READY • Tap 👂 Bare-Ear 100%, 🎧 HE-1 Open-Back or 🧬 Bionic Open-Air Omega",
+    // 🎻 Holographic Live Instrument Realism Engine (6-in-1 Live Stage Physics Suite)
+    val liveInstrumentMode: HolographicLiveInstrumentMode = HolographicLiveInstrumentMode.OFF,
+    val pluckDrumTransientPercent: Int = 92,
+    val woodHelmholtzBodyPercent: Int = 90,
+    val sympatheticStringBleedPercent: Int = 88,
+    val singerBreathProximityPercent: Int = 92,
+    val isHaasStageSeparationEnabled: Boolean = true,
+    val isWoodenUnpluggedFloorEnabled: Boolean = true,
+    val liveInstrumentTelemetryText: String = "🎻 LIVE INSTRUMENT ENGINE READY • Tap 🎸 MTV/Coke Studio Unplugged, 🥁 Live Drum Kit or 🔥 Live Concert Omega"
 )
 
 class EqViewModel(application: Application) : AndroidViewModel(application) {
@@ -1972,6 +1982,113 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         recomputeAndApplyZeroEarbud()
     }
 
+    // =========================================================================
+    // 🎻 HOLOGRAPHIC LIVE INSTRUMENT REALISM ENGINE (6-IN-1 LIVE STAGE PHYSICS)
+    // =========================================================================
+
+    private fun recomputeAndApplyLiveInstrument() {
+        _uiState.update { s ->
+            val result = FutureGenAudioLabEngine.synthesizeHolographicLiveInstrumentSuite(
+                baseBands = s.bandGainsDb,
+                mode = s.liveInstrumentMode,
+                pluckDrumTransientPercent = s.pluckDrumTransientPercent,
+                woodHelmholtzBodyPercent = s.woodHelmholtzBodyPercent,
+                sympatheticStringBleedPercent = s.sympatheticStringBleedPercent,
+                singerBreathProximityPercent = s.singerBreathProximityPercent,
+                haasStageSeparationEnabled = s.isHaasStageSeparationEnabled,
+                woodenUnpluggedFloorEnabled = s.isWoodenUnpluggedFloorEnabled
+            )
+            if (s.liveInstrumentMode == HolographicLiveInstrumentMode.OFF) {
+                s.copy(liveInstrumentTelemetryText = result.telemetrySummary)
+            } else {
+                s.copy(
+                    isMasterEnabled = true,
+                    activePresetName = s.liveInstrumentMode.title,
+                    bandGainsDb = result.sculptedBands31,
+                    bassBoostStrength = result.effectiveBassBoost,
+                    spatialLevel = result.effectiveSpatial3D,
+                    reverbLevel = result.effectiveReverbLevel,
+                    reverbRoom = result.effectiveReverbRoom,
+                    crossfeedStrengthPercent = result.effectiveCrossfeedPct,
+                    analogDrivePercent = result.effectiveAnalogDrivePct,
+                    preampDb = result.effectivePreampDb,
+                    liveInstrumentTelemetryText = result.telemetrySummary
+                )
+            }
+        }
+        syncDspEngine()
+    }
+
+    fun setLiveInstrumentMode(mode: HolographicLiveInstrumentMode) {
+        _uiState.update { it.copy(liveInstrumentMode = mode) }
+        hapticManager.onAiPresetApplied("Live Stage ${mode.badge}")
+        recomputeAndApplyLiveInstrument()
+    }
+
+    fun updatePluckDrumTransientPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.liveInstrumentMode == HolographicLiveInstrumentMode.OFF) {
+                HolographicLiveInstrumentMode.LIVE_DRUM_BASS_FRONT_ROW
+            } else state.liveInstrumentMode
+            state.copy(
+                liveInstrumentMode = nextMode,
+                pluckDrumTransientPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyLiveInstrument()
+    }
+
+    fun updateWoodHelmholtzBodyPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.liveInstrumentMode == HolographicLiveInstrumentMode.OFF) {
+                HolographicLiveInstrumentMode.MTV_COKE_STUDIO_UNPLUGGED
+            } else state.liveInstrumentMode
+            state.copy(
+                liveInstrumentMode = nextMode,
+                woodHelmholtzBodyPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyLiveInstrument()
+    }
+
+    fun updateSympatheticStringBleedPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.liveInstrumentMode == HolographicLiveInstrumentMode.OFF) {
+                HolographicLiveInstrumentMode.ROYAL_ORCHESTRA_VIOLIN_HALL
+            } else state.liveInstrumentMode
+            state.copy(
+                liveInstrumentMode = nextMode,
+                sympatheticStringBleedPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyLiveInstrument()
+    }
+
+    fun updateSingerBreathProximityPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.liveInstrumentMode == HolographicLiveInstrumentMode.OFF) {
+                HolographicLiveInstrumentMode.INTIMATE_JAZZ_CAFE_4FT
+            } else state.liveInstrumentMode
+            state.copy(
+                liveInstrumentMode = nextMode,
+                singerBreathProximityPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyLiveInstrument()
+    }
+
+    fun toggleHaasStageSeparation() {
+        _uiState.update { it.copy(isHaasStageSeparationEnabled = !it.isHaasStageSeparationEnabled) }
+        hapticManager.onControlTick("Haas 18ms Stage Separation")
+        recomputeAndApplyLiveInstrument()
+    }
+
+    fun toggleWoodenUnpluggedFloorBounce() {
+        _uiState.update { it.copy(isWoodenUnpluggedFloorEnabled = !it.isWoodenUnpluggedFloorEnabled) }
+        hapticManager.onControlTick("Wooden Unplugged Club Floor")
+        recomputeAndApplyLiveInstrument()
+    }
+
     private fun startFutureGenCoordinator() {
         viewModelScope.launch {
             var tickCount = 0
@@ -2033,7 +2150,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                         airCushion25mPct = s.airCushion25mPercent,
                         openBackElectrostaticPct = s.openBackElectrostaticPercent,
                         antiVacuumBreeze = s.isAntiVacuumBreezeEnabled,
-                        vestibularMicroDrift = s.isVestibularMicroDriftEnabled
+                        vestibularMicroDrift = s.isVestibularMicroDriftEnabled,
+                        liveInstrumentEnabled = s.liveInstrumentMode != HolographicLiveInstrumentMode.OFF,
+                        pluckDrumTransientPct = s.pluckDrumTransientPercent,
+                        woodHelmholtzBodyPct = s.woodHelmholtzBodyPercent,
+                        sympatheticStringBleedPct = s.sympatheticStringBleedPercent,
+                        singerBreathProximityPct = s.singerBreathProximityPercent,
+                        haasStageSeparation = s.isHaasStageSeparationEnabled,
+                        woodenUnpluggedFloor = s.isWoodenUnpluggedFloorEnabled
                     )
                 }
                 // Bass-to-Haptic Sub-Woofer Tactile Engine: pulse phone vibrator on sub-bass hits
@@ -2137,7 +2261,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             airCushion25mPct = s.airCushion25mPercent,
             openBackElectrostaticPct = s.openBackElectrostaticPercent,
             antiVacuumBreeze = s.isAntiVacuumBreezeEnabled,
-            vestibularMicroDrift = s.isVestibularMicroDriftEnabled
+            vestibularMicroDrift = s.isVestibularMicroDriftEnabled,
+            liveInstrumentEnabled = s.liveInstrumentMode != HolographicLiveInstrumentMode.OFF,
+            pluckDrumTransientPct = s.pluckDrumTransientPercent,
+            woodHelmholtzBodyPct = s.woodHelmholtzBodyPercent,
+            sympatheticStringBleedPct = s.sympatheticStringBleedPercent,
+            singerBreathProximityPct = s.singerBreathProximityPercent,
+            haasStageSeparation = s.isHaasStageSeparationEnabled,
+            woodenUnpluggedFloor = s.isWoodenUnpluggedFloorEnabled
         )
         dspEngine.updateDspState(
             enabled = s.isMasterEnabled,
