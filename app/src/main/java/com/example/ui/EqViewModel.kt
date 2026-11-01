@@ -33,6 +33,7 @@ import com.example.dsp.SpatialStageNode
 import com.example.dsp.SpeedCruiseMode
 import com.example.dsp.StemDeMixerPreset
 import com.example.dsp.VoiceControlAction
+import com.example.dsp.ZeroEarbudOpenAirMode
 import com.example.service.EqForegroundService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -155,7 +156,16 @@ data class EqUiState(
     val elevationHelixSkyPercent: Int = 86,
     val goldenPhiHarmonicPercent: Int = 84,
     val isBioGrooveCardioSyncEnabled: Boolean = true,
-    val omegaPrimeTelemetryText: String = "🧬 OMEGA-PRIME AI READY • Tap 🧬 Omega-Prime AI, 🎤 Vocal Sidechain, 🌀 Sky Helix or ✨ Golden Phi=1.618"
+    val omegaPrimeTelemetryText: String = "🧬 OMEGA-PRIME AI READY • Tap 🧬 Omega-Prime AI, 🎤 Vocal Sidechain, 🌀 Sky Helix or ✨ Golden Phi=1.618",
+    // 🌬️ Zero-Earbud Invisible Open-Air Engine (6-in-1 Anti-Occlusion & Bionic Vent Suite)
+    val zeroEarbudMode: ZeroEarbudOpenAirMode = ZeroEarbudOpenAirMode.OFF,
+    val occlusionValvePercent: Int = 92,
+    val openCanalUnplugPercent: Int = 90,
+    val airCushion25mPercent: Int = 88,
+    val openBackElectrostaticPercent: Int = 90,
+    val isAntiVacuumBreezeEnabled: Boolean = true,
+    val isVestibularMicroDriftEnabled: Boolean = true,
+    val zeroEarbudTelemetryText: String = "🌬️ ZERO-EARBUD ENGINE READY • Tap 👂 Bare-Ear 100%, 🎧 HE-1 Open-Back or 🧬 Bionic Open-Air Omega"
 )
 
 class EqViewModel(application: Application) : AndroidViewModel(application) {
@@ -1856,6 +1866,112 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         recomputeAndApplyOmegaPrime()
     }
 
+    // =========================================================================
+    // 🌬️ ZERO-EARBUD INVISIBLE OPEN-AIR ENGINE (6-IN-1 ANTI-OCCLUSION SUITE)
+    // =========================================================================
+
+    private fun recomputeAndApplyZeroEarbud() {
+        _uiState.update { s ->
+            val result = FutureGenAudioLabEngine.synthesizeZeroEarbudOpenAirSuite(
+                baseBands = s.bandGainsDb,
+                mode = s.zeroEarbudMode,
+                occlusionValvePercent = s.occlusionValvePercent,
+                openCanalUnplugPercent = s.openCanalUnplugPercent,
+                airCushion25mPercent = s.airCushion25mPercent,
+                openBackElectrostaticPercent = s.openBackElectrostaticPercent,
+                antiVacuumBreezeEnabled = s.isAntiVacuumBreezeEnabled,
+                vestibularMicroDriftEnabled = s.isVestibularMicroDriftEnabled
+            )
+            if (s.zeroEarbudMode == ZeroEarbudOpenAirMode.OFF) {
+                s.copy(zeroEarbudTelemetryText = result.telemetrySummary)
+            } else {
+                s.copy(
+                    isMasterEnabled = true,
+                    activePresetName = s.zeroEarbudMode.title,
+                    bandGainsDb = result.sculptedBands31,
+                    bassBoostStrength = result.effectiveBassBoost,
+                    spatialLevel = result.effectiveSpatial3D,
+                    reverbLevel = result.effectiveReverbLevel,
+                    reverbRoom = result.effectiveReverbRoom,
+                    crossfeedStrengthPercent = result.effectiveCrossfeedPct,
+                    preampDb = result.effectivePreampDb,
+                    zeroEarbudTelemetryText = result.telemetrySummary
+                )
+            }
+        }
+        syncDspEngine()
+    }
+
+    fun setZeroEarbudMode(mode: ZeroEarbudOpenAirMode) {
+        _uiState.update { it.copy(zeroEarbudMode = mode) }
+        hapticManager.onAiPresetApplied("Zero-Earbud ${mode.badge}")
+        recomputeAndApplyZeroEarbud()
+    }
+
+    fun updateOcclusionValvePercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.zeroEarbudMode == ZeroEarbudOpenAirMode.OFF) {
+                ZeroEarbudOpenAirMode.TWS_PRESSURE_RELIEF_VALVE
+            } else state.zeroEarbudMode
+            state.copy(
+                zeroEarbudMode = nextMode,
+                occlusionValvePercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyZeroEarbud()
+    }
+
+    fun updateOpenCanalUnplugPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.zeroEarbudMode == ZeroEarbudOpenAirMode.OFF) {
+                ZeroEarbudOpenAirMode.BARE_EAR_INVISIBLE_100
+            } else state.zeroEarbudMode
+            state.copy(
+                zeroEarbudMode = nextMode,
+                openCanalUnplugPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyZeroEarbud()
+    }
+
+    fun updateAirCushion25mPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.zeroEarbudMode == ZeroEarbudOpenAirMode.OFF) {
+                ZeroEarbudOpenAirMode.BARE_EAR_INVISIBLE_100
+            } else state.zeroEarbudMode
+            state.copy(
+                zeroEarbudMode = nextMode,
+                airCushion25mPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyZeroEarbud()
+    }
+
+    fun updateOpenBackElectrostaticPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.zeroEarbudMode == ZeroEarbudOpenAirMode.OFF) {
+                ZeroEarbudOpenAirMode.HE1_OPEN_BACK_ELECTROSTATIC
+            } else state.zeroEarbudMode
+            state.copy(
+                zeroEarbudMode = nextMode,
+                openBackElectrostaticPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyZeroEarbud()
+    }
+
+    fun toggleAntiVacuumBreeze() {
+        _uiState.update { it.copy(isAntiVacuumBreezeEnabled = !it.isAntiVacuumBreezeEnabled) }
+        hapticManager.onControlTick("Anti-Vacuum Breeze Cushion")
+        recomputeAndApplyZeroEarbud()
+    }
+
+    fun toggleVestibularMicroDrift() {
+        _uiState.update { it.copy(isVestibularMicroDriftEnabled = !it.isVestibularMicroDriftEnabled) }
+        hapticManager.onControlTick("0.4Hz Vestibular Micro-Drift")
+        recomputeAndApplyZeroEarbud()
+    }
+
     private fun startFutureGenCoordinator() {
         viewModelScope.launch {
             var tickCount = 0
@@ -1910,7 +2026,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                         vocalSidechainDuckPct = s.vocalSidechainDuckPercent,
                         elevationHelixSkyPct = s.elevationHelixSkyPercent,
                         goldenPhiHarmonicPct = s.goldenPhiHarmonicPercent,
-                        bioGrooveCardioSync = s.isBioGrooveCardioSyncEnabled
+                        bioGrooveCardioSync = s.isBioGrooveCardioSyncEnabled,
+                        zeroEarbudEnabled = s.zeroEarbudMode != ZeroEarbudOpenAirMode.OFF,
+                        occlusionValvePct = s.occlusionValvePercent,
+                        openCanalUnplugPct = s.openCanalUnplugPercent,
+                        airCushion25mPct = s.airCushion25mPercent,
+                        openBackElectrostaticPct = s.openBackElectrostaticPercent,
+                        antiVacuumBreeze = s.isAntiVacuumBreezeEnabled,
+                        vestibularMicroDrift = s.isVestibularMicroDriftEnabled
                     )
                 }
                 // Bass-to-Haptic Sub-Woofer Tactile Engine: pulse phone vibrator on sub-bass hits
@@ -2007,7 +2130,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             vocalSidechainDuckPct = s.vocalSidechainDuckPercent,
             elevationHelixSkyPct = s.elevationHelixSkyPercent,
             goldenPhiHarmonicPct = s.goldenPhiHarmonicPercent,
-            bioGrooveCardioSync = s.isBioGrooveCardioSyncEnabled
+            bioGrooveCardioSync = s.isBioGrooveCardioSyncEnabled,
+            zeroEarbudEnabled = s.zeroEarbudMode != ZeroEarbudOpenAirMode.OFF,
+            occlusionValvePct = s.occlusionValvePercent,
+            openCanalUnplugPct = s.openCanalUnplugPercent,
+            airCushion25mPct = s.airCushion25mPercent,
+            openBackElectrostaticPct = s.openBackElectrostaticPercent,
+            antiVacuumBreeze = s.isAntiVacuumBreezeEnabled,
+            vestibularMicroDrift = s.isVestibularMicroDriftEnabled
         )
         dspEngine.updateDspState(
             enabled = s.isMasterEnabled,

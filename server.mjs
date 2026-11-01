@@ -250,6 +250,48 @@ const HTML_PAGE = `<!DOCTYPE html>
   </header>
 
   <main>
+    <!-- 🌬️ Zero-Earbud Invisible Open-Air Engine (6-in-1 Anti-Occlusion & Bionic Vent Suite) -->
+    <div class="quantum-card" style="border-color: var(--emerald);">
+      <div class="card-header">
+        <div>
+          <span class="card-title" style="color:var(--cyan);">🌬️ ZERO-EARBUD INVISIBLE OPEN-AIR ENGINE (0% EARBUD PLUGGED FEEL — NEW!)</span>
+          <div id="zeroEarbudStatus" style="font-size:11.5px;color:var(--emerald);margin-top:3px;font-family:monospace;">
+            🌬️ [🧬 BIONIC OPEN-AIR]: Occlusion Valve -3.6dB (160Hz) • Open-Canal 2.7kHz +3.6dB • 2.5m Air Cushion 88% • HE-1 Vent 90% • -58dB Breeze ON • 0.4Hz Drift ON
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="chip" onclick="setZeroEarbudMode('off', 'Standard Earbud Seal (Off)', 0, 0, 0, 0)">⏹️ Sealed (Off)</button>
+          <button class="chip" onclick="setZeroEarbudMode('valve', '🌬️ Tympanic Pressure Relief Valve', 100, 80, 75, 70)">🌬️ Zero Pressure Valve</button>
+          <button class="chip" onclick="setZeroEarbudMode('he1', '🎧 Sennheiser HE-1 / Stax Open-Back', 85, 90, 85, 100)">🎧 HE-1 Open-Back Vent</button>
+          <button class="chip" onclick="setZeroEarbudMode('bare', '👂 100% Bare-Ear Invisible', 95, 100, 100, 90)">👂 100% Bare-Ear Invisible</button>
+          <button class="chip active" onclick="setZeroEarbudMode('bionic', '🧬 Bionic Open-Air Omega (All 6)', 92, 90, 88, 90)">🧬 Bionic Open-Air Omega</button>
+        </div>
+      </div>
+
+      <div class="quantum-grid">
+        <div class="q-box">
+          <h4><span>🌬️ Tympanic 160Hz Occlusion Relief Valve</span><span id="zeOccVal" style="color:var(--cyan);">92%</span></h4>
+          <p>Drains 135Hz–260Hz sealed-canal syringe pressure while keeping 25–63Hz sub-bass floating</p>
+          <input id="zeOccSlider" type="range" min="0" max="100" value="92" style="width:100%;accent-color:var(--cyan);" oninput="updateZeroEarbudSlider('occ', this.value)" />
+        </div>
+        <div class="q-box">
+          <h4><span>👂 Open-Canal 2.7kHz Un-Plugger</span><span id="zeCanalVal" style="color:var(--emerald);">90%</span></h4>
+          <p>Restores natural 2.7kHz bare-ear concha resonance &amp; erases 7.5kHz silicone nozzle spike</p>
+          <input id="zeCanalSlider" type="range" min="0" max="100" value="90" style="width:100%;accent-color:var(--emerald);" oninput="updateZeroEarbudSlider('canal', this.value)" />
+        </div>
+        <div class="q-box">
+          <h4><span>☁️ 2.5m Air Cushion &amp; 🎧 HE-1 Vent</span><span id="zeAirVal" style="color:var(--amber);">88% | HE-1 90%</span></h4>
+          <p>Stokes-Kirchhoff 2.5m molecular air cushion + Stax/HE-1 open-back dipole vent + 0.4Hz drift</p>
+          <input id="zeAirSlider" type="range" min="0" max="100" value="88" style="width:100%;accent-color:var(--amber);" oninput="updateZeroEarbudSlider('air', this.value)" />
+          <input id="zeVentSlider" type="range" min="0" max="100" value="90" style="width:100%;accent-color:var(--magenta);margin-top:6px;" oninput="updateZeroEarbudSlider('vent', this.value)" />
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">
+            <button class="chip active" id="zeBreezeBtn" onclick="toggleZeroBreeze()">🍃 -58dB Air Breeze: ON</button>
+            <button class="chip active" id="zeDriftBtn" onclick="toggleZeroDrift()">🧭 0.4Hz Micro-Drift: ON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 🧬 Omega-Prime Autonomous Acoustic AI Suite (6-in-1 Master Engine) -->
     <div class="quantum-card" style="border-color: var(--cyan);">
       <div class="card-header">
@@ -1480,6 +1522,77 @@ const HTML_PAGE = `<!DOCTYPE html>
       omCardio = !omCardio;
       document.getElementById("cardioSyncBtn").textContent = "🫀 Bio-Groove Cardio-Rhythm Sync: " + (omCardio ? "ON" : "OFF");
       applyOmegaCurve();
+    }
+
+    let zeOcc = 92;
+    let zeCanal = 90;
+    let zeAir = 88;
+    let zeVent = 90;
+    let zeBreeze = true;
+    let zeDrift = true;
+    let zeLabel = "🧬 Bionic Open-Air";
+
+    function applyZeroEarbudCurve() {
+      const occ = zeOcc / 100.0;
+      const canal = zeCanal / 100.0;
+      const air = zeAir / 100.0;
+      const vent = zeVent / 100.0;
+      for (let i = 0; i < 31; i++) {
+        let g = gains[i] * 0.44;
+        if (i <= 5) g += vent * 2.8 + occ * 1.8;
+        if (i >= 8 && i <= 11) g -= occ * 3.6;
+        if (i >= 13 && i <= 18) g += vent * 2.2;
+        if (i >= 20 && i <= 22) g += canal * 3.6;
+        if (i === 25 || i === 26) g -= canal * 3.8;
+        if (i >= 27) g += vent * 2.4 - air * 1.2;
+        if (zeBreeze && i >= 1 && i <= 4) g += 0.9;
+        if (zeDrift && i >= 16 && i <= 22) g += 0.8;
+        gains[i] = Math.max(-15, Math.min(15, Math.round(g * 2) / 2));
+      }
+      document.getElementById("zeAirVal").textContent = zeAir + "% | HE-1 " + zeVent + "%";
+      document.getElementById("zeroEarbudStatus").textContent =
+        "🌬️ [" + zeLabel.toUpperCase() + "]: Occlusion Valve -" + (occ * 3.8).toFixed(1) +
+        "dB (160Hz) • Open-Canal 2.7kHz +" + (canal * 3.8).toFixed(1) +
+        "dB • 2.5m Air Cushion " + zeAir + "% • HE-1 Vent " + zeVent + "% • " +
+        (zeBreeze ? "-58dB Breeze ON" : "Breeze OFF") + " • " +
+        (zeDrift ? "0.4Hz Drift ON" : "Drift OFF");
+      renderBands();
+    }
+
+    function setZeroEarbudMode(key, label, occ, canal, air, vent) {
+      zeLabel = label;
+      zeOcc = occ;
+      zeCanal = canal;
+      zeAir = air;
+      zeVent = vent;
+      document.getElementById("zeOccVal").textContent = occ + "%";
+      document.getElementById("zeOccSlider").value = occ;
+      document.getElementById("zeCanalVal").textContent = canal + "%";
+      document.getElementById("zeCanalSlider").value = canal;
+      document.getElementById("zeAirSlider").value = air;
+      document.getElementById("zeVentSlider").value = vent;
+      applyZeroEarbudCurve();
+    }
+
+    function updateZeroEarbudSlider(which, val) {
+      const v = parseInt(val, 10);
+      if (which === 'occ') { zeOcc = v; document.getElementById("zeOccVal").textContent = v + "%"; }
+      if (which === 'canal') { zeCanal = v; document.getElementById("zeCanalVal").textContent = v + "%"; }
+      if (which === 'air') { zeAir = v; }
+      if (which === 'vent') { zeVent = v; }
+      applyZeroEarbudCurve();
+    }
+
+    function toggleZeroBreeze() {
+      zeBreeze = !zeBreeze;
+      document.getElementById("zeBreezeBtn").textContent = "🍃 -58dB Air Breeze: " + (zeBreeze ? "ON" : "OFF");
+      applyZeroEarbudCurve();
+    }
+
+    function toggleZeroDrift() {
+      zeDrift = !zeDrift;
+      document.getElementById("zeDriftBtn").textContent = "🧭 0.4Hz Micro-Drift: " + (zeDrift ? "ON" : "OFF");
+      applyZeroEarbudCurve();
     }
 
     renderPresets();

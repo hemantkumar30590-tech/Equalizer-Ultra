@@ -84,6 +84,7 @@ import com.example.dsp.SpatialStageFormation
 import com.example.dsp.SpatialStageNode
 import com.example.dsp.SpeedCruiseMode
 import com.example.dsp.StemDeMixerPreset
+import com.example.dsp.ZeroEarbudOpenAirMode
 import com.example.ui.theme.AmoledBlack
 import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.HyperViolet
@@ -904,6 +905,13 @@ fun FutureGenQuantumLabDialog(
     onUpdateElevationHelixSky: (Int) -> Unit = {},
     onUpdateGoldenPhiHarmonic: (Int) -> Unit = {},
     onToggleBioGrooveCardioSync: () -> Unit = {},
+    onSelectZeroEarbudMode: (ZeroEarbudOpenAirMode) -> Unit = {},
+    onUpdateOcclusionValve: (Int) -> Unit = {},
+    onUpdateOpenCanalUnplug: (Int) -> Unit = {},
+    onUpdateAirCushion25m: (Int) -> Unit = {},
+    onUpdateOpenBackElectrostatic: (Int) -> Unit = {},
+    onToggleAntiVacuumBreeze: () -> Unit = {},
+    onToggleVestibularMicroDrift: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -939,13 +947,13 @@ fun FutureGenQuantumLabDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = "EQULTRA OMEGA-PRIME & 2030 R&D LAB",
+                                text = "EQULTRA ZERO-EARBUD & OMEGA-PRIME LAB",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
-                                text = "🧬 Omega-Prime AI • 🛸 2030 R&D • 🌐 Global Triad • 🔊 Out-Of-Head 3D",
+                                text = "🌬️ Zero-Earbud Open-Air • 🧬 Omega-Prime AI • 🛸 2030 R&D • 🌐 Triad",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ElectricCyan
                             )
@@ -968,6 +976,18 @@ fun FutureGenQuantumLabDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // 000000. 🌬️ ZERO-EARBUD INVISIBLE OPEN-AIR ENGINE (6-IN-1 ANTI-OCCLUSION SUITE)
+                    ZeroEarbudInvisibleOpenAirCard(
+                        uiState = uiState,
+                        onSelectMode = onSelectZeroEarbudMode,
+                        onUpdateOcclusionValve = onUpdateOcclusionValve,
+                        onUpdateOpenCanalUnplug = onUpdateOpenCanalUnplug,
+                        onUpdateAirCushion25m = onUpdateAirCushion25m,
+                        onUpdateOpenBackElectrostatic = onUpdateOpenBackElectrostatic,
+                        onToggleAntiVacuumBreeze = onToggleAntiVacuumBreeze,
+                        onToggleVestibularMicroDrift = onToggleVestibularMicroDrift
+                    )
+
                     // 00000. 🧬 OMEGA-PRIME AUTONOMOUS ACOUSTIC AI SUITE (6-IN-1 MASTER ENGINE)
                     OmegaPrimeAutonomousAiCard(
                         uiState = uiState,
@@ -3098,7 +3118,293 @@ fun OmegaPrimeAutonomousAiCard(
     }
 }
 
+@Composable
+fun ZeroEarbudInvisibleOpenAirCard(
+    uiState: EqUiState,
+    onSelectMode: (ZeroEarbudOpenAirMode) -> Unit,
+    onUpdateOcclusionValve: (Int) -> Unit,
+    onUpdateOpenCanalUnplug: (Int) -> Unit,
+    onUpdateAirCushion25m: (Int) -> Unit,
+    onUpdateOpenBackElectrostatic: (Int) -> Unit,
+    onToggleAntiVacuumBreeze: () -> Unit,
+    onToggleVestibularMicroDrift: () -> Unit
+) {
+    val isActive = uiState.zeroEarbudMode != ZeroEarbudOpenAirMode.OFF
+    Surface(
+        color = ObsidianCard,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            width = 2.0.dp,
+            brush = Brush.horizontalGradient(
+                listOf(ElectricCyan, SignalEmerald, StudioAmber, HyperViolet, NeonMagenta)
+            )
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Hearing,
+                            contentDescription = "Zero-Earbud Invisible Open-Air Engine",
+                            tint = ElectricCyan,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "🌬️ ZERO-EARBUD INVISIBLE OPEN-AIR ENGINE (6-IN-1)",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "0% Earbud Plugged Feel! Cancels 160Hz Canal Pressure • Restores 2.7kHz Open Ear • HE-1 Vent",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = SignalEmerald
+                    )
+                }
+                Text(
+                    text = uiState.zeroEarbudMode.badge,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = AmoledBlack,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier
+                        .background(
+                            if (isActive) ElectricCyan else TextSecondary,
+                            RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
 
+            // Live Telemetry Banner
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, if (isActive) ElectricCyan.copy(alpha = 0.7f) else ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = uiState.zeroEarbudTelemetryText,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = if (isActive) ElectricCyan else TextSecondary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                )
+            }
 
+            // 1-Tap Zero-Earbud Invisible Mode Chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ZeroEarbudOpenAirMode.entries.forEach { mode ->
+                    val selected = uiState.zeroEarbudMode == mode
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectMode(mode) },
+                        label = {
+                            Text(
+                                text = mode.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ElectricCyan,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        )
+                    )
+                }
+            }
 
+            // 4 Anti-Occlusion & Bionic Open-Air Sliders
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    // 1. 🌬️ Tympanic Cabin-Pressure & Occlusion Valve
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🌬️ Tympanic Cabin-Pressure & 160Hz Occlusion Relief Valve",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.occlusionValvePercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.occlusionValvePercent.toFloat(),
+                        onValueChange = { onUpdateOcclusionValve(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = ElectricCyan,
+                            activeTrackColor = ElectricCyan
+                        )
+                    )
 
+                    // 2. 👂 Open-Canal Quarter-Wave Un-Plugger
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "👂 Open-Canal 2.7kHz Un-Plugger & 8kHz Nozzle Spike Eraser",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.openCanalUnplugPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.openCanalUnplugPercent.toFloat(),
+                        onValueChange = { onUpdateOpenCanalUnplug(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = SignalEmerald,
+                            activeTrackColor = SignalEmerald
+                        )
+                    )
+
+                    // 3. ☁️ 2.5m Atmospheric Molecular Air-Cushion
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "☁️ 2.5m Atmospheric Molecular Air-Cushion (8-Hr Zero Pain)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.airCushion25mPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.airCushion25mPercent.toFloat(),
+                        onValueChange = { onUpdateAirCushion25m(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = StudioAmber,
+                            activeTrackColor = StudioAmber
+                        )
+                    )
+
+                    // 4. 🎧 Sennheiser HE-1 / Stax Open-Back Electrostatic Vent
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🎧 Sennheiser HE-1 / Stax Open-Back Electrostatic Vent",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.openBackElectrostaticPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.openBackElectrostaticPercent.toFloat(),
+                        onValueChange = { onUpdateOpenBackElectrostatic(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = NeonMagenta,
+                            activeTrackColor = NeonMagenta
+                        )
+                    )
+                }
+            }
+
+            // 5 & 6. 🍃 Anti-Vacuum Room Air-Breeze Cushion + 🧭 0.4Hz Vestibular Micro-Head Drift
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = uiState.isAntiVacuumBreezeEnabled,
+                    onClick = onToggleAntiVacuumBreeze,
+                    label = {
+                        Text(
+                            text = if (uiState.isAntiVacuumBreezeEnabled) {
+                                "🍃 -58dB Anti-Vacuum Room Air-Breeze Cushion (Zero Suction): ON"
+                            } else {
+                                "🍃 Anti-Vacuum Room Air-Breeze Cushion: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = SignalEmerald,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+
+                FilterChip(
+                    selected = uiState.isVestibularMicroDriftEnabled,
+                    onClick = onToggleVestibularMicroDrift,
+                    label = {
+                        Text(
+                            text = if (uiState.isVestibularMicroDriftEnabled) {
+                                "🧭 0.4Hz Vestibular Micro-Head Drift (Un-Glues Sound from Skull): ON"
+                            } else {
+                                "🧭 0.4Hz Vestibular Micro-Head Drift: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = ElectricCyan,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+            }
+        }
+    }
+}

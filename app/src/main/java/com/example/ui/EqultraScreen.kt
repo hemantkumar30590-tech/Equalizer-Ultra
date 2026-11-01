@@ -509,7 +509,17 @@ fun EqultraScreen(
                         onUpdateVocalSidechainDuck = viewModel::updateVocalSidechainDuckPercent,
                         onUpdateElevationHelixSky = viewModel::updateElevationHelixSkyPercent,
                         onUpdateGoldenPhiHarmonic = viewModel::updateGoldenPhiHarmonicPercent,
-                        onToggleBioGrooveCardioSync = viewModel::toggleBioGrooveCardioSync
+                        onToggleBioGrooveCardioSync = viewModel::toggleBioGrooveCardioSync,
+                        onSelectZeroEarbudMode = { mode ->
+                            viewModel.setZeroEarbudMode(mode)
+                            Toast.makeText(context, "Zero-Earbud: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdateOcclusionValve = viewModel::updateOcclusionValvePercent,
+                        onUpdateOpenCanalUnplug = viewModel::updateOpenCanalUnplugPercent,
+                        onUpdateAirCushion25m = viewModel::updateAirCushion25mPercent,
+                        onUpdateOpenBackElectrostatic = viewModel::updateOpenBackElectrostaticPercent,
+                        onToggleAntiVacuumBreeze = viewModel::toggleAntiVacuumBreeze,
+                        onToggleVestibularMicroDrift = viewModel::toggleVestibularMicroDrift
                     )
 
                     2 -> DevicePresetsTab(
@@ -837,6 +847,16 @@ fun EqultraScreen(
             onUpdateElevationHelixSky = viewModel::updateElevationHelixSkyPercent,
             onUpdateGoldenPhiHarmonic = viewModel::updateGoldenPhiHarmonicPercent,
             onToggleBioGrooveCardioSync = viewModel::toggleBioGrooveCardioSync,
+            onSelectZeroEarbudMode = { mode ->
+                viewModel.setZeroEarbudMode(mode)
+                Toast.makeText(context, "Zero-Earbud: ${mode.title}", Toast.LENGTH_SHORT).show()
+            },
+            onUpdateOcclusionValve = viewModel::updateOcclusionValvePercent,
+            onUpdateOpenCanalUnplug = viewModel::updateOpenCanalUnplugPercent,
+            onUpdateAirCushion25m = viewModel::updateAirCushion25mPercent,
+            onUpdateOpenBackElectrostatic = viewModel::updateOpenBackElectrostaticPercent,
+            onToggleAntiVacuumBreeze = viewModel::toggleAntiVacuumBreeze,
+            onToggleVestibularMicroDrift = viewModel::toggleVestibularMicroDrift,
             onDismiss = { viewModel.setFutureLabDialogVisible(false) }
         )
     }
@@ -1501,7 +1521,14 @@ private fun BassAndSpatialDspTab(
     onUpdateVocalSidechainDuck: (Int) -> Unit,
     onUpdateElevationHelixSky: (Int) -> Unit,
     onUpdateGoldenPhiHarmonic: (Int) -> Unit,
-    onToggleBioGrooveCardioSync: () -> Unit
+    onToggleBioGrooveCardioSync: () -> Unit,
+    onSelectZeroEarbudMode: (com.example.dsp.ZeroEarbudOpenAirMode) -> Unit,
+    onUpdateOcclusionValve: (Int) -> Unit,
+    onUpdateOpenCanalUnplug: (Int) -> Unit,
+    onUpdateAirCushion25m: (Int) -> Unit,
+    onUpdateOpenBackElectrostatic: (Int) -> Unit,
+    onToggleAntiVacuumBreeze: () -> Unit,
+    onToggleVestibularMicroDrift: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -1518,6 +1545,20 @@ private fun BassAndSpatialDspTab(
             peakDb = peakDb,
             bassBoostPercent = uiState.bassBoostStrength,
             spatialPercent = uiState.spatialLevel
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 🌬️ Zero-Earbud Invisible Open-Air Engine (6-in-1 Anti-Occlusion & Bionic Vent Suite) directly at top of Bass & 3D Tab
+        ZeroEarbudInvisibleOpenAirCard(
+            uiState = uiState,
+            onSelectMode = onSelectZeroEarbudMode,
+            onUpdateOcclusionValve = onUpdateOcclusionValve,
+            onUpdateOpenCanalUnplug = onUpdateOpenCanalUnplug,
+            onUpdateAirCushion25m = onUpdateAirCushion25m,
+            onUpdateOpenBackElectrostatic = onUpdateOpenBackElectrostatic,
+            onToggleAntiVacuumBreeze = onToggleAntiVacuumBreeze,
+            onToggleVestibularMicroDrift = onToggleVestibularMicroDrift
         )
 
         Spacer(modifier = Modifier.height(12.dp))

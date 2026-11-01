@@ -172,6 +172,27 @@ class AudioDspEngine(
     @Volatile
     private var omegaCardioSyncOn: Boolean = true
 
+    @Volatile
+    private var zeroEarbudActive: Boolean = false
+
+    @Volatile
+    private var occlusionValveNorm: Float = 0.92f
+
+    @Volatile
+    private var openCanalNorm: Float = 0.90f
+
+    @Volatile
+    private var airCushionNorm: Float = 0.88f
+
+    @Volatile
+    private var openBackVentNorm: Float = 0.90f
+
+    @Volatile
+    private var antiVacuumBreezeOn: Boolean = true
+
+    @Volatile
+    private var vestibularDriftOn: Boolean = true
+
     private val _isPlayingTestLoop = MutableStateFlow(false)
     val isPlayingTestLoop: StateFlow<Boolean> = _isPlayingTestLoop.asStateFlow()
 
@@ -283,7 +304,14 @@ class AudioDspEngine(
         vocalSidechainDuckPct: Int = 90,
         elevationHelixSkyPct: Int = 86,
         goldenPhiHarmonicPct: Int = 84,
-        bioGrooveCardioSync: Boolean = true
+        bioGrooveCardioSync: Boolean = true,
+        zeroEarbudEnabled: Boolean = false,
+        occlusionValvePct: Int = 92,
+        openCanalUnplugPct: Int = 90,
+        airCushion25mPct: Int = 88,
+        openBackElectrostaticPct: Int = 90,
+        antiVacuumBreeze: Boolean = true,
+        vestibularMicroDrift: Boolean = true
     ) {
         neuralBrainwaveMode = brainwaveMode
         radarAzimuthDeg = azimuthDeg.coerceIn(-180f, 180f)
@@ -321,6 +349,13 @@ class AudioDspEngine(
         omegaSkyHelixNorm = (elevationHelixSkyPct.coerceIn(0, 100) / 100f)
         omegaGoldenPhiNorm = (goldenPhiHarmonicPct.coerceIn(0, 100) / 100f)
         omegaCardioSyncOn = bioGrooveCardioSync
+        zeroEarbudActive = zeroEarbudEnabled
+        occlusionValveNorm = (occlusionValvePct.coerceIn(0, 100) / 100f)
+        openCanalNorm = (openCanalUnplugPct.coerceIn(0, 100) / 100f)
+        airCushionNorm = (airCushion25mPct.coerceIn(0, 100) / 100f)
+        openBackVentNorm = (openBackElectrostaticPct.coerceIn(0, 100) / 100f)
+        antiVacuumBreezeOn = antiVacuumBreeze
+        vestibularDriftOn = vestibularMicroDrift
     }
 
     fun updateDspState(
@@ -600,6 +635,28 @@ class AudioDspEngine(
 
                         outL += upwardBreath + sidechainSculpt + skyHelixL + phiHarmonic + cardioPulse
                         outR += upwardBreath + sidechainSculpt + skyHelixR + phiHarmonic + cardioPulse
+                    }
+
+                    // 🌬️ Zero-Earbud Invisible Open-Air Engine (6-in-1 Anti-Occlusion & Bionic Vent Suite)
+                    if (active && zeroEarbudActive) {
+                        // 1. 🌬️ Tympanic Cabin-Pressure & Occlusion Valve (cancels trapped 160Hz ear-canal pressure phase)
+                        val occlusionRelief = -lpMid * 0.16f * occlusionValveNorm
+                        // 2. 👂 Open-Canal Quarter-Wave Un-Plugger (restores 2.7kHz open concha air & tames 7.5kHz nozzle glare)
+                        val openCanalAir = (midComp * 0.19f - hiComp * 0.12f) * openCanalNorm
+                        // 3. ☁️ 2.5m Atmospheric Molecular Air-Cushion (Stokes-Kirchhoff velvet transient rounding)
+                        val airVelvetL = (tapFloorL * 0.15f + skullShadowL * 0.14f) * airCushionNorm
+                        val airVelvetR = (tapDeskR * 0.15f + skullShadowR * 0.14f) * airCushionNorm
+                        // 4. 🎧 Sennheiser HE-1 / Stax Open-Back Electrostatic Vent (dipole outward back-wave)
+                        val he1OpenVentL = (tapWallR * 0.24f + delayedR * 0.14f) * openBackVentNorm
+                        val he1OpenVentR = (tapWallL * 0.24f + delayedL * 0.14f) * openBackVentNorm
+                        // 5. 🍃 Anti-Vacuum Room Air-Breeze Cushion (-58dB decorrelated room tone so silence never feels like ear vacuum)
+                        val roomBreezeL = if (antiVacuumBreezeOn) (sin(2.0 * PI * 118.0 * t + 0.7) * 0.0045).toFloat() else 0f
+                        val roomBreezeR = if (antiVacuumBreezeOn) (cos(2.0 * PI * 124.0 * t + 1.9) * 0.0045).toFloat() else 0f
+                        // 6. 🧭 0.4Hz Vestibular Micro-Head Drift (natural postural neck-sway ±1.2° un-glues sound from skull)
+                        val sway = if (vestibularDriftOn) (sin(2.0 * PI * 0.4 * t) * 0.045).toFloat() else 0f
+
+                        outL = (outL * (1f + sway)) + occlusionRelief + openCanalAir + airVelvetL + he1OpenVentL + roomBreezeL
+                        outR = (outR * (1f - sway)) + occlusionRelief + openCanalAir + airVelvetR + he1OpenVentR + roomBreezeR
                     }
 
                     // Analog Vacuum Tube / Tape Harmonic Saturation
