@@ -25,6 +25,7 @@ import com.example.dsp.GyroHeadTrackingMode
 import com.example.dsp.HolographicVibeProfile
 import com.example.dsp.NeuralBrainwaveMode
 import com.example.dsp.OutOfHeadExternalizerMode
+import com.example.dsp.Sovereign2030RndMode
 import com.example.dsp.SpatialStageFormation
 import com.example.dsp.SpatialStageNode
 import com.example.dsp.SpeedCruiseMode
@@ -134,7 +135,16 @@ data class EqUiState(
     val chinaR2rBerylliumPercent: Int = 82,
     val usaDiracSpherePercent: Int = 85,
     val isFletcherMunsonEnabled: Boolean = true,
-    val globalTriadTelemetryText: String = "GLOBAL TRIAD READY • Tap 🇯🇵 Japan DSEE, 🇨🇳 China R2R+Beryllium, 🇺🇸 USA Vegas Sphere or 🌐 Triad Omega"
+    val globalTriadTelemetryText: String = "GLOBAL TRIAD READY • Tap 🇯🇵 Japan DSEE, 🇨🇳 China R2R+Beryllium, 🇺🇸 USA Vegas Sphere or 🌐 Triad Omega",
+    // 🛸 2030 Sovereign R&D Lab (🇯🇵 NTT 16Hz + Doppler-0 • 🇨🇳 DSD1024 + Bio De-Esser • 🇺🇸 MIT 64-WFS + De-Squasher)
+    val sovereign2030Mode: Sovereign2030RndMode = Sovereign2030RndMode.OFF,
+    val phantomSub16HzPercent: Int = 82,
+    val isDopplerEraserEnabled: Boolean = true,
+    val dsd1024DampingPercent: Int = 85,
+    val isBioEarDeEsserEnabled: Boolean = true,
+    val mit64WfsWallPercent: Int = 88,
+    val streamDeSquasherPercent: Int = 84,
+    val sovereign2030TelemetryText: String = "🛸 2030 R&D LAB READY • Tap 🇯🇵 NTT 16Hz, 🇨🇳 DSD1024, 🇺🇸 MIT 64-WFS or 🛸 2030 Singularity"
 )
 
 class EqViewModel(application: Application) : AndroidViewModel(application) {
@@ -1613,6 +1623,113 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         recomputeAndApplyGlobalTriad()
     }
 
+    // =========================================================================
+    // 🛸 2030 SOVEREIGN R&D LAB (🇯🇵 JAPAN • 🇨🇳 CHINA • 🇺🇸 USA NEXT-GEN ROADMAP)
+    // =========================================================================
+
+    private fun recomputeAndApplySovereign2030() {
+        _uiState.update { s ->
+            val result = FutureGenAudioLabEngine.synthesizeSovereign2030RndSuite(
+                baseBands = s.bandGainsDb,
+                mode = s.sovereign2030Mode,
+                phantomSub16HzPercent = s.phantomSub16HzPercent,
+                dopplerEraserEnabled = s.isDopplerEraserEnabled,
+                dsd1024DampingPercent = s.dsd1024DampingPercent,
+                bioEarDeEsserEnabled = s.isBioEarDeEsserEnabled,
+                mit64WfsWallPercent = s.mit64WfsWallPercent,
+                streamDeSquasherPercent = s.streamDeSquasherPercent
+            )
+            if (s.sovereign2030Mode == Sovereign2030RndMode.OFF) {
+                s.copy(sovereign2030TelemetryText = result.telemetrySummary)
+            } else {
+                s.copy(
+                    isMasterEnabled = true,
+                    activePresetName = s.sovereign2030Mode.title,
+                    bandGainsDb = result.sculptedBands31,
+                    bassBoostStrength = result.effectiveBassBoost,
+                    spatialLevel = result.effectiveSpatial3D,
+                    reverbLevel = result.effectiveReverbLevel,
+                    reverbRoom = result.effectiveReverbRoom,
+                    crossfeedStrengthPercent = result.effectiveCrossfeedPct,
+                    analogDrivePercent = result.effectiveAnalogDrivePct,
+                    preampDb = result.effectivePreampDb,
+                    sovereign2030TelemetryText = result.telemetrySummary
+                )
+            }
+        }
+        syncDspEngine()
+    }
+
+    fun setSovereign2030Mode(mode: Sovereign2030RndMode) {
+        _uiState.update { it.copy(sovereign2030Mode = mode) }
+        hapticManager.onAiPresetApplied("2030 R&D ${mode.badge}")
+        recomputeAndApplySovereign2030()
+    }
+
+    fun updatePhantomSub16HzPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.sovereign2030Mode == Sovereign2030RndMode.OFF) {
+                Sovereign2030RndMode.JAPAN_NTT_YAMAHA_2030
+            } else state.sovereign2030Mode
+            state.copy(
+                sovereign2030Mode = nextMode,
+                phantomSub16HzPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplySovereign2030()
+    }
+
+    fun toggleDopplerEraser() {
+        _uiState.update { it.copy(isDopplerEraserEnabled = !it.isDopplerEraserEnabled) }
+        hapticManager.onControlTick("Yamaha Inverse Doppler")
+        recomputeAndApplySovereign2030()
+    }
+
+    fun updateDsd1024DampingPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.sovereign2030Mode == Sovereign2030RndMode.OFF) {
+                Sovereign2030RndMode.CHINA_DSD1024_BIO_2030
+            } else state.sovereign2030Mode
+            state.copy(
+                sovereign2030Mode = nextMode,
+                dsd1024DampingPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplySovereign2030()
+    }
+
+    fun toggleBioEarDeEsser() {
+        _uiState.update { it.copy(isBioEarDeEsserEnabled = !it.isBioEarDeEsserEnabled) }
+        hapticManager.onControlTick("Biometric Ear-Canal De-Esser")
+        recomputeAndApplySovereign2030()
+    }
+
+    fun updateMit64WfsWallPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.sovereign2030Mode == Sovereign2030RndMode.OFF) {
+                Sovereign2030RndMode.USA_MIT_WFS_DESQUASH_2030
+            } else state.sovereign2030Mode
+            state.copy(
+                sovereign2030Mode = nextMode,
+                mit64WfsWallPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplySovereign2030()
+    }
+
+    fun updateStreamDeSquasherPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.sovereign2030Mode == Sovereign2030RndMode.OFF) {
+                Sovereign2030RndMode.USA_MIT_WFS_DESQUASH_2030
+            } else state.sovereign2030Mode
+            state.copy(
+                sovereign2030Mode = nextMode,
+                streamDeSquasherPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplySovereign2030()
+    }
+
     private fun startFutureGenCoordinator() {
         viewModelScope.launch {
             var tickCount = 0
@@ -1654,7 +1771,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                         globalTriadEnabled = s.globalTriadMode != GlobalTriadMode.OFF,
                         japanDseePct = s.japanDseePercent,
                         chinaR2rPct = s.chinaR2rBerylliumPercent,
-                        usaDiracPct = s.usaDiracSpherePercent
+                        usaDiracPct = s.usaDiracSpherePercent,
+                        sovereign2030Enabled = s.sovereign2030Mode != Sovereign2030RndMode.OFF,
+                        phantomSub16Pct = s.phantomSub16HzPercent,
+                        dopplerEraser = s.isDopplerEraserEnabled,
+                        dsd1024DampingPct = s.dsd1024DampingPercent,
+                        bioDeEsser = s.isBioEarDeEsserEnabled,
+                        mit64WfsPct = s.mit64WfsWallPercent,
+                        streamDeSquasherPct = s.streamDeSquasherPercent
                     )
                 }
                 // Bass-to-Haptic Sub-Woofer Tactile Engine: pulse phone vibrator on sub-bass hits
@@ -1738,7 +1862,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             globalTriadEnabled = s.globalTriadMode != GlobalTriadMode.OFF,
             japanDseePct = s.japanDseePercent,
             chinaR2rPct = s.chinaR2rBerylliumPercent,
-            usaDiracPct = s.usaDiracSpherePercent
+            usaDiracPct = s.usaDiracSpherePercent,
+            sovereign2030Enabled = s.sovereign2030Mode != Sovereign2030RndMode.OFF,
+            phantomSub16Pct = s.phantomSub16HzPercent,
+            dopplerEraser = s.isDopplerEraserEnabled,
+            dsd1024DampingPct = s.dsd1024DampingPercent,
+            bioDeEsser = s.isBioEarDeEsserEnabled,
+            mit64WfsPct = s.mit64WfsWallPercent,
+            streamDeSquasherPct = s.streamDeSquasherPercent
         )
         dspEngine.updateDspState(
             enabled = s.isMasterEnabled,

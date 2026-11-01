@@ -486,7 +486,17 @@ fun EqultraScreen(
                         onUpdateJapanDsee = viewModel::updateJapanDseePercent,
                         onUpdateChinaR2r = viewModel::updateChinaR2rPercent,
                         onUpdateUsaDirac = viewModel::updateUsaDiracPercent,
-                        onToggleFletcherMunson = viewModel::toggleFletcherMunsonLoudness
+                        onToggleFletcherMunson = viewModel::toggleFletcherMunsonLoudness,
+                        onSelectSovereign2030Mode = { mode ->
+                            viewModel.setSovereign2030Mode(mode)
+                            Toast.makeText(context, "2030 R&D: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdatePhantomSub16Hz = viewModel::updatePhantomSub16HzPercent,
+                        onToggleDopplerEraser = viewModel::toggleDopplerEraser,
+                        onUpdateDsd1024Damping = viewModel::updateDsd1024DampingPercent,
+                        onToggleBioEarDeEsser = viewModel::toggleBioEarDeEsser,
+                        onUpdateMit64WfsWall = viewModel::updateMit64WfsWallPercent,
+                        onUpdateStreamDeSquasher = viewModel::updateStreamDeSquasherPercent
                     )
 
                     2 -> DevicePresetsTab(
@@ -791,6 +801,16 @@ fun EqultraScreen(
             onUpdateChinaR2r = viewModel::updateChinaR2rPercent,
             onUpdateUsaDirac = viewModel::updateUsaDiracPercent,
             onToggleFletcherMunson = viewModel::toggleFletcherMunsonLoudness,
+            onSelectSovereign2030Mode = { mode ->
+                viewModel.setSovereign2030Mode(mode)
+                Toast.makeText(context, "2030 R&D: ${mode.title}", Toast.LENGTH_SHORT).show()
+            },
+            onUpdatePhantomSub16Hz = viewModel::updatePhantomSub16HzPercent,
+            onToggleDopplerEraser = viewModel::toggleDopplerEraser,
+            onUpdateDsd1024Damping = viewModel::updateDsd1024DampingPercent,
+            onToggleBioEarDeEsser = viewModel::toggleBioEarDeEsser,
+            onUpdateMit64WfsWall = viewModel::updateMit64WfsWallPercent,
+            onUpdateStreamDeSquasher = viewModel::updateStreamDeSquasherPercent,
             onDismiss = { viewModel.setFutureLabDialogVisible(false) }
         )
     }
@@ -1441,7 +1461,14 @@ private fun BassAndSpatialDspTab(
     onUpdateJapanDsee: (Int) -> Unit,
     onUpdateChinaR2r: (Int) -> Unit,
     onUpdateUsaDirac: (Int) -> Unit,
-    onToggleFletcherMunson: () -> Unit
+    onToggleFletcherMunson: () -> Unit,
+    onSelectSovereign2030Mode: (com.example.dsp.Sovereign2030RndMode) -> Unit,
+    onUpdatePhantomSub16Hz: (Int) -> Unit,
+    onToggleDopplerEraser: () -> Unit,
+    onUpdateDsd1024Damping: (Int) -> Unit,
+    onToggleBioEarDeEsser: () -> Unit,
+    onUpdateMit64WfsWall: (Int) -> Unit,
+    onUpdateStreamDeSquasher: (Int) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -1458,6 +1485,20 @@ private fun BassAndSpatialDspTab(
             peakDb = peakDb,
             bassBoostPercent = uiState.bassBoostStrength,
             spatialPercent = uiState.spatialLevel
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 🛸 2030 Sovereign R&D Lab (Japan • China • USA Future Tech) directly at top of Bass & 3D Tab
+        Sovereign2030RndLabCard(
+            uiState = uiState,
+            onSelectMode = onSelectSovereign2030Mode,
+            onUpdatePhantomSub16Hz = onUpdatePhantomSub16Hz,
+            onToggleDopplerEraser = onToggleDopplerEraser,
+            onUpdateDsd1024Damping = onUpdateDsd1024Damping,
+            onToggleBioEarDeEsser = onToggleBioEarDeEsser,
+            onUpdateMit64WfsWall = onUpdateMit64WfsWall,
+            onUpdateStreamDeSquasher = onUpdateStreamDeSquasher
         )
 
         Spacer(modifier = Modifier.height(12.dp))

@@ -77,6 +77,7 @@ import com.example.dsp.GyroHeadTrackingMode
 import com.example.dsp.HolographicVibeProfile
 import com.example.dsp.NeuralBrainwaveMode
 import com.example.dsp.OutOfHeadExternalizerMode
+import com.example.dsp.Sovereign2030RndMode
 import com.example.dsp.SpatialStageFormation
 import com.example.dsp.SpatialStageNode
 import com.example.dsp.SpeedCruiseMode
@@ -887,6 +888,13 @@ fun FutureGenQuantumLabDialog(
     onUpdateChinaR2r: (Int) -> Unit = {},
     onUpdateUsaDirac: (Int) -> Unit = {},
     onToggleFletcherMunson: () -> Unit = {},
+    onSelectSovereign2030Mode: (Sovereign2030RndMode) -> Unit = {},
+    onUpdatePhantomSub16Hz: (Int) -> Unit = {},
+    onToggleDopplerEraser: () -> Unit = {},
+    onUpdateDsd1024Damping: (Int) -> Unit = {},
+    onToggleBioEarDeEsser: () -> Unit = {},
+    onUpdateMit64WfsWall: (Int) -> Unit = {},
+    onUpdateStreamDeSquasher: (Int) -> Unit = {},
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -922,13 +930,13 @@ fun FutureGenQuantumLabDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = "EQULTRA QUANTUM LAB & GLOBAL TRIAD",
+                                text = "EQULTRA 2030 SOVEREIGN R&D LAB",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
-                                text = "🇯🇵 Japan DSEE • 🇨🇳 China R2R • 🇺🇸 USA Sphere • Out-Of-Head 3D",
+                                text = "🛸 2030 R&D (JP/CN/US) • 🌐 Global Triad • 🔊 Out-Of-Head 3D",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ElectricCyan
                             )
@@ -951,6 +959,18 @@ fun FutureGenQuantumLabDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // 0000. 🛸 2030 SOVEREIGN R&D LAB (🇯🇵 JAPAN • 🇨🇳 CHINA • 🇺🇸 USA NEXT-GEN ROADMAP)
+                    Sovereign2030RndLabCard(
+                        uiState = uiState,
+                        onSelectMode = onSelectSovereign2030Mode,
+                        onUpdatePhantomSub16Hz = onUpdatePhantomSub16Hz,
+                        onToggleDopplerEraser = onToggleDopplerEraser,
+                        onUpdateDsd1024Damping = onUpdateDsd1024Damping,
+                        onToggleBioEarDeEsser = onToggleBioEarDeEsser,
+                        onUpdateMit64WfsWall = onUpdateMit64WfsWall,
+                        onUpdateStreamDeSquasher = onUpdateStreamDeSquasher
+                    )
+
                     // 000. GLOBAL TRIAD FLAGSHIP HI-FI SUITE (🇯🇵 JAPAN • 🇨🇳 CHINA • 🇺🇸 USA)
                     GlobalTriadHiFiCard(
                         uiState = uiState,
@@ -2468,6 +2488,298 @@ fun GlobalTriadHiFiCard(
         }
     }
 }
+
+@Composable
+fun Sovereign2030RndLabCard(
+    uiState: EqUiState,
+    onSelectMode: (Sovereign2030RndMode) -> Unit,
+    onUpdatePhantomSub16Hz: (Int) -> Unit,
+    onToggleDopplerEraser: () -> Unit,
+    onUpdateDsd1024Damping: (Int) -> Unit,
+    onToggleBioEarDeEsser: () -> Unit,
+    onUpdateMit64WfsWall: (Int) -> Unit,
+    onUpdateStreamDeSquasher: (Int) -> Unit
+) {
+    val isActive = uiState.sovereign2030Mode != Sovereign2030RndMode.OFF
+    Surface(
+        color = ObsidianCard,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            width = 1.8.dp,
+            brush = Brush.horizontalGradient(
+                listOf(ElectricCyan, HyperViolet, NeonMagenta, SignalEmerald, StudioAmber)
+            )
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Psychology,
+                            contentDescription = "2030 Sovereign R&D Lab",
+                            tint = ElectricCyan,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "🛸 2030 SOVEREIGN R&D LAB (🇯🇵 • 🇨🇳 • 🇺🇸 FUTURE TECH)",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "🇯🇵 Phantom 16Hz + Doppler-0 • 🇨🇳 1-Bit DSD1024 + De-Esser • 🇺🇸 MIT 64-WFS + De-Squasher",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = SignalEmerald
+                    )
+                }
+                Text(
+                    text = uiState.sovereign2030Mode.badge,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = AmoledBlack,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier
+                        .background(
+                            if (isActive) ElectricCyan else TextSecondary,
+                            RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+
+            // Live Telemetry Banner
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, if (isActive) ElectricCyan.copy(alpha = 0.65f) else ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = uiState.sovereign2030TelemetryText,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = if (isActive) ElectricCyan else TextSecondary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                )
+            }
+
+            // 1-Tap 2030 R&D Mode Chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Sovereign2030RndMode.entries.forEach { mode ->
+                    val selected = uiState.sovereign2030Mode == mode
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectMode(mode) },
+                        label = {
+                            Text(
+                                text = mode.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ElectricCyan,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        )
+                    )
+                }
+            }
+
+            // 4 Future R&D Sliders
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    // 1. 🇯🇵 NTT Phantom Sub-16Hz
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🇯🇵 NTT Phantom Sub-16Hz Missing-Fundamental Neuro-Bass",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.phantomSub16HzPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.phantomSub16HzPercent.toFloat(),
+                        onValueChange = { onUpdatePhantomSub16Hz(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = ElectricCyan,
+                            activeTrackColor = ElectricCyan
+                        )
+                    )
+
+                    // 2. 🇨🇳 1-Bit DSD1024 + Back-EMF Damping Factor
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🇨🇳 1-Bit DSD1024 Liquid Stream & Back-EMF Laser Damping",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.dsd1024DampingPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.dsd1024DampingPercent.toFloat(),
+                        onValueChange = { onUpdateDsd1024Damping(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = NeonMagenta,
+                            activeTrackColor = NeonMagenta
+                        )
+                    )
+
+                    // 3. 🇺🇸 MIT 64-Speaker Wave-Field Synthesis (WFS) Wall
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🇺🇸 MIT 64-Speaker Wave-Field Synthesis (WFS) Holographic Wall",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.mit64WfsWallPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.mit64WfsWallPercent.toFloat(),
+                        onValueChange = { onUpdateMit64WfsWall(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = SignalEmerald,
+                            activeTrackColor = SignalEmerald
+                        )
+                    )
+
+                    // 4. 🇺🇸 YouTube/Spotify Loudness De-Squasher
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🇺🇸 YouTube/Spotify Drum De-Squasher (Crest-Factor Restorer)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "+${String.format(Locale.US, "%.1f", (uiState.streamDeSquasherPercent / 100f) * 6.0f)} dB",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.streamDeSquasherPercent.toFloat(),
+                        onValueChange = { onUpdateStreamDeSquasher(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = StudioAmber,
+                            activeTrackColor = StudioAmber
+                        )
+                    )
+                }
+            }
+
+            // 2 Hardware R&D Switches: 🇯🇵 Inverse Doppler Vocal Eraser + 🇨🇳 Biometric Ear-Canal De-Esser
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = uiState.isDopplerEraserEnabled,
+                    onClick = onToggleDopplerEraser,
+                    label = {
+                        Text(
+                            text = if (uiState.isDopplerEraserEnabled) {
+                                "🇯🇵 Yamaha Inverse Doppler Vocal Eraser (Crystal Vocals at 100% Bass): ON"
+                            } else {
+                                "🇯🇵 Yamaha Inverse Doppler Vocal Eraser: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = ElectricCyan,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+
+                FilterChip(
+                    selected = uiState.isBioEarDeEsserEnabled,
+                    onClick = onToggleBioEarDeEsser,
+                    label = {
+                        Text(
+                            text = if (uiState.isBioEarDeEsserEnabled) {
+                                "🇨🇳 Biometric Ear-Canal Sibilance De-Esser (Zero 7kHz Piercing): ON"
+                            } else {
+                                "🇨🇳 Biometric Ear-Canal De-Esser: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = NeonMagenta,
+                        selectedLabelColor = Color.White,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+            }
+        }
+    }
+}
+
 
 
 

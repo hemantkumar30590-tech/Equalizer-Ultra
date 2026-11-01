@@ -133,6 +133,27 @@ class AudioDspEngine(
     @Volatile
     private var usaDiracNorm: Float = 0.85f
 
+    @Volatile
+    private var sovereign2030Active: Boolean = false
+
+    @Volatile
+    private var phantomSub16Norm: Float = 0.82f
+
+    @Volatile
+    private var dopplerEraserOn: Boolean = true
+
+    @Volatile
+    private var dsdDampingNorm: Float = 0.85f
+
+    @Volatile
+    private var bioDeEsserOn: Boolean = true
+
+    @Volatile
+    private var mitWfsNorm: Float = 0.88f
+
+    @Volatile
+    private var deSquasherNorm: Float = 0.84f
+
     private val _isPlayingTestLoop = MutableStateFlow(false)
     val isPlayingTestLoop: StateFlow<Boolean> = _isPlayingTestLoop.asStateFlow()
 
@@ -231,7 +252,14 @@ class AudioDspEngine(
         globalTriadEnabled: Boolean = false,
         japanDseePct: Int = 75,
         chinaR2rPct: Int = 80,
-        usaDiracPct: Int = 85
+        usaDiracPct: Int = 85,
+        sovereign2030Enabled: Boolean = false,
+        phantomSub16Pct: Int = 82,
+        dopplerEraser: Boolean = true,
+        dsd1024DampingPct: Int = 85,
+        bioDeEsser: Boolean = true,
+        mit64WfsPct: Int = 88,
+        streamDeSquasherPct: Int = 84
     ) {
         neuralBrainwaveMode = brainwaveMode
         radarAzimuthDeg = azimuthDeg.coerceIn(-180f, 180f)
@@ -256,6 +284,13 @@ class AudioDspEngine(
         japanDseeNorm = (japanDseePct.coerceIn(0, 100) / 100f)
         chinaR2rNorm = (chinaR2rPct.coerceIn(0, 100) / 100f)
         usaDiracNorm = (usaDiracPct.coerceIn(0, 100) / 100f)
+        sovereign2030Active = sovereign2030Enabled
+        phantomSub16Norm = (phantomSub16Pct.coerceIn(0, 100) / 100f)
+        dopplerEraserOn = dopplerEraser
+        dsdDampingNorm = (dsd1024DampingPct.coerceIn(0, 100) / 100f)
+        bioDeEsserOn = bioDeEsser
+        mitWfsNorm = (mit64WfsPct.coerceIn(0, 100) / 100f)
+        deSquasherNorm = (streamDeSquasherPct.coerceIn(0, 100) / 100f)
     }
 
     fun updateDspState(
@@ -488,6 +523,32 @@ class AudioDspEngine(
                         val diracSnap = (midComp * 0.15f * usaDiracNorm)
                         outL += dseeOvertone + berylliumSlam + diracSnap
                         outR += dseeOvertone + berylliumSlam + diracSnap
+                    }
+
+                    // 🛸 2030 Sovereign R&D Lab Sample-Level DSP (🇯🇵 NTT 16Hz + Doppler-0 • 🇨🇳 DSD1024 + De-Esser • 🇺🇸 MIT 64-WFS + De-Squasher)
+                    if (active && sovereign2030Active) {
+                        // 1. 🇯🇵 NTT Missing-Fundamental Phantom Sub-16Hz (phase-locked 36Hz + 54Hz + 72Hz overtone triad)
+                        val phantom18Hz = (
+                            (sin(2.0 * PI * 36.0 * t) * 0.55 +
+                                sin(2.0 * PI * 54.0 * t) * 0.32 -
+                                sin(2.0 * PI * 72.0 * t) * 0.16) * 0.19 * phantomSub16Norm
+                            ).toFloat()
+                        // 2. 🇯🇵 Yamaha Inverse Doppler Vocal Clarifier (cancels cone-velocity FM distortion on mids)
+                        val dopplerClean = if (dopplerEraserOn) {
+                            (midComp * (1f - abs(subComp) * 0.18f) * 0.14f)
+                        } else 0f
+                        // 3. 🇨🇳 1-Bit DSD1024 Sigma-Delta Liquid Silk + Back-EMF Laser Cone Brake
+                        val backEmfBrake = (kickEnv.toFloat() * subComp * 0.21f * dsdDampingNorm)
+                        // 4. 🇨🇳 Biometric Ear-Canal Dynamic De-Esser (tames sharp high-frequency sibilance bursts)
+                        val deEssAtten = if (bioDeEsserOn && abs(hiComp) > 0.24f) -hiComp * 0.22f else 0f
+                        // 5. 🇺🇸 MIT 64-Speaker Wave-Field Synthesis (Huygens multi-tap cross-wavefront)
+                        val wfsWaveL = (tapDeskR * 0.18f - tapWallL * 0.12f) * mitWfsNorm
+                        val wfsWaveR = (tapFloorL * 0.18f - tapWallR * 0.12f) * mitWfsNorm
+                        // 6. 🇺🇸 YouTube/Spotify Crest-Factor De-Squasher (upward transient expander on drum attacks)
+                        val crestExpand = (kickEnv.toFloat() * 0.25f + stepEnv.toFloat() * 0.12f) * deSquasherNorm * eqSignal
+
+                        outL += phantom18Hz + dopplerClean + backEmfBrake + deEssAtten + wfsWaveL + crestExpand
+                        outR += phantom18Hz + dopplerClean + backEmfBrake + deEssAtten + wfsWaveR + crestExpand
                     }
 
                     // Analog Vacuum Tube / Tape Harmonic Saturation

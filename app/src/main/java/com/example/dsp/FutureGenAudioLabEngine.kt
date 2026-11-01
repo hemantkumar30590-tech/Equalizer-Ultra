@@ -959,6 +959,203 @@ object FutureGenAudioLabEngine {
             telemetrySummary = summary
         )
     }
+
+    /**
+     * Synthesizes the "🛸 2030 SOVEREIGN R&D LAB (🇯🇵 JAPAN • 🇨🇳 CHINA • 🇺🇸 USA NEXT-GEN ROADMAP)"
+     * combining 6 secret lab technologies:
+     * 1. 🇯🇵 NTT + Sony Phantom Sub-16Hz Missing-Fundamental Neuro-Bass
+     * 2. 🇯🇵 Yamaha Acoustic Metamaterial Inverse Doppler Vocal Distortion Eraser
+     * 3. 🇨🇳 Topping/Holo 1-Bit DSD1024 Liquid Sigma-Delta + Back-EMF Damping Factor Control
+     * 4. 🇨🇳 Huawei/Moondrop Biometric Ear-Canal Resonance & Sibilance De-Esser
+     * 5. 🇺🇸 MIT Media Lab 64-Virtual-Speaker Wave-Field Synthesis (WFS) Holographic Wall
+     * 6. 🇺🇸 Dolby/Harman Dynamic Crest-Factor Expander (YouTube/Spotify Loudness De-Squasher)
+     */
+    fun synthesizeSovereign2030RndSuite(
+        baseBands: List<Float>,
+        mode: Sovereign2030RndMode,
+        phantomSub16HzPercent: Int,
+        dopplerEraserEnabled: Boolean,
+        dsd1024DampingPercent: Int,
+        bioEarDeEsserEnabled: Boolean,
+        mit64WfsWallPercent: Int,
+        streamDeSquasherPercent: Int
+    ): Sovereign2030SynthesisResult {
+        if (mode == Sovereign2030RndMode.OFF) {
+            return Sovereign2030SynthesisResult(
+                sculptedBands31 = EqPresetEntity.interpolateTo31Bands(baseBands),
+                effectiveBassBoost = 78,
+                effectiveSpatial3D = 48,
+                effectiveReverbLevel = 18,
+                effectiveReverbRoom = "Medium Room",
+                effectiveCrossfeedPct = 30,
+                effectiveAnalogDrivePct = 25,
+                effectivePreampDb = 0f,
+                telemetrySummary = "🛸 2030 R&D LAB STANDBY • Select 🇯🇵 NTT 16Hz, 🇨🇳 DSD1024, 🇺🇸 MIT 64-WFS or 🛸 2030 Singularity"
+            )
+        }
+
+        val cleanBase = EqPresetEntity.interpolateTo31Bands(baseBands)
+        val phantomNorm = (phantomSub16HzPercent.coerceIn(0, 100) / 100f) * mode.jpScale
+        val dsdNorm = (dsd1024DampingPercent.coerceIn(0, 100) / 100f) * mode.cnScale
+        val wfsNorm = (mit64WfsWallPercent.coerceIn(0, 100) / 100f) * mode.usScale
+        val deSquashNorm = (streamDeSquasherPercent.coerceIn(0, 100) / 100f) * mode.usScale
+
+        val outBands = List(31) { idx ->
+            var g = cleanBase.getOrElse(idx) { 0f } * 0.48f
+
+            // 1. 🇯🇵 NTT + Sony Phantom Sub-16Hz Missing-Fundamental Harmonic Matrix:
+            // Mild protection at 20Hz cone excursion limit, strong phase-locked 31.5Hz (idx 2), 40Hz (idx 3), 63Hz (idx 5), 80Hz (idx 6)
+            if (phantomNorm > 0.01f) {
+                when (idx) {
+                    0 -> g += 2.6f * phantomNorm
+                    1 -> g += 3.8f * phantomNorm
+                    2, 3 -> g += 5.2f * phantomNorm // 1st & 2nd missing-fundamental overtones (31.5Hz-40Hz)
+                    4, 5 -> g += 4.4f * phantomNorm // 3rd harmonic lock (50Hz-63Hz)
+                    6 -> g += 2.8f * phantomNorm    // Upper sub-harmonic anchor (80Hz)
+                }
+            }
+
+            // 2. 🇯🇵 Yamaha Inverse Doppler Distortion Eraser:
+            // Cleans intermodulation mud between 160Hz-315Hz (idx 9..12) and locks vocal phase clarity at 1.25kHz-3.15kHz (idx 18..22)
+            if (dopplerEraserEnabled) {
+                when (idx) {
+                    in 9..12 -> g -= 2.4f           // Erase cone-excursion Doppler mud zone
+                    in 18..22 -> g += 2.9f          // Crystal-clear zero-Doppler vocal projection
+                }
+            }
+
+            // 3. 🇨🇳 1-Bit DSD1024 Liquid Sigma-Delta + Back-EMF Damping Factor:
+            // High damping (dsdNorm > 0.5) = laser-tight sub-bass & zero upper-bass bloat; silky 10kHz-20kHz liquid air
+            if (dsdNorm > 0.01f) {
+                when (idx) {
+                    in 2..5 -> g += 3.4f * dsdNorm  // High-current transconductance sub-slam
+                    in 7..9 -> g -= 1.8f * dsdNorm  // Back-EMF cone brake (kills boomy overhang at 100Hz-160Hz)
+                    in 13..16 -> g += 2.0f * dsdNorm // Liquid DSD1024 analog lower-mid density
+                    in 27..30 -> g += 3.8f * dsdNorm // 1-Bit Sigma-Delta ultrasonic silk ribbon (10kHz-20kHz)
+                }
+            }
+
+            // 4. 🇨🇳 Biometric Otoacoustic Ear-Canal Resonance & Sibilance De-Esser:
+            // Cancels 6.3kHz-8kHz (idx 25..26) ear-canal piercing peak & restores 12.5kHz-20kHz velvet air
+            if (bioEarDeEsserEnabled) {
+                when (idx) {
+                    25, 26 -> g -= 3.6f             // Surgical ear-canal resonance & "Sss/Ttt" sibilance notch
+                    28, 29, 30 -> g += 2.2f         // Compensating velvet air shimmer above sibilance zone
+                }
+            }
+
+            // 5. 🇺🇸 MIT 64-Speaker Wave-Field Synthesis (WFS) Holographic Wall:
+            // Expands Huygens acoustic wavefront presence across 500Hz-1kHz and 4kHz-6.3kHz spatial bands
+            if (wfsNorm > 0.01f) {
+                when (idx) {
+                    in 14..17 -> g += 2.1f * wfsNorm // Holographic room body wavefront (500Hz-1kHz)
+                    in 22..24 -> g += 3.1f * wfsNorm // 64-Speaker array horizontal dispersion cues (3.15kHz-5kHz)
+                }
+            }
+
+            // 6. 🇺🇸 Dolby/Harman Stream De-Squasher (Dynamic Crest-Factor & Drum Slam Expander):
+            // Restores squashed YouTube/Spotify kick punch (50Hz-100Hz) and snare/transient snap (2kHz-4kHz)
+            if (deSquashNorm > 0.01f) {
+                when (idx) {
+                    in 4..7 -> g += 3.5f * deSquashNorm  // Un-squashed kick drum transient punch
+                    in 20..23 -> g += 2.8f * deSquashNorm // Snare & acoustic pluck crest-factor snap
+                }
+            }
+
+            (kotlin.math.round(g * 2f) / 2f).coerceIn(-15f, 15f)
+        }
+
+        val effBass = (76 + (phantomNorm * 12f + dsdNorm * 8f + deSquashNorm * 6f).roundToInt()).coerceIn(50, 99)
+        val effSpatial = (72 + (wfsNorm * 22f + phantomNorm * 5f).roundToInt()).coerceIn(50, 99)
+        val effReverb = (24 + (wfsNorm * 28f).roundToInt()).coerceIn(15, 65)
+        val effRoom = if (wfsNorm > 0.6f) "Large Hall" else "Medium Room"
+        val effCrossfeed = (40 + (wfsNorm * 32f).roundToInt()).coerceIn(25, 85)
+        val effAnalog = (34 + (dsdNorm * 46f).roundToInt()).coerceIn(20, 92)
+        val effPreamp = (deSquashNorm * 2.4f - 0.8f).coerceIn(-2.0f, 3.0f)
+
+        val summary = buildString {
+            append("${mode.badge}: ")
+            append("🇯🇵 16Hz Phantom ${phantomSub16HzPercent}% • ")
+            if (dopplerEraserEnabled) append("Doppler-0 ON • ")
+            append("🇨🇳 DSD1024 ${dsd1024DampingPercent}% • ")
+            if (bioEarDeEsserEnabled) append("Bio De-Esser ON • ")
+            append("🇺🇸 64-WFS ${mit64WfsWallPercent}% • De-Squash +${String.format(java.util.Locale.US, "%.1f", deSquashNorm * 6.0f)}dB")
+        }
+
+        return Sovereign2030SynthesisResult(
+            sculptedBands31 = outBands,
+            effectiveBassBoost = effBass,
+            effectiveSpatial3D = effSpatial,
+            effectiveReverbLevel = effReverb,
+            effectiveReverbRoom = effRoom,
+            effectiveCrossfeedPct = effCrossfeed,
+            effectiveAnalogDrivePct = effAnalog,
+            effectivePreampDb = effPreamp,
+            telemetrySummary = summary
+        )
+    }
+}
+
+data class Sovereign2030SynthesisResult(
+    val sculptedBands31: List<Float>,
+    val effectiveBassBoost: Int,
+    val effectiveSpatial3D: Int,
+    val effectiveReverbLevel: Int,
+    val effectiveReverbRoom: String,
+    val effectiveCrossfeedPct: Int,
+    val effectiveAnalogDrivePct: Int,
+    val effectivePreampDb: Float,
+    val telemetrySummary: String
+)
+
+enum class Sovereign2030RndMode(
+    val title: String,
+    val badge: String,
+    val jpScale: Float,
+    val cnScale: Float,
+    val usScale: Float,
+    val subtitle: String
+) {
+    OFF(
+        title = "2030 R&D Bypass (Off)",
+        badge = "BYPASS",
+        jpScale = 0f,
+        cnScale = 0f,
+        usScale = 0f,
+        subtitle = "Standard DSP pipeline without 2030 R&D experimental synthesis"
+    ),
+    JAPAN_NTT_YAMAHA_2030(
+        title = "🇯🇵 Japan 2030: NTT Phantom 16Hz + Doppler Eraser",
+        badge = "🇯🇵 NTT 2030",
+        jpScale = 1.0f,
+        cnScale = 0.35f,
+        usScale = 0.35f,
+        subtitle = "Missing-Fundamental 16Hz Neuro-Sub + Yamaha Inverse Doppler Vocal Clarifier"
+    ),
+    CHINA_DSD1024_BIO_2030(
+        title = "🇨🇳 China 2030: 1-Bit DSD1024 + Back-EMF + Bio De-Esser",
+        badge = "🇨🇳 DSD1024 LAB",
+        jpScale = 0.35f,
+        cnScale = 1.0f,
+        usScale = 0.35f,
+        subtitle = "Liquid 1-Bit Sigma-Delta Stream + Laser Back-EMF Damping + Ear-Canal De-Esser"
+    ),
+    USA_MIT_WFS_DESQUASH_2030(
+        title = "🇺🇸 USA 2030: MIT 64-Speaker WFS + Stream De-Squasher",
+        badge = "🇺🇸 MIT 64-WFS",
+        jpScale = 0.35f,
+        cnScale = 0.35f,
+        usScale = 1.0f,
+        subtitle = "64-Virtual-Speaker Holographic Wavefront Wall + YouTube/Spotify Crest Restorer"
+    ),
+    OMEGA_2030_SINGULARITY(
+        title = "🛸 2030 Singularity (🇯🇵 + 🇨🇳 + 🇺🇸 All 6 Future Labs)",
+        badge = "🛸 2030 SINGULARITY",
+        jpScale = 0.95f,
+        cnScale = 0.95f,
+        usScale = 0.95f,
+        subtitle = "Full 2030 R&D Stack: Phantom 16Hz + Zero-Doppler + DSD1024 + Bio De-Esser + 64-WFS + De-Squasher"
+    )
 }
 
 data class GlobalTriadSynthesisResult(

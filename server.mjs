@@ -250,6 +250,50 @@ const HTML_PAGE = `<!DOCTYPE html>
   </header>
 
   <main>
+    <!-- 🛸 2030 Sovereign R&D Lab (Japan • China • USA Next-Gen Roadmap) -->
+    <div class="quantum-card" style="border-color: var(--emerald);">
+      <div class="card-header">
+        <div>
+          <span class="card-title" style="color:var(--emerald);">🛸 2030 SOVEREIGN R&amp;D LAB (🇯🇵 JAPAN • 🇨🇳 CHINA • 🇺🇸 USA FUTURE ROADMAP — NEW!)</span>
+          <div id="rnd2030Status" style="font-size:11.5px;color:var(--cyan);margin-top:3px;font-family:monospace;">
+            🛸 [2030 SINGULARITY] • 🇯🇵 16Hz Phantom 88% • Doppler-0 ON • 🇨🇳 DSD1024 90% • Bio De-Esser ON • 🇺🇸 64-WFS 92% • De-Squash +5.2dB
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="chip" onclick="setRnd2030Mode('off', '2030 R&D Bypass', 0, 0, 0, 0)">⏹️ Bypass</button>
+          <button class="chip" onclick="setRnd2030Mode('jp', '🇯🇵 Japan 2030: NTT 16Hz + Doppler-0', 92, 40, 40, 45)">🇯🇵 NTT 16Hz + Doppler-0</button>
+          <button class="chip" onclick="setRnd2030Mode('cn', '🇨🇳 China 2030: DSD1024 + Back-EMF + De-Esser', 40, 94, 40, 45)">🇨🇳 DSD1024 + Back-EMF</button>
+          <button class="chip" onclick="setRnd2030Mode('us', '🇺🇸 USA 2030: MIT 64-WFS + De-Squasher', 40, 45, 95, 92)">🇺🇸 MIT 64-WFS + De-Squash</button>
+          <button class="chip active" onclick="setRnd2030Mode('singularity', '🛸 2030 Singularity (All 6 Future Labs)', 88, 90, 92, 86)">🛸 2030 Singularity (All 6)</button>
+        </div>
+      </div>
+
+      <div class="quantum-grid">
+        <div class="q-box">
+          <h4><span>🇯🇵 NTT Phantom Sub-16Hz Neuro-Bass</span><span id="rnd16Val" style="color:var(--cyan);">88%</span></h4>
+          <p>Missing-Fundamental 36/54/72Hz phase-locked overtones create 16Hz cinema sub-bass without driver overload</p>
+          <input id="rnd16Slider" type="range" min="0" max="100" value="88" style="width:100%;accent-color:var(--cyan);" oninput="updateRnd2030Slider('p16', this.value)" />
+          <div style="margin-top:6px;">
+            <button class="chip active" id="dopplerBtn" onclick="toggleRndDoppler()">🫧 Yamaha Inverse Doppler Vocal Eraser: ON</button>
+          </div>
+        </div>
+        <div class="q-box">
+          <h4><span>🇨🇳 1-Bit DSD1024 + Back-EMF Damping</span><span id="rndDsdVal" style="color:var(--magenta);">90%</span></h4>
+          <p>Liquid Sigma-Delta analog silk + Laser Back-EMF cone brake + Biometric 7kHz Sibilance De-Esser</p>
+          <input id="rndDsdSlider" type="range" min="0" max="100" value="90" style="width:100%;accent-color:var(--magenta);" oninput="updateRnd2030Slider('dsd', this.value)" />
+          <div style="margin-top:6px;">
+            <button class="chip active" id="deEssBtn" onclick="toggleRndDeEsser()">🧬 Biometric Ear-Canal 7kHz De-Esser: ON</button>
+          </div>
+        </div>
+        <div class="q-box">
+          <h4><span>🇺🇸 MIT 64-Speaker WFS + De-Squasher</span><span id="rndWfsVal" style="color:var(--emerald);">92% | +5.2dB</span></h4>
+          <p>64-Speaker Huygens Holographic Wall + YouTube/Spotify Crest-Factor Drum Slam Restorer</p>
+          <input id="rndWfsSlider" type="range" min="0" max="100" value="92" style="width:100%;accent-color:var(--emerald);" oninput="updateRnd2030Slider('wfs', this.value)" />
+          <input id="rndSqSlider" type="range" min="0" max="100" value="86" style="width:100%;accent-color:var(--amber);margin-top:6px;" oninput="updateRnd2030Slider('sq', this.value)" />
+        </div>
+      </div>
+    </div>
+
     <!-- Global Triad Flagship Hi-Fi Suite (Japan • China • USA) -->
     <div class="quantum-card" style="border-color: var(--cyan);">
       <div class="card-header">
@@ -1251,6 +1295,74 @@ const HTML_PAGE = `<!DOCTYPE html>
       triadIso = !triadIso;
       document.getElementById("isoLoudnessBtn").textContent = "📈 ISO 226 Dynamic Equal-Loudness: " + (triadIso ? "ON" : "OFF");
       applyTriadCurve();
+    }
+
+    let rndP16 = 88;
+    let rndDsd = 90;
+    let rndWfs = 92;
+    let rndSq = 86;
+    let rndDoppler = true;
+    let rndDeEss = true;
+    let rndLabel = "🛸 2030 Singularity";
+
+    function applyRnd2030Curve() {
+      const p16 = rndP16 / 100.0;
+      const dsd = rndDsd / 100.0;
+      const wfs = rndWfs / 100.0;
+      const sq = rndSq / 100.0;
+      for (let i = 0; i < 31; i++) {
+        let g = gains[i] * 0.45;
+        if (i >= 1 && i <= 6) g += p16 * 4.8 + dsd * 3.0 + sq * 3.2;
+        if (i >= 7 && i <= 11) g -= (rndDoppler ? 2.2 : 0) + dsd * 1.4;
+        if (i >= 13 && i <= 17) g += dsd * 2.0 + wfs * 2.1;
+        if (i >= 18 && i <= 23) g += (rndDoppler ? 2.8 : 0) + wfs * 2.6 + sq * 2.5;
+        if (i === 25 || i === 26) g -= (rndDeEss ? 3.5 : 0);
+        if (i >= 27) g += dsd * 3.8 + (rndDeEss ? 2.2 : 0);
+        gains[i] = Math.max(-15, Math.min(15, Math.round(g * 2) / 2));
+      }
+      const sqDb = ((rndSq / 100.0) * 6.0).toFixed(1);
+      document.getElementById("rndWfsVal").textContent = rndWfs + "% | +" + sqDb + "dB";
+      document.getElementById("rnd2030Status").textContent =
+        "🛸 [" + rndLabel.toUpperCase() + "] • 🇯🇵 16Hz Phantom " + rndP16 + "% • " +
+        (rndDoppler ? "Doppler-0 ON" : "Doppler OFF") + " • 🇨🇳 DSD1024 " + rndDsd + "% • " +
+        (rndDeEss ? "Bio De-Esser ON" : "De-Esser OFF") + " • 🇺🇸 64-WFS " + rndWfs + "% • De-Squash +" + sqDb + "dB";
+      renderBands();
+    }
+
+    function setRnd2030Mode(key, label, p16, dsd, wfs, sq) {
+      rndLabel = label;
+      rndP16 = p16;
+      rndDsd = dsd;
+      rndWfs = wfs;
+      rndSq = sq;
+      document.getElementById("rnd16Val").textContent = p16 + "%";
+      document.getElementById("rnd16Slider").value = p16;
+      document.getElementById("rndDsdVal").textContent = dsd + "%";
+      document.getElementById("rndDsdSlider").value = dsd;
+      document.getElementById("rndWfsSlider").value = wfs;
+      document.getElementById("rndSqSlider").value = sq;
+      applyRnd2030Curve();
+    }
+
+    function updateRnd2030Slider(which, val) {
+      const v = parseInt(val, 10);
+      if (which === 'p16') { rndP16 = v; document.getElementById("rnd16Val").textContent = v + "%"; }
+      if (which === 'dsd') { rndDsd = v; document.getElementById("rndDsdVal").textContent = v + "%"; }
+      if (which === 'wfs') { rndWfs = v; }
+      if (which === 'sq') { rndSq = v; }
+      applyRnd2030Curve();
+    }
+
+    function toggleRndDoppler() {
+      rndDoppler = !rndDoppler;
+      document.getElementById("dopplerBtn").textContent = "🫧 Yamaha Inverse Doppler Vocal Eraser: " + (rndDoppler ? "ON" : "OFF");
+      applyRnd2030Curve();
+    }
+
+    function toggleRndDeEsser() {
+      rndDeEss = !rndDeEss;
+      document.getElementById("deEssBtn").textContent = "🧬 Biometric Ear-Canal 7kHz De-Esser: " + (rndDeEss ? "ON" : "OFF");
+      applyRnd2030Curve();
     }
 
     renderPresets();
