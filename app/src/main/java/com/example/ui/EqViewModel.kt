@@ -24,7 +24,9 @@ import com.example.dsp.GlobalTriadMode
 import com.example.dsp.GyroHeadTrackingMode
 import com.example.dsp.HolographicVibeProfile
 import com.example.dsp.NeuralBrainwaveMode
+import com.example.dsp.OmegaPrimeMode
 import com.example.dsp.OutOfHeadExternalizerMode
+import com.example.dsp.ServoTransducerProfile
 import com.example.dsp.Sovereign2030RndMode
 import com.example.dsp.SpatialStageFormation
 import com.example.dsp.SpatialStageNode
@@ -144,7 +146,16 @@ data class EqUiState(
     val isBioEarDeEsserEnabled: Boolean = true,
     val mit64WfsWallPercent: Int = 88,
     val streamDeSquasherPercent: Int = 84,
-    val sovereign2030TelemetryText: String = "🛸 2030 R&D LAB READY • Tap 🇯🇵 NTT 16Hz, 🇨🇳 DSD1024, 🇺🇸 MIT 64-WFS or 🛸 2030 Singularity"
+    val sovereign2030TelemetryText: String = "🛸 2030 R&D LAB READY • Tap 🇯🇵 NTT 16Hz, 🇨🇳 DSD1024, 🇺🇸 MIT 64-WFS or 🛸 2030 Singularity",
+    // 🧬 Omega-Prime Autonomous Acoustic AI Suite (6-in-1 Master Engine)
+    val omegaPrimeMode: OmegaPrimeMode = OmegaPrimeMode.OFF,
+    val servoTransducerProfile: ServoTransducerProfile = ServoTransducerProfile.TWS_EARBUD_6MM,
+    val dynamicBreathingEqPercent: Int = 88,
+    val vocalSidechainDuckPercent: Int = 90,
+    val elevationHelixSkyPercent: Int = 86,
+    val goldenPhiHarmonicPercent: Int = 84,
+    val isBioGrooveCardioSyncEnabled: Boolean = true,
+    val omegaPrimeTelemetryText: String = "🧬 OMEGA-PRIME AI READY • Tap 🧬 Omega-Prime AI, 🎤 Vocal Sidechain, 🌀 Sky Helix or ✨ Golden Phi=1.618"
 )
 
 class EqViewModel(application: Application) : AndroidViewModel(application) {
@@ -1730,6 +1741,121 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         recomputeAndApplySovereign2030()
     }
 
+    // =========================================================================
+    // 🧬 OMEGA-PRIME AUTONOMOUS ACOUSTIC AI SUITE (6-IN-1 MASTER ENGINE)
+    // =========================================================================
+
+    private fun recomputeAndApplyOmegaPrime() {
+        _uiState.update { s ->
+            val result = FutureGenAudioLabEngine.synthesizeOmegaPrimeSuite(
+                baseBands = s.bandGainsDb,
+                mode = s.omegaPrimeMode,
+                servoProfile = s.servoTransducerProfile,
+                dynamicBreathingEqPercent = s.dynamicBreathingEqPercent,
+                vocalSidechainDuckPercent = s.vocalSidechainDuckPercent,
+                elevationHelixSkyPercent = s.elevationHelixSkyPercent,
+                goldenPhiHarmonicPercent = s.goldenPhiHarmonicPercent,
+                bioGrooveCardioSyncEnabled = s.isBioGrooveCardioSyncEnabled
+            )
+            if (s.omegaPrimeMode == OmegaPrimeMode.OFF) {
+                s.copy(omegaPrimeTelemetryText = result.telemetrySummary)
+            } else {
+                s.copy(
+                    isMasterEnabled = true,
+                    activePresetName = s.omegaPrimeMode.title,
+                    bandGainsDb = result.sculptedBands31,
+                    bassBoostStrength = result.effectiveBassBoost,
+                    spatialLevel = result.effectiveSpatial3D,
+                    reverbLevel = result.effectiveReverbLevel,
+                    reverbRoom = result.effectiveReverbRoom,
+                    crossfeedStrengthPercent = result.effectiveCrossfeedPct,
+                    analogDrivePercent = result.effectiveAnalogDrivePct,
+                    preampDb = result.effectivePreampDb,
+                    omegaPrimeTelemetryText = result.telemetrySummary
+                )
+            }
+        }
+        syncDspEngine()
+    }
+
+    fun setOmegaPrimeMode(mode: OmegaPrimeMode) {
+        _uiState.update { it.copy(omegaPrimeMode = mode) }
+        hapticManager.onAiPresetApplied("Omega-Prime ${mode.badge}")
+        recomputeAndApplyOmegaPrime()
+    }
+
+    fun setServoTransducerProfile(profile: ServoTransducerProfile) {
+        _uiState.update { state ->
+            val nextMode = if (state.omegaPrimeMode == OmegaPrimeMode.OFF) {
+                OmegaPrimeMode.OMEGA_PRIME_AUTONOMOUS_ALL
+            } else state.omegaPrimeMode
+            state.copy(
+                omegaPrimeMode = nextMode,
+                servoTransducerProfile = profile
+            )
+        }
+        hapticManager.onControlTick("Servo: ${profile.badge}")
+        recomputeAndApplyOmegaPrime()
+    }
+
+    fun updateDynamicBreathingEqPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.omegaPrimeMode == OmegaPrimeMode.OFF) {
+                OmegaPrimeMode.OMEGA_PRIME_AUTONOMOUS_ALL
+            } else state.omegaPrimeMode
+            state.copy(
+                omegaPrimeMode = nextMode,
+                dynamicBreathingEqPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyOmegaPrime()
+    }
+
+    fun updateVocalSidechainDuckPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.omegaPrimeMode == OmegaPrimeMode.OFF) {
+                OmegaPrimeMode.VOCAL_SIDECHAIN_MASTER
+            } else state.omegaPrimeMode
+            state.copy(
+                omegaPrimeMode = nextMode,
+                vocalSidechainDuckPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyOmegaPrime()
+    }
+
+    fun updateElevationHelixSkyPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.omegaPrimeMode == OmegaPrimeMode.OFF) {
+                OmegaPrimeMode.HELIX_SKY_DOME_3D
+            } else state.omegaPrimeMode
+            state.copy(
+                omegaPrimeMode = nextMode,
+                elevationHelixSkyPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyOmegaPrime()
+    }
+
+    fun updateGoldenPhiHarmonicPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.omegaPrimeMode == OmegaPrimeMode.OFF) {
+                OmegaPrimeMode.GOLDEN_PHI_UNPLUGGED
+            } else state.omegaPrimeMode
+            state.copy(
+                omegaPrimeMode = nextMode,
+                goldenPhiHarmonicPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyOmegaPrime()
+    }
+
+    fun toggleBioGrooveCardioSync() {
+        _uiState.update { it.copy(isBioGrooveCardioSyncEnabled = !it.isBioGrooveCardioSyncEnabled) }
+        hapticManager.onControlTick("Bio-Groove Cardio Sync")
+        recomputeAndApplyOmegaPrime()
+    }
+
     private fun startFutureGenCoordinator() {
         viewModelScope.launch {
             var tickCount = 0
@@ -1778,7 +1904,13 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                         dsd1024DampingPct = s.dsd1024DampingPercent,
                         bioDeEsser = s.isBioEarDeEsserEnabled,
                         mit64WfsPct = s.mit64WfsWallPercent,
-                        streamDeSquasherPct = s.streamDeSquasherPercent
+                        streamDeSquasherPct = s.streamDeSquasherPercent,
+                        omegaPrimeEnabled = s.omegaPrimeMode != OmegaPrimeMode.OFF,
+                        dynamicBreathingEqPct = s.dynamicBreathingEqPercent,
+                        vocalSidechainDuckPct = s.vocalSidechainDuckPercent,
+                        elevationHelixSkyPct = s.elevationHelixSkyPercent,
+                        goldenPhiHarmonicPct = s.goldenPhiHarmonicPercent,
+                        bioGrooveCardioSync = s.isBioGrooveCardioSyncEnabled
                     )
                 }
                 // Bass-to-Haptic Sub-Woofer Tactile Engine: pulse phone vibrator on sub-bass hits
@@ -1869,7 +2001,13 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             dsd1024DampingPct = s.dsd1024DampingPercent,
             bioDeEsser = s.isBioEarDeEsserEnabled,
             mit64WfsPct = s.mit64WfsWallPercent,
-            streamDeSquasherPct = s.streamDeSquasherPercent
+            streamDeSquasherPct = s.streamDeSquasherPercent,
+            omegaPrimeEnabled = s.omegaPrimeMode != OmegaPrimeMode.OFF,
+            dynamicBreathingEqPct = s.dynamicBreathingEqPercent,
+            vocalSidechainDuckPct = s.vocalSidechainDuckPercent,
+            elevationHelixSkyPct = s.elevationHelixSkyPercent,
+            goldenPhiHarmonicPct = s.goldenPhiHarmonicPercent,
+            bioGrooveCardioSync = s.isBioGrooveCardioSyncEnabled
         )
         dspEngine.updateDspState(
             enabled = s.isMasterEnabled,

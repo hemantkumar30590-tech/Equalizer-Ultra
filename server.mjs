@@ -250,6 +250,53 @@ const HTML_PAGE = `<!DOCTYPE html>
   </header>
 
   <main>
+    <!-- 🧬 Omega-Prime Autonomous Acoustic AI Suite (6-in-1 Master Engine) -->
+    <div class="quantum-card" style="border-color: var(--cyan);">
+      <div class="card-header">
+        <div>
+          <span class="card-title" style="color:var(--emerald);">🧬 OMEGA-PRIME AUTONOMOUS ACOUSTIC AI SUITE (6-IN-1 MASTER ENGINE — NEW!)</span>
+          <div id="omegaPrimeStatus" style="font-size:11.5px;color:var(--amber);margin-top:3px;font-family:monospace;">
+            🧬 [OMEGA-PRIME AI • TWS SERVO]: Breathing EQ 88% • Vocal Sidechain 90% • 45° Sky Helix 86% • Golden φ=1.618 84% • Cardio-Sync ON
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="chip" onclick="setOmegaMode('off', 'Omega-Prime Bypass', 0, 0, 0, 0)">⏹️ Bypass</button>
+          <button class="chip" onclick="setOmegaMode('sidechain', '🎤 Vocal-Sidechain Master', 85, 96, 55, 65)">🎤 Vocal-Sidechain Master</button>
+          <button class="chip" onclick="setOmegaMode('helix', '🌀 3D Sky Helix Canopy', 75, 65, 96, 70)">🌀 45° Sky Helix 3D</button>
+          <button class="chip" onclick="setOmegaMode('phi', '✨ Golden φ=1.618 Soul', 70, 75, 75, 96)">✨ Golden φ=1.618 Soul</button>
+          <button class="chip active" onclick="setOmegaMode('all', '🧬 Omega-Prime Autonomous (All 6)', 88, 90, 86, 84)">🧬 Omega-Prime Master (All 6)</button>
+        </div>
+      </div>
+
+      <div class="quantum-grid">
+        <div class="q-box">
+          <h4><span>🎚️ Dynamic Breathing EQ &amp; 🛡️ Servo Guard</span><span id="omDynVal" style="color:var(--emerald);">88%</span></h4>
+          <p>Upward low-volume boost + 2ms drop clamp + Transducer Fs excursion protection</p>
+          <input id="omDynSlider" type="range" min="0" max="100" value="88" style="width:100%;accent-color:var(--emerald);" oninput="updateOmegaSlider('dyn', this.value)" />
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">
+            <button class="chip active" onclick="setServoGuard('TWS SERVO', 2)">🎧 TWS</button>
+            <button class="chip" onclick="setServoGuard('BT SPEAKER', 3)">📻 BT Speaker</button>
+            <button class="chip" onclick="setServoGuard('CAR WOOFER', 1)">🚘 Car Woofer</button>
+            <button class="chip" onclick="setServoGuard('18&quot; SUB', 0)">🔊 18" Sub</button>
+          </div>
+        </div>
+        <div class="q-box">
+          <h4><span>🎤 Studio Vocal-Ducking Sidechain Bass</span><span id="omScVal" style="color:var(--cyan);">90%</span></h4>
+          <p>100% Sub-Bass Slam (20–63Hz) + Automatic 100–200Hz Vocal Pocket Carve so lyrics never drown</p>
+          <input id="omScSlider" type="range" min="0" max="100" value="90" style="width:100%;accent-color:var(--cyan);" oninput="updateOmegaSlider('sc', this.value)" />
+        </div>
+        <div class="q-box">
+          <h4><span>🌀 45° Sky Helix &amp; ✨ Golden φ=1.618</span><span id="omHelixVal" style="color:var(--magenta);">86% | φ 84%</span></h4>
+          <p>Blauert 45° Overhead Sky Canopy + Stradivarius φ=1.618 Harmonic Exciter + 44Hz Cardio Sync</p>
+          <input id="omHelixSlider" type="range" min="0" max="100" value="86" style="width:100%;accent-color:var(--magenta);" oninput="updateOmegaSlider('hx', this.value)" />
+          <input id="omPhiSlider" type="range" min="0" max="100" value="84" style="width:100%;accent-color:var(--amber);margin-top:6px;" oninput="updateOmegaSlider('phi', this.value)" />
+          <div style="margin-top:6px;">
+            <button class="chip active" id="cardioSyncBtn" onclick="toggleOmegaCardio()">🫀 Bio-Groove Cardio-Rhythm Sync: ON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 🛸 2030 Sovereign R&D Lab (Japan • China • USA Next-Gen Roadmap) -->
     <div class="quantum-card" style="border-color: var(--emerald);">
       <div class="card-header">
@@ -1363,6 +1410,76 @@ const HTML_PAGE = `<!DOCTYPE html>
       rndDeEss = !rndDeEss;
       document.getElementById("deEssBtn").textContent = "🧬 Biometric Ear-Canal 7kHz De-Esser: " + (rndDeEss ? "ON" : "OFF");
       applyRnd2030Curve();
+    }
+
+    let omDyn = 88;
+    let omSc = 90;
+    let omHx = 86;
+    let omPhi = 84;
+    let omCardio = true;
+    let omServoBadge = "TWS SERVO";
+    let omServoCutIdx = 2;
+    let omLabel = "🧬 Omega-Prime Master";
+
+    function applyOmegaCurve() {
+      const dyn = omDyn / 100.0;
+      const sc = omSc / 100.0;
+      const hx = omHx / 100.0;
+      const phi = omPhi / 100.0;
+      for (let i = 0; i < 31; i++) {
+        let g = gains[i] * 0.45;
+        if (i < omServoCutIdx) g -= 2.2;
+        else if (i <= omServoCutIdx + 3) g += 3.6 * (0.6 + dyn * 0.4);
+        if (i >= 1 && i <= 5) g += dyn * 3.6 + sc * 4.0 + hx * 2.0;
+        if (i >= 7 && i <= 10) g -= sc * 2.8;
+        if (i >= 11 && i <= 15) g += phi * 2.1 - dyn * 1.2;
+        if (i >= 18 && i <= 23) g += sc * 3.4 + dyn * 2.5 + phi * 2.4;
+        if (i >= 25 && i <= 29) g += hx * 3.8 + phi * 3.0 + dyn * 2.8;
+        if (omCardio && (i === 3 || i === 4 || i === 21)) g += 2.0;
+        gains[i] = Math.max(-15, Math.min(15, Math.round(g * 2) / 2));
+      }
+      document.getElementById("omHelixVal").textContent = omHx + "% | φ " + omPhi + "%";
+      document.getElementById("omegaPrimeStatus").textContent =
+        "🧬 [" + omLabel.toUpperCase() + " • " + omServoBadge + "]: Breathing EQ " + omDyn +
+        "% • Vocal Sidechain " + omSc + "% • 45° Sky Helix " + omHx + "% • Golden φ=1.618 " + omPhi +
+        "% • " + (omCardio ? "Cardio-Sync ON" : "Cardio OFF");
+      renderBands();
+    }
+
+    function setOmegaMode(key, label, dyn, sc, hx, phi) {
+      omLabel = label;
+      omDyn = dyn;
+      omSc = sc;
+      omHx = hx;
+      omPhi = phi;
+      document.getElementById("omDynVal").textContent = dyn + "%";
+      document.getElementById("omDynSlider").value = dyn;
+      document.getElementById("omScVal").textContent = sc + "%";
+      document.getElementById("omScSlider").value = sc;
+      document.getElementById("omHelixSlider").value = hx;
+      document.getElementById("omPhiSlider").value = phi;
+      applyOmegaCurve();
+    }
+
+    function setServoGuard(badge, cutIdx) {
+      omServoBadge = badge;
+      omServoCutIdx = cutIdx;
+      applyOmegaCurve();
+    }
+
+    function updateOmegaSlider(which, val) {
+      const v = parseInt(val, 10);
+      if (which === 'dyn') { omDyn = v; document.getElementById("omDynVal").textContent = v + "%"; }
+      if (which === 'sc') { omSc = v; document.getElementById("omScVal").textContent = v + "%"; }
+      if (which === 'hx') { omHx = v; }
+      if (which === 'phi') { omPhi = v; }
+      applyOmegaCurve();
+    }
+
+    function toggleOmegaCardio() {
+      omCardio = !omCardio;
+      document.getElementById("cardioSyncBtn").textContent = "🫀 Bio-Groove Cardio-Rhythm Sync: " + (omCardio ? "ON" : "OFF");
+      applyOmegaCurve();
     }
 
     renderPresets();

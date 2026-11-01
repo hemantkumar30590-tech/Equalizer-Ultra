@@ -76,7 +76,9 @@ import com.example.dsp.GlobalTriadMode
 import com.example.dsp.GyroHeadTrackingMode
 import com.example.dsp.HolographicVibeProfile
 import com.example.dsp.NeuralBrainwaveMode
+import com.example.dsp.OmegaPrimeMode
 import com.example.dsp.OutOfHeadExternalizerMode
+import com.example.dsp.ServoTransducerProfile
 import com.example.dsp.Sovereign2030RndMode
 import com.example.dsp.SpatialStageFormation
 import com.example.dsp.SpatialStageNode
@@ -895,6 +897,13 @@ fun FutureGenQuantumLabDialog(
     onToggleBioEarDeEsser: () -> Unit = {},
     onUpdateMit64WfsWall: (Int) -> Unit = {},
     onUpdateStreamDeSquasher: (Int) -> Unit = {},
+    onSelectOmegaPrimeMode: (OmegaPrimeMode) -> Unit = {},
+    onSelectServoProfile: (ServoTransducerProfile) -> Unit = {},
+    onUpdateDynamicBreathingEq: (Int) -> Unit = {},
+    onUpdateVocalSidechainDuck: (Int) -> Unit = {},
+    onUpdateElevationHelixSky: (Int) -> Unit = {},
+    onUpdateGoldenPhiHarmonic: (Int) -> Unit = {},
+    onToggleBioGrooveCardioSync: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -930,13 +939,13 @@ fun FutureGenQuantumLabDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = "EQULTRA 2030 SOVEREIGN R&D LAB",
+                                text = "EQULTRA OMEGA-PRIME & 2030 R&D LAB",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
-                                text = "🛸 2030 R&D (JP/CN/US) • 🌐 Global Triad • 🔊 Out-Of-Head 3D",
+                                text = "🧬 Omega-Prime AI • 🛸 2030 R&D • 🌐 Global Triad • 🔊 Out-Of-Head 3D",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ElectricCyan
                             )
@@ -959,6 +968,18 @@ fun FutureGenQuantumLabDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // 00000. 🧬 OMEGA-PRIME AUTONOMOUS ACOUSTIC AI SUITE (6-IN-1 MASTER ENGINE)
+                    OmegaPrimeAutonomousAiCard(
+                        uiState = uiState,
+                        onSelectMode = onSelectOmegaPrimeMode,
+                        onSelectServoProfile = onSelectServoProfile,
+                        onUpdateDynamicBreathingEq = onUpdateDynamicBreathingEq,
+                        onUpdateVocalSidechainDuck = onUpdateVocalSidechainDuck,
+                        onUpdateElevationHelixSky = onUpdateElevationHelixSky,
+                        onUpdateGoldenPhiHarmonic = onUpdateGoldenPhiHarmonic,
+                        onToggleBioGrooveCardioSync = onToggleBioGrooveCardioSync
+                    )
+
                     // 0000. 🛸 2030 SOVEREIGN R&D LAB (🇯🇵 JAPAN • 🇨🇳 CHINA • 🇺🇸 USA NEXT-GEN ROADMAP)
                     Sovereign2030RndLabCard(
                         uiState = uiState,
@@ -2779,6 +2800,304 @@ fun Sovereign2030RndLabCard(
         }
     }
 }
+
+@Composable
+fun OmegaPrimeAutonomousAiCard(
+    uiState: EqUiState,
+    onSelectMode: (OmegaPrimeMode) -> Unit,
+    onSelectServoProfile: (ServoTransducerProfile) -> Unit,
+    onUpdateDynamicBreathingEq: (Int) -> Unit,
+    onUpdateVocalSidechainDuck: (Int) -> Unit,
+    onUpdateElevationHelixSky: (Int) -> Unit,
+    onUpdateGoldenPhiHarmonic: (Int) -> Unit,
+    onToggleBioGrooveCardioSync: () -> Unit
+) {
+    val isActive = uiState.omegaPrimeMode != OmegaPrimeMode.OFF
+    Surface(
+        color = ObsidianCard,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            width = 1.9.dp,
+            brush = Brush.horizontalGradient(
+                listOf(SignalEmerald, ElectricCyan, StudioAmber, NeonMagenta, HyperViolet)
+            )
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = "Omega-Prime Autonomous AI",
+                            tint = SignalEmerald,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "🧬 OMEGA-PRIME AUTONOMOUS ACOUSTIC AI (6-IN-1 MASTER)",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Breathing Dynamic EQ • Vocal-Ducking Sidechain Bass • 45° Sky Helix • Golden φ=1.618 • Servo Guard",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = StudioAmber
+                    )
+                }
+                Text(
+                    text = uiState.omegaPrimeMode.badge,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = AmoledBlack,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier
+                        .background(
+                            if (isActive) SignalEmerald else TextSecondary,
+                            RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+
+            // Live Telemetry Banner
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, if (isActive) SignalEmerald.copy(alpha = 0.7f) else ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = uiState.omegaPrimeTelemetryText,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = if (isActive) SignalEmerald else TextSecondary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                )
+            }
+
+            // 1-Tap Omega-Prime Master Mode Chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                OmegaPrimeMode.entries.forEach { mode ->
+                    val selected = uiState.omegaPrimeMode == mode
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectMode(mode) },
+                        label = {
+                            Text(
+                                text = mode.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = SignalEmerald,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        )
+                    )
+                }
+            }
+
+            // Virtual Servo-Woofer Transducer Excursion Guard Selector
+            Text(
+                text = "🛡️ Virtual Servo-Woofer Excursion Guard (Select Your Speaker/Earbud Size):",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = ElectricCyan,
+                fontWeight = FontWeight.Bold
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ServoTransducerProfile.entries.forEach { profile ->
+                    val selected = uiState.servoTransducerProfile == profile
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectServoProfile(profile) },
+                        label = {
+                            Text(
+                                text = profile.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = StudioAmber,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextSecondary
+                        )
+                    )
+                }
+            }
+
+            // 4 Autonomous Acoustic AI Sliders
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    // 1. Per-Band Dynamic Breathing EQ
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🎚️ Per-Band Dynamic Breathing EQ (Upward Lift + Drop Clamp)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.dynamicBreathingEqPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.dynamicBreathingEqPercent.toFloat(),
+                        onValueChange = { onUpdateDynamicBreathingEq(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = SignalEmerald,
+                            activeTrackColor = SignalEmerald
+                        )
+                    )
+
+                    // 2. Vocal-Ducking Sidechain Sub-Bass
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🎤 Studio Vocal-Ducking Sidechain Sub-Bass (100% Bass + Lyrics)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.vocalSidechainDuckPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.vocalSidechainDuckPercent.toFloat(),
+                        onValueChange = { onUpdateVocalSidechainDuck(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = ElectricCyan,
+                            activeTrackColor = ElectricCyan
+                        )
+                    )
+
+                    // 3. 3D Frequency-Elevation Helix & 45° Sky Dome
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🌀 3D Frequency-Elevation Helix & 45° Overhead Sky Canopy",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.elevationHelixSkyPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.elevationHelixSkyPercent.toFloat(),
+                        onValueChange = { onUpdateElevationHelixSky(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = NeonMagenta,
+                            activeTrackColor = NeonMagenta
+                        )
+                    )
+
+                    // 4. Golden-Ratio (Phi = 1.618) Stradivarius Harmonic Exciter
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "✨ Golden-Ratio (φ = 1.618) Stradivarius Soul Harmonic Exciter",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.goldenPhiHarmonicPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.goldenPhiHarmonicPercent.toFloat(),
+                        onValueChange = { onUpdateGoldenPhiHarmonic(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = StudioAmber,
+                            activeTrackColor = StudioAmber
+                        )
+                    )
+                }
+            }
+
+            // Bio-Groove Cardio-Rhythm Sync Switch
+            FilterChip(
+                selected = uiState.isBioGrooveCardioSyncEnabled,
+                onClick = onToggleBioGrooveCardioSync,
+                label = {
+                    Text(
+                        text = if (uiState.isBioGrooveCardioSyncEnabled) {
+                            "🫀 Bio-Groove Cardio-Rhythm Sync (44Hz Vagus-Nerve Warmth + Kinetic Snap): ON"
+                        } else {
+                            "🫀 Bio-Groove Cardio-Rhythm Sync: OFF"
+                        },
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = SignalEmerald,
+                    selectedLabelColor = AmoledBlack,
+                    containerColor = AmoledBlack,
+                    labelColor = TextSecondary
+                )
+            )
+        }
+    }
+}
+
 
 
 

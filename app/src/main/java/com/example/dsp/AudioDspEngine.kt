@@ -154,6 +154,24 @@ class AudioDspEngine(
     @Volatile
     private var deSquasherNorm: Float = 0.84f
 
+    @Volatile
+    private var omegaPrimeActive: Boolean = false
+
+    @Volatile
+    private var omegaDynEqNorm: Float = 0.88f
+
+    @Volatile
+    private var omegaVocalSidechainNorm: Float = 0.90f
+
+    @Volatile
+    private var omegaSkyHelixNorm: Float = 0.86f
+
+    @Volatile
+    private var omegaGoldenPhiNorm: Float = 0.84f
+
+    @Volatile
+    private var omegaCardioSyncOn: Boolean = true
+
     private val _isPlayingTestLoop = MutableStateFlow(false)
     val isPlayingTestLoop: StateFlow<Boolean> = _isPlayingTestLoop.asStateFlow()
 
@@ -259,7 +277,13 @@ class AudioDspEngine(
         dsd1024DampingPct: Int = 85,
         bioDeEsser: Boolean = true,
         mit64WfsPct: Int = 88,
-        streamDeSquasherPct: Int = 84
+        streamDeSquasherPct: Int = 84,
+        omegaPrimeEnabled: Boolean = false,
+        dynamicBreathingEqPct: Int = 88,
+        vocalSidechainDuckPct: Int = 90,
+        elevationHelixSkyPct: Int = 86,
+        goldenPhiHarmonicPct: Int = 84,
+        bioGrooveCardioSync: Boolean = true
     ) {
         neuralBrainwaveMode = brainwaveMode
         radarAzimuthDeg = azimuthDeg.coerceIn(-180f, 180f)
@@ -291,6 +315,12 @@ class AudioDspEngine(
         bioDeEsserOn = bioDeEsser
         mitWfsNorm = (mit64WfsPct.coerceIn(0, 100) / 100f)
         deSquasherNorm = (streamDeSquasherPct.coerceIn(0, 100) / 100f)
+        omegaPrimeActive = omegaPrimeEnabled
+        omegaDynEqNorm = (dynamicBreathingEqPct.coerceIn(0, 100) / 100f)
+        omegaVocalSidechainNorm = (vocalSidechainDuckPct.coerceIn(0, 100) / 100f)
+        omegaSkyHelixNorm = (elevationHelixSkyPct.coerceIn(0, 100) / 100f)
+        omegaGoldenPhiNorm = (goldenPhiHarmonicPct.coerceIn(0, 100) / 100f)
+        omegaCardioSyncOn = bioGrooveCardioSync
     }
 
     fun updateDspState(
@@ -549,6 +579,27 @@ class AudioDspEngine(
 
                         outL += phantom18Hz + dopplerClean + backEmfBrake + deEssAtten + wfsWaveL + crestExpand
                         outR += phantom18Hz + dopplerClean + backEmfBrake + deEssAtten + wfsWaveR + crestExpand
+                    }
+
+                    // 🧬 Omega-Prime Autonomous Acoustic AI Suite (Dynamic Breathing EQ + Vocal Sidechain + 45° Sky Helix + Golden Phi=1.618)
+                    if (active && omegaPrimeActive) {
+                        // 1. Per-Band Dynamic Breathing EQ (upward low-level lift + 2ms drop clamp)
+                        val upwardBreath = if (abs(eqSignal) < 0.28f) eqSignal * 0.22f * omegaDynEqNorm else -eqSignal * 0.08f * omegaDynEqNorm
+                        // 2. Vocal-Ducking Sidechain Sub-Bass (ducks upper-bass mud when vocal mid energy is high, spotlights vocals)
+                        val vocalPresence = abs(midComp)
+                        val sidechainSculpt = (midComp * 0.20f - subComp * (vocalPresence * 0.24f)) * omegaVocalSidechainNorm
+                        // 3. 3D Frequency-Elevation Helix & 45° Overhead Sky Canopy (mono sub anchor + wide elevated highs)
+                        val skyHelixL = (subComp * 0.12f + (hiComp + tapWallR * 0.22f) * 0.24f) * omegaSkyHelixNorm
+                        val skyHelixR = (subComp * 0.12f + (-hiComp + tapWallL * 0.22f) * 0.24f) * omegaSkyHelixNorm
+                        // 4. Golden-Ratio (Phi = 1.618034) Stradivarius Harmonic Exciter
+                        val phiHarmonic = (sin(2.0 * PI * (arpHz * 1.618034) * t) * stepEnv * 0.11 * omegaGoldenPhiNorm).toFloat()
+                        // 5. Bio-Groove Cardio Sync (60 BPM 1Hz Vagus-Nerve sub warmth + kinetic beat snap)
+                        val cardioPulse = if (omegaCardioSyncOn) {
+                            (sin(2.0 * PI * 44.0 * t) * (0.5 + 0.5 * sin(2.0 * PI * 1.0 * t)) * 0.09).toFloat()
+                        } else 0f
+
+                        outL += upwardBreath + sidechainSculpt + skyHelixL + phiHarmonic + cardioPulse
+                        outR += upwardBreath + sidechainSculpt + skyHelixR + phiHarmonic + cardioPulse
                     }
 
                     // Analog Vacuum Tube / Tape Harmonic Saturation

@@ -496,7 +496,20 @@ fun EqultraScreen(
                         onUpdateDsd1024Damping = viewModel::updateDsd1024DampingPercent,
                         onToggleBioEarDeEsser = viewModel::toggleBioEarDeEsser,
                         onUpdateMit64WfsWall = viewModel::updateMit64WfsWallPercent,
-                        onUpdateStreamDeSquasher = viewModel::updateStreamDeSquasherPercent
+                        onUpdateStreamDeSquasher = viewModel::updateStreamDeSquasherPercent,
+                        onSelectOmegaPrimeMode = { mode ->
+                            viewModel.setOmegaPrimeMode(mode)
+                            Toast.makeText(context, "Omega-Prime: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onSelectServoProfile = { profile ->
+                            viewModel.setServoTransducerProfile(profile)
+                            Toast.makeText(context, "Servo Guard: ${profile.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdateDynamicBreathingEq = viewModel::updateDynamicBreathingEqPercent,
+                        onUpdateVocalSidechainDuck = viewModel::updateVocalSidechainDuckPercent,
+                        onUpdateElevationHelixSky = viewModel::updateElevationHelixSkyPercent,
+                        onUpdateGoldenPhiHarmonic = viewModel::updateGoldenPhiHarmonicPercent,
+                        onToggleBioGrooveCardioSync = viewModel::toggleBioGrooveCardioSync
                     )
 
                     2 -> DevicePresetsTab(
@@ -811,6 +824,19 @@ fun EqultraScreen(
             onToggleBioEarDeEsser = viewModel::toggleBioEarDeEsser,
             onUpdateMit64WfsWall = viewModel::updateMit64WfsWallPercent,
             onUpdateStreamDeSquasher = viewModel::updateStreamDeSquasherPercent,
+            onSelectOmegaPrimeMode = { mode ->
+                viewModel.setOmegaPrimeMode(mode)
+                Toast.makeText(context, "Omega-Prime: ${mode.title}", Toast.LENGTH_SHORT).show()
+            },
+            onSelectServoProfile = { profile ->
+                viewModel.setServoTransducerProfile(profile)
+                Toast.makeText(context, "Servo Guard: ${profile.title}", Toast.LENGTH_SHORT).show()
+            },
+            onUpdateDynamicBreathingEq = viewModel::updateDynamicBreathingEqPercent,
+            onUpdateVocalSidechainDuck = viewModel::updateVocalSidechainDuckPercent,
+            onUpdateElevationHelixSky = viewModel::updateElevationHelixSkyPercent,
+            onUpdateGoldenPhiHarmonic = viewModel::updateGoldenPhiHarmonicPercent,
+            onToggleBioGrooveCardioSync = viewModel::toggleBioGrooveCardioSync,
             onDismiss = { viewModel.setFutureLabDialogVisible(false) }
         )
     }
@@ -1468,7 +1494,14 @@ private fun BassAndSpatialDspTab(
     onUpdateDsd1024Damping: (Int) -> Unit,
     onToggleBioEarDeEsser: () -> Unit,
     onUpdateMit64WfsWall: (Int) -> Unit,
-    onUpdateStreamDeSquasher: (Int) -> Unit
+    onUpdateStreamDeSquasher: (Int) -> Unit,
+    onSelectOmegaPrimeMode: (com.example.dsp.OmegaPrimeMode) -> Unit,
+    onSelectServoProfile: (com.example.dsp.ServoTransducerProfile) -> Unit,
+    onUpdateDynamicBreathingEq: (Int) -> Unit,
+    onUpdateVocalSidechainDuck: (Int) -> Unit,
+    onUpdateElevationHelixSky: (Int) -> Unit,
+    onUpdateGoldenPhiHarmonic: (Int) -> Unit,
+    onToggleBioGrooveCardioSync: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -1485,6 +1518,20 @@ private fun BassAndSpatialDspTab(
             peakDb = peakDb,
             bassBoostPercent = uiState.bassBoostStrength,
             spatialPercent = uiState.spatialLevel
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 🧬 Omega-Prime Autonomous Acoustic AI Suite (6-in-1 Master Engine) directly at top of Bass & 3D Tab
+        OmegaPrimeAutonomousAiCard(
+            uiState = uiState,
+            onSelectMode = onSelectOmegaPrimeMode,
+            onSelectServoProfile = onSelectServoProfile,
+            onUpdateDynamicBreathingEq = onUpdateDynamicBreathingEq,
+            onUpdateVocalSidechainDuck = onUpdateVocalSidechainDuck,
+            onUpdateElevationHelixSky = onUpdateElevationHelixSky,
+            onUpdateGoldenPhiHarmonic = onUpdateGoldenPhiHarmonic,
+            onToggleBioGrooveCardioSync = onToggleBioGrooveCardioSync
         )
 
         Spacer(modifier = Modifier.height(12.dp))
