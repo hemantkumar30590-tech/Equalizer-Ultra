@@ -78,6 +78,7 @@ import com.example.dsp.GlobalTriadMode
 import com.example.dsp.GyroHeadTrackingMode
 import com.example.dsp.HolographicLiveInstrumentMode
 import com.example.dsp.HolographicVibeProfile
+import com.example.dsp.LrTwinVocalSplitterMode
 import com.example.dsp.NeuralBrainwaveMode
 import com.example.dsp.OmegaPrimeMode
 import com.example.dsp.OutOfHeadExternalizerMode
@@ -4341,5 +4342,297 @@ fun ApexSingularityCard(
         }
     }
 }
+
+@Composable
+fun LrTwinVocalSplitterCard(
+    uiState: EqUiState,
+    onSelectMode: (LrTwinVocalSplitterMode) -> Unit,
+    onToggleMainSwitch: () -> Unit,
+    onUpdateFrontCenterNull: (Int) -> Unit,
+    onUpdateSideTwinProjection: (Int) -> Unit,
+    onUpdateHaasStereoDoubler: (Int) -> Unit,
+    onUpdateLateralPinnaCue: (Int) -> Unit,
+    onToggleSubBassCenterAnchor: () -> Unit,
+    onToggleVelvetSideAir: () -> Unit
+) {
+    val isActive = uiState.lrTwinVocalMode != LrTwinVocalSplitterMode.OFF
+    Surface(
+        color = ObsidianCard,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            width = 2.4.dp,
+            brush = Brush.horizontalGradient(
+                listOf(ElectricCyan, NeonMagenta, SignalEmerald, StudioAmber)
+            )
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.SurroundSound,
+                            contentDescription = "L/R Twin-Side Vocal Splitter",
+                            tint = ElectricCyan,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "↔️ L/R TWIN-SIDE VOCAL SPLITTER (0% FRONT VOCAL)",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "0% Front Center Null • 50% Left + 50% Right Vocal Wings • 12ms Haas Doubler • ±90° Pinna Lock",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = ElectricCyan
+                    )
+                }
+                Switch(
+                    checked = isActive,
+                    onCheckedChange = { onToggleMainSwitch() },
+                    modifier = Modifier.testTag("lr_twin_vocal_switch"),
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = AmoledBlack,
+                        checkedTrackColor = ElectricCyan,
+                        uncheckedThumbColor = TextSecondary,
+                        uncheckedTrackColor = AmoledBlack
+                    )
+                )
+            }
+
+            // Live Telemetry Banner
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, if (isActive) ElectricCyan.copy(alpha = 0.8f) else ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = uiState.lrTwinVocalTelemetryText,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = if (isActive) ElectricCyan else TextSecondary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                )
+            }
+
+            // 1-Tap L/R Twin-Vocal Mode Chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                LrTwinVocalSplitterMode.entries.forEach { mode ->
+                    val selected = uiState.lrTwinVocalMode == mode
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectMode(mode) },
+                        label = {
+                            Text(
+                                text = mode.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ElectricCyan,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        )
+                    )
+                }
+            }
+
+            // 4 Zero-Front L/R Vocal Physics Sliders
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    // 1. 🎯 100% Front-Center Vocal Nuller
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🎯 Front-Center Vocal Nuller (0% Front Eraser)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.frontCenterNullPercent}% NULL",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.frontCenterNullPercent.toFloat(),
+                        onValueChange = { onUpdateFrontCenterNull(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = NeonMagenta,
+                            activeTrackColor = NeonMagenta
+                        )
+                    )
+
+                    // 2. ↔️ 50% Left + 50% Right Side-Matrix Projector
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "↔️ 50% Left + 50% Right Twin-Side Vocal Split",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.sideTwinProjectionPercent}% L/R",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.sideTwinProjectionPercent.toFloat(),
+                        onValueChange = { onUpdateSideTwinProjection(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = ElectricCyan,
+                            activeTrackColor = ElectricCyan
+                        )
+                    )
+
+                    // 3. ⏱️ 12ms Haas Micro-Phase Stereo Doubler
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "⏱️ 12ms Haas Micro-Phase Stereo Vocal Doubler",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.haasStereoDoublerPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.haasStereoDoublerPercent.toFloat(),
+                        onValueChange = { onUpdateHaasStereoDoubler(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = StudioAmber,
+                            activeTrackColor = StudioAmber
+                        )
+                    )
+
+                    // 4. 👂 Lateral ±90° Pinna Azimuth Cue Sculptor
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "👂 Lateral ±90° Pinna Ear-Side Azimuth Lock",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.lateralPinnaCuePercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.lateralPinnaCuePercent.toFloat(),
+                        onValueChange = { onUpdateLateralPinnaCue(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = SignalEmerald,
+                            activeTrackColor = SignalEmerald
+                        )
+                    )
+                }
+            }
+
+            // 5 & 6. 🔒 20Hz–120Hz Sub-Bass Center Anchor + ✨ Velvet Side-Vocal Air
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = uiState.isSubBassCenterAnchorEnabled,
+                    onClick = onToggleSubBassCenterAnchor,
+                    label = {
+                        Text(
+                            text = if (uiState.isSubBassCenterAnchorEnabled) {
+                                "🔒 20Hz–120Hz Sub-Bass Center Lock: ON"
+                            } else {
+                                "🔒 20Hz–120Hz Sub-Bass Center Lock: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = SignalEmerald,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+
+                FilterChip(
+                    selected = uiState.isVelvetSideAirEnabled,
+                    onClick = onToggleVelvetSideAir,
+                    label = {
+                        Text(
+                            text = if (uiState.isVelvetSideAirEnabled) {
+                                "✨ Velvet Side-Vocal Ribbon Air: ON"
+                            } else {
+                                "✨ Velvet Side-Vocal Ribbon Air: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = ElectricCyan,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+            }
+        }
+    }
+}
+
 
 

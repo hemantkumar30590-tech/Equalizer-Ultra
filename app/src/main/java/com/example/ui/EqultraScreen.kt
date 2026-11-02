@@ -564,7 +564,29 @@ fun EqultraScreen(
                         onUpdateVocalFormantUnmasker = viewModel::updateVocalFormantUnmaskerPercent,
                         onUpdateMetamaterialShellCloak = viewModel::updateMetamaterialShellCloakPercent,
                         onToggleGoldenPhiTriodeTape = viewModel::toggleGoldenPhiTriodeTape,
-                        onToggleFrissonVagusResonator = viewModel::toggleFrissonVagusResonator
+                        onToggleFrissonVagusResonator = viewModel::toggleFrissonVagusResonator,
+                        onSelectLrTwinVocalMode = { mode ->
+                            viewModel.setLrTwinVocalMode(mode)
+                            Toast.makeText(context, "L/R Vocal Split: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onToggleLrTwinVocalSwitch = {
+                            viewModel.toggleLrTwinVocalSplitter()
+                            Toast.makeText(
+                                context,
+                                if (uiState.lrTwinVocalMode == com.example.dsp.LrTwinVocalSplitterMode.OFF) {
+                                    "↔️ L/R Twin-Vocal Split ON (0% Front • 50% Left + 50% Right)"
+                                } else {
+                                    "↔️ L/R Twin-Vocal Split OFF (Standard Front Vocal)"
+                                },
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        },
+                        onUpdateFrontCenterNull = viewModel::updateFrontCenterNullPercent,
+                        onUpdateSideTwinProjection = viewModel::updateSideTwinProjectionPercent,
+                        onUpdateHaasStereoDoubler = viewModel::updateHaasStereoDoublerPercent,
+                        onUpdateLateralPinnaCue = viewModel::updateLateralPinnaCuePercent,
+                        onToggleSubBassCenterAnchor = viewModel::toggleSubBassCenterAnchor,
+                        onToggleVelvetSideAir = viewModel::toggleVelvetSideAir
                     )
 
                     2 -> DevicePresetsTab(
@@ -1514,8 +1536,12 @@ private fun TenBandEqualizerTab(
                     value = "${uiState.bassBoostStrength}%",
                     color = if (uiState.isBassBoostLocked) SignalEmerald else NeonMagenta
                 )
-                DspMiniStat("SPATIAL 3D", "${uiState.spatialLevel}%", ElectricCyan)
-                DspMiniStat("REVERB (${uiState.reverbRoom.uppercase(Locale.US)})", "${uiState.reverbLevel}%", HyperViolet)
+                DspMiniStat(
+                    label = "VOCAL STAGE",
+                    value = if (uiState.lrTwinVocalMode != com.example.dsp.LrTwinVocalSplitterMode.OFF) "50%L/50%R ↔️" else "CENTER",
+                    color = ElectricCyan
+                )
+                DspMiniStat("SPATIAL 3D", "${uiState.spatialLevel}%", HyperViolet)
                 DspMiniStat("PREAMP", String.format(Locale.US, "%+.1fdB", uiState.preampDb), SignalEmerald)
             }
         }
@@ -1629,7 +1655,15 @@ private fun BassAndSpatialDspTab(
     onUpdateVocalFormantUnmasker: (Int) -> Unit,
     onUpdateMetamaterialShellCloak: (Int) -> Unit,
     onToggleGoldenPhiTriodeTape: () -> Unit,
-    onToggleFrissonVagusResonator: () -> Unit
+    onToggleFrissonVagusResonator: () -> Unit,
+    onSelectLrTwinVocalMode: (com.example.dsp.LrTwinVocalSplitterMode) -> Unit = {},
+    onToggleLrTwinVocalSwitch: () -> Unit = {},
+    onUpdateFrontCenterNull: (Int) -> Unit = {},
+    onUpdateSideTwinProjection: (Int) -> Unit = {},
+    onUpdateHaasStereoDoubler: (Int) -> Unit = {},
+    onUpdateLateralPinnaCue: (Int) -> Unit = {},
+    onToggleSubBassCenterAnchor: () -> Unit = {},
+    onToggleVelvetSideAir: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -1750,6 +1784,21 @@ private fun BassAndSpatialDspTab(
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // ↔️ L/R Twin-Side Vocal Splitter (Zero-Front Vocal Engine: 0% Front / 50% Left + 50% Right)
+        LrTwinVocalSplitterCard(
+            uiState = uiState,
+            onSelectMode = onSelectLrTwinVocalMode,
+            onToggleMainSwitch = onToggleLrTwinVocalSwitch,
+            onUpdateFrontCenterNull = onUpdateFrontCenterNull,
+            onUpdateSideTwinProjection = onUpdateSideTwinProjection,
+            onUpdateHaasStereoDoubler = onUpdateHaasStereoDoubler,
+            onUpdateLateralPinnaCue = onUpdateLateralPinnaCue,
+            onToggleSubBassCenterAnchor = onToggleSubBassCenterAnchor,
+            onToggleVelvetSideAir = onToggleVelvetSideAir
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -2103,7 +2152,7 @@ private fun ApkAndGithubGuideTab() {
                         inStream.copyTo(outStream)
                     }
                 }
-                Toast.makeText(context, "Saved Equltra-v2.5-BassLock.apk successfully!", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Saved Equltra-v2.6-TwinVocal-LR.apk successfully!", Toast.LENGTH_LONG).show()
             }.onFailure {
                 Toast.makeText(context, "Export failed: ${it.localizedMessage}", Toast.LENGTH_LONG).show()
             }
@@ -2132,13 +2181,13 @@ private fun ApkAndGithubGuideTab() {
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "Equltra v2.5 (Bass-Lock Edition) APK",
+                            text = "Equltra v2.6 (L/R Twin-Vocal + Bass-Lock) APK",
                             style = MaterialTheme.typography.titleLarge,
                             color = TextPrimary,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "🔒 25% Smooth Default Bass • Bass Memory Lock • Direct Upgrade",
+                            text = "↔️ 0% Front / 50% L+R Vocal Split • 🔒 25% Smooth Bass Lock",
                             style = MaterialTheme.typography.labelSmall,
                             color = SignalEmerald
                         )
@@ -2148,7 +2197,7 @@ private fun ApkAndGithubGuideTab() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
-                    onClick = { exportApkLauncher.launch("Equltra-v2.5-BassLock.apk") },
+                    onClick = { exportApkLauncher.launch("Equltra-v2.6-TwinVocal-LR.apk") },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = ElectricCyan,
                         contentColor = AmoledBlack
@@ -2161,12 +2210,12 @@ private fun ApkAndGithubGuideTab() {
                 ) {
                     Icon(
                         imageVector = Icons.Default.Download,
-                        contentDescription = "Save Equltra-v2.5-BassLock.apk",
+                        contentDescription = "Save Equltra-v2.6-TwinVocal-LR.apk",
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "EXPORT EQULTRA-V2.5-BASSLOCK.APK TO FILES",
+                        text = "EXPORT EQULTRA-V2.6-TWINVOCAL-LR.APK",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold
                     )

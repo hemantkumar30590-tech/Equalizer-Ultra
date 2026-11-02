@@ -4,8 +4,10 @@ import fs from 'node:fs';
 const PORT = 3000;
 const APK_PATHS = [
   '/app/applet/app/build/outputs/apk/debug/app-debug.apk',
+  '/app/applet/Equltra-v2.5-BassLock.apk',
   '/app/applet/.build-outputs/app-debug.apk',
   '/app/applet/Equltra-v1.0.apk',
+  '/app/applet/Equltra.apk',
 ];
 
 function getApkPath() {
@@ -238,18 +240,60 @@ const HTML_PAGE = `<!DOCTYPE html>
     <div class="brand">
       <div class="logo-badge">EQ</div>
       <div>
-        <h1>EQULTRA v2.0 QUANTUM PRO</h1>
-        <p>31-Band ISO EQ • 7-in-1 Future-Gen Quantum Lab • YouTube &amp; Global Android DSP</p>
+        <h1>EQULTRA v2.6 QUANTUM PRO (L/R TWIN-VOCAL + BASS-LOCK)</h1>
+        <p>↔️ 0% Front / 50% L+R Vocal Split • 🔒 25% Smooth Bass Memory Lock • 31-Band ISO EQ</p>
       </div>
     </div>
     <div class="header-actions">
       <button class="btn" id="testAudioBtn" onclick="toggleSynth()">▶ Play Test Synth</button>
       <button class="btn btn-magenta" onclick="runSonarSweep()">📡 Sonar Room Scan</button>
-      <a class="btn btn-primary" href="/download/Equltra-v1.0-PRO.apk" download="Equltra-v1.0-PRO.apk">⬇ Download Upgraded APK (Equltra-v1.0-PRO.apk)</a>
+      <a class="btn btn-primary" href="/download/Equltra-v2.6-TwinVocal-LR.apk" download="Equltra-v2.6-TwinVocal-LR.apk">⬇ Download APK (Equltra-v2.6-TwinVocal-LR.apk)</a>
     </div>
   </header>
 
   <main>
+    <!-- ↔️ L/R Twin-Side Vocal Splitter (Zero-Front Vocal Engine: 0% Front / 50% Left + 50% Right) -->
+    <div class="quantum-card" style="border-color: var(--cyan);">
+      <div class="card-header">
+        <div>
+          <span class="card-title" style="color:var(--cyan);">↔️ L/R TWIN-SIDE VOCAL SPLITTER (ZERO-FRONT VOCAL ENGINE — 0% FRONT / 50% L + 50% R — NEW!)</span>
+          <div id="lrTwinVocalStatus" style="font-size:11.5px;color:var(--emerald);margin-top:3px;font-family:monospace;">
+            ↔️ [🔥 0% FRONT • 50% L/R]: 0% Front Null 96% • 50%L/50%R Split 96% • Haas 12ms 92% • ±90° Pinna 94% • Sub Center-Lock ON • Side Air ON
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="chip" onclick="setLrVocalMode('off', 'Standard Center Vocal (Off)', 0, 0, 0, 0)">⏹️ Center Vocal (Off)</button>
+          <button class="chip" onclick="setLrVocalMode('twin50', '↔️ 50% Left + 50% Right Twin-Side Split', 100, 100, 88, 92)">↔️ 50% L / 50% R Split</button>
+          <button class="chip" onclick="setLrVocalMode('haas90', '🎧 12ms Haas Binaural Vocal Doubler (±90°)', 92, 94, 100, 95)">🎧 Haas ±90° Doubler</button>
+          <button class="chip" onclick="setLrVocalMode('wings', '🏟️ Concert Left &amp; Right Line-Array Wings', 90, 100, 92, 100)">🏟️ Concert L/R Wings</button>
+          <button class="chip active" onclick="setLrVocalMode('omega', '🔥 Zero-Front L/R Twin-Vocal Omega (All 6)', 96, 96, 92, 94)">🔥 0% Front • 50% L/R Omega</button>
+        </div>
+      </div>
+
+      <div class="quantum-grid">
+        <div class="q-box">
+          <h4><span>🎯 Front-Center Vocal Nuller (0% Front)</span><span id="lrNullVal" style="color:var(--magenta);">96% NULL</span></h4>
+          <p>Mid-channel spectral notch (400Hz–1.25kHz) erases the straight-in-front-of-face center vocal phantom image</p>
+          <input id="lrNullSlider" type="range" min="0" max="100" value="96" style="width:100%;accent-color:var(--magenta);" oninput="updateLrVocalSlider('null', this.value)" />
+        </div>
+        <div class="q-box">
+          <h4><span>↔️ 50% Left + 50% Right Twin-Side Split</span><span id="lrSplitVal" style="color:var(--cyan);">96% L/R</span></h4>
+          <p>Complementary Left/Right comb-matrix &amp; 12ms Haas stereo doubler project vocals equally from both sides</p>
+          <input id="lrSplitSlider" type="range" min="0" max="100" value="96" style="width:100%;accent-color:var(--cyan);" oninput="updateLrVocalSlider('split', this.value)" />
+        </div>
+        <div class="q-box">
+          <h4><span>⏱️ 12ms Haas &amp; 👂 ±90° Pinna Lock</span><span id="lrHaasVal" style="color:var(--amber);">92% | ±90° 94%</span></h4>
+          <p>+6ms L / -6ms R binaural phase decorrelation + ±90° ear-entrance azimuth cues + 25% Locked Sub-Bass</p>
+          <input id="lrHaasSlider" type="range" min="0" max="100" value="92" style="width:100%;accent-color:var(--amber);" oninput="updateLrVocalSlider('haas', this.value)" />
+          <input id="lrPinnaSlider" type="range" min="0" max="100" value="94" style="width:100%;accent-color:var(--emerald);margin-top:6px;" oninput="updateLrVocalSlider('pinna', this.value)" />
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">
+            <button class="chip active" id="lrSubAnchorBtn" onclick="toggleLrSubAnchor()">🔒 20–120Hz Sub Center-Lock: ON</button>
+            <button class="chip active" id="lrSideAirBtn" onclick="toggleLrSideAir()">✨ Velvet Side-Vocal Air: ON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 🌌 Apex Singularity & Bio-Acoustic Engine (6-in-1 Ultra-Power Suite) -->
     <div class="quantum-card" style="border-color: var(--emerald);">
       <div class="card-header">
@@ -1943,6 +1987,83 @@ const HTML_PAGE = `<!DOCTYPE html>
       applyApexCurve();
     }
 
+    let lrNull = 96;
+    let lrSplit = 96;
+    let lrHaas = 92;
+    let lrPinna = 94;
+    let lrSubAnchor = true;
+    let lrSideAir = true;
+    let lrLabel = "🔥 0% Front • 50% L/R";
+
+    function applyLrVocalCurve() {
+      const nl = lrNull / 100.0;
+      const sp = lrSplit / 100.0;
+      const hs = lrHaas / 100.0;
+      const pn = lrPinna / 100.0;
+      for (let i = 0; i < 31; i++) {
+        let g = gains[i] * 0.42;
+        if (lrSubAnchor && i <= 7) g += 1.6 * (1 - i / 9);
+        if (i === 13) g -= 1.8 * nl;
+        if (i >= 14 && i <= 16) g -= 3.8 * nl;
+        if (i >= 17 && i <= 18) g -= 3.2 * nl;
+        if (i >= 11 && i <= 12) g += 2.2 * sp;
+        if (i >= 19 && i <= 20) g += 3.4 * sp;
+        if (i >= 21 && i <= 22) g += 2.8 * hs;
+        if (i >= 23 && i <= 24) g += 3.2 * sp;
+        if (i === 25) g -= 2.4 * pn;
+        if (i >= 26 && i <= 28) g += 3.6 * pn;
+        if (lrSideAir) {
+          if (i === 22) g -= 1.2;
+          if (i >= 28) g += 2.6;
+        }
+        gains[i] = Math.max(-15, Math.min(15, Math.round(g * 2) / 2));
+      }
+      document.getElementById("lrHaasVal").textContent = lrHaas + "% | ±90° " + lrPinna + "%";
+      document.getElementById("lrTwinVocalStatus").textContent =
+        "↔️ [" + lrLabel.toUpperCase() + "]: 0% Front Null " + lrNull +
+        "% • 50%L/50%R Split " + lrSplit + "% • Haas 12ms " + lrHaas +
+        "% • ±90° Pinna " + lrPinna + "% • " +
+        (lrSubAnchor ? "Sub Center-Lock ON" : "Sub Lock OFF") + " • " +
+        (lrSideAir ? "Side Air ON" : "Side Air OFF");
+      renderBands();
+    }
+
+    function setLrVocalMode(key, label, nl, sp, hs, pn) {
+      lrLabel = label;
+      lrNull = nl;
+      lrSplit = sp;
+      lrHaas = hs;
+      lrPinna = pn;
+      document.getElementById("lrNullVal").textContent = nl + "% NULL";
+      document.getElementById("lrNullSlider").value = nl;
+      document.getElementById("lrSplitVal").textContent = sp + "% L/R";
+      document.getElementById("lrSplitSlider").value = sp;
+      document.getElementById("lrHaasSlider").value = hs;
+      document.getElementById("lrPinnaSlider").value = pn;
+      applyLrVocalCurve();
+    }
+
+    function updateLrVocalSlider(which, val) {
+      const v = parseInt(val, 10);
+      if (which === 'null') { lrNull = v; document.getElementById("lrNullVal").textContent = v + "% NULL"; }
+      if (which === 'split') { lrSplit = v; document.getElementById("lrSplitVal").textContent = v + "% L/R"; }
+      if (which === 'haas') { lrHaas = v; }
+      if (which === 'pinna') { lrPinna = v; }
+      applyLrVocalCurve();
+    }
+
+    function toggleLrSubAnchor() {
+      lrSubAnchor = !lrSubAnchor;
+      document.getElementById("lrSubAnchorBtn").textContent = "🔒 20–120Hz Sub Center-Lock: " + (lrSubAnchor ? "ON" : "OFF");
+      applyLrVocalCurve();
+    }
+
+    function toggleLrSideAir() {
+      lrSideAir = !lrSideAir;
+      document.getElementById("lrSideAirBtn").textContent = "✨ Velvet Side-Vocal Air: " + (lrSideAir ? "ON" : "OFF");
+      applyLrVocalCurve();
+    }
+
     renderPresets();
     renderBands();
     updateSelectedUi();
@@ -1970,10 +2091,12 @@ const server = http.createServer((req, res) => {
       return;
     }
     const stat = fs.statSync(apk);
+    const reqFile = url.split('/').pop() || 'Equltra-v2.6-TwinVocal-LR.apk';
+    const outName = reqFile.endsWith('.apk') ? reqFile : 'Equltra-v2.6-TwinVocal-LR.apk';
     res.writeHead(200, {
       'Content-Type': 'application/vnd.android.package-archive',
       'Content-Length': stat.size,
-      'Content-Disposition': 'attachment; filename="Equltra-v1.0-PRO.apk"',
+      'Content-Disposition': `attachment; filename="${outName}"`,
     });
     fs.createReadStream(apk).pipe(res);
     return;

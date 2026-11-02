@@ -26,6 +26,7 @@ import com.example.dsp.GlobalTriadMode
 import com.example.dsp.GyroHeadTrackingMode
 import com.example.dsp.HolographicLiveInstrumentMode
 import com.example.dsp.HolographicVibeProfile
+import com.example.dsp.LrTwinVocalSplitterMode
 import com.example.dsp.NeuralBrainwaveMode
 import com.example.dsp.OmegaPrimeMode
 import com.example.dsp.OutOfHeadExternalizerMode
@@ -196,7 +197,16 @@ data class EqUiState(
     val metamaterialShellCloakPercent: Int = 92,
     val isGoldenPhiTriodeTapeEnabled: Boolean = true,
     val isFrissonVagusResonatorEnabled: Boolean = true,
-    val apexSingularityTelemetryText: String = "🌌 APEX SINGULARITY READY • Tap 🧭 Gyro 360° Lock, 💥 18Hz Chest-Slam, 🎙️ Vocal Unmasker or 🌌 Apex Singularity"
+    val apexSingularityTelemetryText: String = "🌌 APEX SINGULARITY READY • Tap 🧭 Gyro 360° Lock, 💥 18Hz Chest-Slam, 🎙️ Vocal Unmasker or 🌌 Apex Singularity",
+    // ↔️ L/R Twin-Side Vocal Splitter (Zero-Front Vocal Engine: 0% Front / 50% Left + 50% Right)
+    val lrTwinVocalMode: LrTwinVocalSplitterMode = LrTwinVocalSplitterMode.ZERO_FRONT_OMEGA_ALL,
+    val frontCenterNullPercent: Int = 96,
+    val sideTwinProjectionPercent: Int = 96,
+    val haasStereoDoublerPercent: Int = 92,
+    val lateralPinnaCuePercent: Int = 94,
+    val isSubBassCenterAnchorEnabled: Boolean = true,
+    val isVelvetSideAirEnabled: Boolean = true,
+    val lrTwinVocalTelemetryText: String = "↔️ [🔥 0% FRONT • 50% L/R]: 0% Front Null 96% • 50%L/50%R Split 96% • Haas 12ms 92% • ±90° Pinna 94% • Sub Center-Lock ON • Side Air ON"
 )
 
 class EqViewModel(application: Application) : AndroidViewModel(application) {
@@ -2403,6 +2413,122 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         recomputeAndApplyApexSingularity()
     }
 
+    // =========================================================================
+    // ↔️ L/R TWIN-SIDE VOCAL SPLITTER (ZERO-FRONT VOCAL ENGINE: 0% FRONT / 50% L + 50% R)
+    // =========================================================================
+
+    private fun recomputeAndApplyLrTwinVocalSplitter() {
+        _uiState.update { s ->
+            val result = FutureGenAudioLabEngine.synthesizeLrTwinVocalSplitterSuite(
+                baseBands = s.bandGainsDb,
+                mode = s.lrTwinVocalMode,
+                frontCenterNullPercent = s.frontCenterNullPercent,
+                sideTwinProjectionPercent = s.sideTwinProjectionPercent,
+                haasStereoDoublerPercent = s.haasStereoDoublerPercent,
+                lateralPinnaCuePercent = s.lateralPinnaCuePercent,
+                subBassCenterAnchorEnabled = s.isSubBassCenterAnchorEnabled,
+                velvetSideAirEnabled = s.isVelvetSideAirEnabled
+            )
+            if (s.lrTwinVocalMode == LrTwinVocalSplitterMode.OFF) {
+                s.copy(lrTwinVocalTelemetryText = result.telemetrySummary)
+            } else {
+                val effectiveBass = resolveBass(result.effectiveBassBoost, s)
+                s.copy(
+                    isMasterEnabled = true,
+                    activePresetName = s.lrTwinVocalMode.title,
+                    bandGainsDb = applyBassLockToBands(result.sculptedBands31, effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
+                    spatialLevel = result.effectiveSpatial3D,
+                    reverbLevel = result.effectiveReverbLevel,
+                    reverbRoom = result.effectiveReverbRoom,
+                    crossfeedStrengthPercent = result.effectiveCrossfeedPct,
+                    preampDb = result.effectivePreampDb,
+                    lrTwinVocalTelemetryText = result.telemetrySummary
+                )
+            }
+        }
+        syncDspEngine()
+    }
+
+    fun setLrTwinVocalMode(mode: LrTwinVocalSplitterMode) {
+        _uiState.update { it.copy(lrTwinVocalMode = mode) }
+        hapticManager.onAiPresetApplied("L/R Vocal ${mode.badge}")
+        recomputeAndApplyLrTwinVocalSplitter()
+    }
+
+    fun toggleLrTwinVocalSplitter() {
+        val nextMode = if (_uiState.value.lrTwinVocalMode == LrTwinVocalSplitterMode.OFF) {
+            LrTwinVocalSplitterMode.ZERO_FRONT_OMEGA_ALL
+        } else {
+            LrTwinVocalSplitterMode.OFF
+        }
+        setLrTwinVocalMode(nextMode)
+    }
+
+    fun updateFrontCenterNullPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.lrTwinVocalMode == LrTwinVocalSplitterMode.OFF) {
+                LrTwinVocalSplitterMode.TWIN_SIDE_50_50
+            } else state.lrTwinVocalMode
+            state.copy(
+                lrTwinVocalMode = nextMode,
+                frontCenterNullPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyLrTwinVocalSplitter()
+    }
+
+    fun updateSideTwinProjectionPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.lrTwinVocalMode == LrTwinVocalSplitterMode.OFF) {
+                LrTwinVocalSplitterMode.TWIN_SIDE_50_50
+            } else state.lrTwinVocalMode
+            state.copy(
+                lrTwinVocalMode = nextMode,
+                sideTwinProjectionPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyLrTwinVocalSplitter()
+    }
+
+    fun updateHaasStereoDoublerPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.lrTwinVocalMode == LrTwinVocalSplitterMode.OFF) {
+                LrTwinVocalSplitterMode.HAAS_BINAURAL_DOUBLER
+            } else state.lrTwinVocalMode
+            state.copy(
+                lrTwinVocalMode = nextMode,
+                haasStereoDoublerPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyLrTwinVocalSplitter()
+    }
+
+    fun updateLateralPinnaCuePercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.lrTwinVocalMode == LrTwinVocalSplitterMode.OFF) {
+                LrTwinVocalSplitterMode.CONCERT_WIDE_WING_ARRAY
+            } else state.lrTwinVocalMode
+            state.copy(
+                lrTwinVocalMode = nextMode,
+                lateralPinnaCuePercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyLrTwinVocalSplitter()
+    }
+
+    fun toggleSubBassCenterAnchor() {
+        _uiState.update { it.copy(isSubBassCenterAnchorEnabled = !it.isSubBassCenterAnchorEnabled) }
+        hapticManager.onControlTick("20Hz–120Hz Sub-Bass Center Lock")
+        recomputeAndApplyLrTwinVocalSplitter()
+    }
+
+    fun toggleVelvetSideAir() {
+        _uiState.update { it.copy(isVelvetSideAirEnabled = !it.isVelvetSideAirEnabled) }
+        hapticManager.onControlTick("Velvet Side-Vocal Air")
+        recomputeAndApplyLrTwinVocalSplitter()
+    }
+
     private fun startFutureGenCoordinator() {
         viewModelScope.launch {
             var tickCount = 0
@@ -2485,7 +2611,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                         vocalFormantUnmaskerPct = s.vocalFormantUnmaskerPercent,
                         metamaterialShellCloakPct = s.metamaterialShellCloakPercent,
                         goldenPhiTriodeTape = s.isGoldenPhiTriodeTapeEnabled,
-                        frissonVagusResonator = s.isFrissonVagusResonatorEnabled
+                        frissonVagusResonator = s.isFrissonVagusResonatorEnabled,
+                        lrTwinVocalEnabled = s.lrTwinVocalMode != LrTwinVocalSplitterMode.OFF,
+                        frontCenterNullPct = s.frontCenterNullPercent,
+                        sideTwinProjectionPct = s.sideTwinProjectionPercent,
+                        haasStereoDoublerPct = s.haasStereoDoublerPercent,
+                        lateralPinnaCuePct = s.lateralPinnaCuePercent,
+                        subBassCenterAnchor = s.isSubBassCenterAnchorEnabled,
+                        velvetSideAir = s.isVelvetSideAirEnabled
                     )
                 }
                 // Bass-to-Haptic Sub-Woofer Tactile Engine: pulse phone vibrator on sub-bass hits
@@ -2610,7 +2743,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             vocalFormantUnmaskerPct = s.vocalFormantUnmaskerPercent,
             metamaterialShellCloakPct = s.metamaterialShellCloakPercent,
             goldenPhiTriodeTape = s.isGoldenPhiTriodeTapeEnabled,
-            frissonVagusResonator = s.isFrissonVagusResonatorEnabled
+            frissonVagusResonator = s.isFrissonVagusResonatorEnabled,
+            lrTwinVocalEnabled = s.lrTwinVocalMode != LrTwinVocalSplitterMode.OFF,
+            frontCenterNullPct = s.frontCenterNullPercent,
+            sideTwinProjectionPct = s.sideTwinProjectionPercent,
+            haasStereoDoublerPct = s.haasStereoDoublerPercent,
+            lateralPinnaCuePct = s.lateralPinnaCuePercent,
+            subBassCenterAnchor = s.isSubBassCenterAnchorEnabled,
+            velvetSideAir = s.isVelvetSideAirEnabled
         )
         dspEngine.updateDspState(
             enabled = s.isMasterEnabled,

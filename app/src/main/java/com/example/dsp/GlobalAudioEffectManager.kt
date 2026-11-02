@@ -92,7 +92,13 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
     @Volatile
     private var softLimiterEnabled: Boolean = true
 
-    private val _statusText = MutableStateFlow("Global YouTube & System DSP Active (31-Band DynamicsProcessing)")
+    @Volatile
+    private var lrTwinVocalSplitterActive: Boolean = true
+
+    @Volatile
+    private var lrTwinVocalStrength: Int = 96 // 0..100
+
+    private val _statusText = MutableStateFlow("Global YouTube & System DSP Active (31-Band + ↔️ L/R Twin-Vocal Split)")
     val statusText: StateFlow<String> = _statusText.asStateFlow()
 
     private val _isExternalMediaPlaying = MutableStateFlow(false)
@@ -318,7 +324,9 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         reverbRoom: String,
         spatial: Int,
         preamp: Float,
-        limiter: Boolean
+        limiter: Boolean,
+        lrTwinVocalEnabled: Boolean = lrTwinVocalSplitterActive,
+        lrTwinVocalPct: Int = lrTwinVocalStrength
     ) {
         isMasterEnabled = enabled
         val interpolated = EqPresetEntity.interpolateTo31Bands(bandsDb)
@@ -333,6 +341,8 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         spatialAmount = spatial.coerceIn(0, 100)
         preampDb = preamp.coerceIn(-12f, 12f)
         softLimiterEnabled = limiter
+        lrTwinVocalSplitterActive = lrTwinVocalEnabled
+        lrTwinVocalStrength = lrTwinVocalPct.coerceIn(0, 100)
 
         ensureSessionHooked(0, "GlobalOutputMix")
         applyParametersToAllSessions()
@@ -348,6 +358,8 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         val revRoom = reverbRoomType
         val preamp = preampDb
         val limit = softLimiterEnabled
+        val twinVocalOn = lrTwinVocalSplitterActive && lrTwinVocalStrength > 0
+        val twinVocalNorm = if (twinVocalOn) (lrTwinVocalStrength / 100f).coerceIn(0f, 1f) else 0f
 
         // Sub-bass extra shelf in dB from the Bass Boost knob across 20Hz..125Hz (bands 0..8)
         val maxSubBoostDb = if (active) (bass / 100f) * 5.8f else 0f
@@ -356,7 +368,7 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         val spatialAirDb = if (active) (spatial / 100f) * 3.5f else 0f
 
         sessionBundles.values.forEach { bundle ->
-            // 1. Apply 31-band EQ + Bass Boost + Spatial + Preamp to DynamicsProcessing (API 28+)
+            // 1. Apply 31-band EQ + Bass Boost + Spatial + L/R Twin-Vocal Split to DynamicsProcessing (API 28+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 runCatching {
                     bundle.dynamicsProcessing?.let { dp ->
@@ -368,41 +380,118 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
                                 maxSubBoostDb * (1f - (b / 10f))
                             } else 0f
                             val extraAir = if (b >= 23) spatialAirDb else 0f
-                            val totalBandDb = if (active) {
+                            val baseBandDb = if (active) {
                                 (bands.getOrElse(b) { 0f } + extraBass + extraAir).coerceIn(-18f, 18f)
                             } else 0f
 
-                            // Split gain across PreEQ (55%) and PostEQ (45%) for clean headroom
-                            val preBand = DynamicsProcessing.EqBand(active, cutoffHz[b], totalBandDb * 0.55f)
-                            val postBand = DynamicsProcessing.EqBand(active, cutoffHz[b], totalBandDb * 0.45f)
-                            dp.setPreEqBandAllChannelsTo(b, preBand)
-                            dp.setPostEqBandAllChannelsTo(b, postBand)
+                            if (active && twinVocalOn && b >= 11) {
+                                // ↔️ L/R Twin-Side Vocal Splitter (0% Front • 50% Left + 50% Right):
+                                // Sub-bass (b <= 10) stays 100% center-locked (Channel 0 == Channel 1).
+                                // Vocal & presence bands (b in 11..30) receive complementary Left/Right
+                                // stereo comb-matrix offsets + front-center nasal scoop so mono vocals
+                                // decorrelate into 50% Left & 50% Right ear-wings instead of hitting from front!
+                                val centerNotch = when (b) {
+                                    14, 15, 16 -> -2.8f * twinVocalNorm // 500–800Hz dead-center frontal null
+                                    17, 18 -> -2.4f * twinVocalNorm     // 1k–1.25kHz front nasal projection cut
+                                    25 -> -2.0f * twinVocalNorm         // 6.3kHz frontal pinna cue cut
+                                    else -> 0f
+                                }
+                                val sideWingLift = when (b) {
+                                    11, 12 -> 1.8f * twinVocalNorm      // 250–315Hz warm side vocal body
+                                    19, 20, 21 -> 2.6f * twinVocalNorm  // 1.6k–2.5kHz wide L/R vocal wings
+                                    23, 24 -> 2.4f * twinVocalNorm      // 4k–5kHz lateral presence
+                                    26, 27, 28 -> 2.8f * twinVocalNorm  // 8k–12.5kHz ±90° lateral pinna air
+                                    else -> 0f
+                                }
+                                // Complementary L/R stereo comb decorrelation across vocal formants (b in 11..28)
+                                val polarity = if (b % 2 == 0) 1f else -1f
+                                val combSpreadDb = when (b) {
+                                    in 11..13 -> 3.4f * twinVocalNorm
+                                    in 14..22 -> 4.8f * twinVocalNorm
+                                    in 23..28 -> 3.8f * twinVocalNorm
+                                    else -> 2.0f * twinVocalNorm
+                                }
+                                val leftTotalDb = (baseBandDb + centerNotch + sideWingLift + polarity * combSpreadDb)
+                                    .coerceIn(-18f, 18f)
+                                val rightTotalDb = (baseBandDb + centerNotch + sideWingLift - polarity * combSpreadDb)
+                                    .coerceIn(-18f, 18f)
+
+                                val preL = DynamicsProcessing.EqBand(true, cutoffHz[b], leftTotalDb * 0.55f)
+                                val postL = DynamicsProcessing.EqBand(true, cutoffHz[b], leftTotalDb * 0.45f)
+                                val preR = DynamicsProcessing.EqBand(true, cutoffHz[b], rightTotalDb * 0.55f)
+                                val postR = DynamicsProcessing.EqBand(true, cutoffHz[b], rightTotalDb * 0.45f)
+
+                                dp.setPreEqBandByChannelIndex(0, b, preL)
+                                dp.setPostEqBandByChannelIndex(0, b, postL)
+                                dp.setPreEqBandByChannelIndex(1, b, preR)
+                                dp.setPostEqBandByChannelIndex(1, b, postR)
+                            } else {
+                                // Standard symmetric L/R (or sub-bass bands 0..10 which stay center-locked)
+                                val preBand = DynamicsProcessing.EqBand(active, cutoffHz[b], baseBandDb * 0.55f)
+                                val postBand = DynamicsProcessing.EqBand(active, cutoffHz[b], baseBandDb * 0.45f)
+                                dp.setPreEqBandAllChannelsTo(b, preBand)
+                                dp.setPostEqBandAllChannelsTo(b, postBand)
+                            }
                         }
 
-                        // Boost low MBC postGain smoothly when Bass Boost is turned up
+                        // Boost low MBC postGain smoothly when Bass Boost is turned up,
+                        // and apply dynamic Haas L/R attack/release offset on vocal MBC bands when Twin-Vocal is ON!
                         val mbcCutoffs = floatArrayOf(85f, 220f, 750f, 2500f, 7000f, 20000f)
                         for (m in 0 until 6) {
                             val mbcPostGain = when {
                                 !active -> 0f
                                 m == 0 -> (bass / 100f) * 3.0f
                                 m == 1 -> (bass / 100f) * 1.5f
-                                m >= 4 -> (spatial / 100f) * 2.0f
+                                m == 3 && twinVocalOn -> 2.4f * twinVocalNorm // 750Hz–2.5kHz L/R vocal wing lift
+                                m >= 4 -> (spatial / 100f) * 2.0f + (if (twinVocalOn) 1.5f * twinVocalNorm else 0f)
                                 else -> 0f
                             }
-                            val mbcBand = DynamicsProcessing.MbcBand(
-                                active,
-                                mbcCutoffs[m],
-                                5f,
-                                80f,
-                                if (bass > 50 && m <= 1) 2.5f else 1.8f,
-                                -16f,
-                                6f,
-                                -65f,
-                                1.0f,
-                                0f,
-                                mbcPostGain
-                            )
-                            dp.setMbcBandAllChannelsTo(m, mbcBand)
+                            if (active && twinVocalOn && m in 2..4) {
+                                // Dynamic Haas L/R Micro-Timing Split on vocal bands (Left fast 3ms attack, Right 14ms attack)
+                                val mbcLeft = DynamicsProcessing.MbcBand(
+                                    true,
+                                    mbcCutoffs[m],
+                                    if (m % 2 == 0) 3.0f else 13.5f,
+                                    if (m % 2 == 0) 65f else 95f,
+                                    1.8f,
+                                    -18f,
+                                    6f,
+                                    -65f,
+                                    1.0f,
+                                    0f,
+                                    mbcPostGain + (if (m % 2 == 0) 1.2f * twinVocalNorm else -0.8f * twinVocalNorm)
+                                )
+                                val mbcRight = DynamicsProcessing.MbcBand(
+                                    true,
+                                    mbcCutoffs[m],
+                                    if (m % 2 == 0) 13.5f else 3.0f,
+                                    if (m % 2 == 0) 95f else 65f,
+                                    1.8f,
+                                    -18f,
+                                    6f,
+                                    -65f,
+                                    1.0f,
+                                    0f,
+                                    mbcPostGain + (if (m % 2 == 0) -0.8f * twinVocalNorm else 1.2f * twinVocalNorm)
+                                )
+                                dp.setMbcBandByChannelIndex(0, m, mbcLeft)
+                                dp.setMbcBandByChannelIndex(1, m, mbcRight)
+                            } else {
+                                val mbcBand = DynamicsProcessing.MbcBand(
+                                    active,
+                                    mbcCutoffs[m],
+                                    5f,
+                                    80f,
+                                    if (bass > 50 && m <= 1) 2.5f else 1.8f,
+                                    -16f,
+                                    6f,
+                                    -65f,
+                                    1.0f,
+                                    0f,
+                                    mbcPostGain
+                                )
+                                dp.setMbcBandAllChannelsTo(m, mbcBand)
+                            }
                         }
 
                         dp.setInputGainAllChannelsTo(if (active) preamp else 0f)
@@ -452,12 +541,13 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
                 }
             }
 
-            // 4. Apply to Hardware Virtualizer (Spatial 3D)
+            // 4. Apply to Hardware Virtualizer (Spatial 3D + L/R Twin-Vocal Wide Stage)
             runCatching {
                 bundle.virtualizer?.let { virt ->
-                    virt.enabled = active && spatial > 0
+                    val effectiveSpatial = if (twinVocalOn) max(spatial, (88 + twinVocalNorm * 12f).roundToInt()) else spatial
+                    virt.enabled = active && effectiveSpatial > 0
                     if (virt.strengthSupported) {
-                        virt.setStrength((if (active) spatial * 10 else 0).coerceIn(0, 1000).toShort())
+                        virt.setStrength((if (active) effectiveSpatial * 10 else 0).coerceIn(0, 1000).toShort())
                     }
                 }
             }
@@ -498,17 +588,18 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         val hasEq = sessionBundles[0]?.equalizer != null
         val externalPlaying = _isExternalMediaPlaying.value
         val count = sessionBundles.size
+        val twinTag = if (lrTwinVocalSplitterActive) " • ↔️ L/R Vocal Split ON" else ""
 
         _statusText.value = when {
             !isMasterEnabled -> "DSP Bypassed • Tap Power to Enable on YouTube & Apps"
             externalPlaying && hasDp ->
-                "YouTube / Media Stream Hooked! (31-Band DynamicsProcessing • $count Session${if (count > 1) "s" else ""})"
+                "YouTube / Media Hooked! (31-Band$twinTag • $count Session${if (count > 1) "s" else ""})"
             hasDp ->
-                "Global YouTube & System Hook Active (31-Band DynamicsProcessing + Session 0)"
+                "Global YouTube & System Hook Active (31-Band$twinTag)"
             hasEq ->
-                "Global Hardware AudioFX Hook Active ($count Session${if (count > 1) "s" else ""})"
+                "Global Hardware AudioFX Hook Active ($count Session${if (count > 1) "s" else ""}$twinTag)"
             else ->
-                "System DSP Active • Ready for YouTube & Media Apps"
+                "System DSP Active • Ready for YouTube & Media Apps$twinTag"
         }
     }
 

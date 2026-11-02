@@ -27,46 +27,53 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Stage or Build Verified Native Equltra-v1.0.apk
+      - name: Stage or Build Verified Native Equltra v2.5 Bass-Lock APK
         run: |
           mkdir -p "$GITHUB_WORKSPACE/release_apks"
           if [ ! -f "$GITHUB_WORKSPACE/.env.example" ]; then
             echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > "$GITHUB_WORKSPACE/.env.example"
           fi
-          if [ -f "$GITHUB_WORKSPACE/Equltra-v1.0.apk" ]; then
-            cp -f "$GITHUB_WORKSPACE/Equltra-v1.0.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v1.0.apk"
-            cp -f "$GITHUB_WORKSPACE/Equltra-v1.0.apk" "$GITHUB_WORKSPACE/release_apks/Equltra.apk"
-          elif [ -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" ]; then
+          if [ -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" ]; then
+            cp -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v2.5-BassLock.apk"
             cp -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v1.0.apk"
             cp -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" "$GITHUB_WORKSPACE/release_apks/Equltra.apk"
+          elif [ -f "$GITHUB_WORKSPACE/Equltra-v2.5-BassLock.apk" ]; then
+            cp -f "$GITHUB_WORKSPACE/Equltra-v2.5-BassLock.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v2.5-BassLock.apk"
+            cp -f "$GITHUB_WORKSPACE/Equltra-v2.5-BassLock.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v1.0.apk"
+            cp -f "$GITHUB_WORKSPACE/Equltra-v2.5-BassLock.apk" "$GITHUB_WORKSPACE/release_apks/Equltra.apk"
+          elif [ -f "$GITHUB_WORKSPACE/Equltra-v1.0.apk" ]; then
+            cp -f "$GITHUB_WORKSPACE/Equltra-v1.0.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v2.5-BassLock.apk"
+            cp -f "$GITHUB_WORKSPACE/Equltra-v1.0.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v1.0.apk"
+            cp -f "$GITHUB_WORKSPACE/Equltra-v1.0.apk" "$GITHUB_WORKSPACE/release_apks/Equltra.apk"
           fi
           ls -lh "$GITHUB_WORKSPACE/release_apks/"
 
       - name: Upload APK to GitHub Actions Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Equltra-v1.0-APK
+          name: Equltra-v2.5-BassLock-APK
           path: |
+            release_apks/Equltra-v2.5-BassLock.apk
             release_apks/Equltra-v1.0.apk
             release_apks/Equltra.apk
           if-no-files-found: error
 
-      - name: Upload APK to GitHub Releases Automatically (v1.0.3-pro-31band)
+      - name: Upload APK to GitHub Releases Automatically (v2.5.0-bass-lock)
         continue-on-error: true
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.3-pro-31band
-          name: "Equltra v1.0.3 PRO 31-Band (Build #${{ github.run_number }})"
+          tag_name: v2.5.0-bass-lock
+          name: "Equltra v2.5.0 PRO (Bass-Lock Edition - Build #${{ github.run_number }})"
           body: |
-            ## Equltra PRO - Direct Phone APK Download (`hemantkumar30590-tech/Equltra-`)
-            Tap **`Equltra-v1.0.apk`** below under **Assets** (`https://github.com/hemantkumar30590-tech/Equltra-/releases`) to download and install directly on your Android phone.
-            - **31-Band ISO 1/3-Octave Studio EQ:** 20Hz to 20kHz precision faders + Real-time RTA Spectrum & Waveform Oscilloscope.
-            - **AI Auto-EQ PRO & Voice Control:** Gemini 3.5 Flash + On-Device Acoustic DSP + Hindi/Hinglish/English Voice Commands + Haptic Engine.
-            - **15 Device-Specific EQ Presets:** AirPods Pro 3, AirPods 4 ANC, Sony WF-1000XM5/XM6, WH-1000XM6, Galaxy Buds 3 Pro / 4 Pro, Bose QC Ultra 2nd Gen, Sennheiser Momentum 4, Pixel Buds Pro 2, JBL Tour Pro 3, OnePlus Buds Pro 3, Nothing Ear (a), Boat/Noise/Realme Buds, and Over-ear Generic.
-            - **YouTube & System Audio Support:** Android 9+ `DynamicsProcessing` + `LoudnessEnhancer` + `Equltra Background DSP ACTIVE` foreground service.
+            ## Equltra v2.5.0 PRO - Direct Phone APK Download (`hemantkumar30590-tech/Equltra-`)
+            Tap **`Equltra-v2.5-BassLock.apk`** or **`Equltra-v1.0.apk`** below under **Assets** (`https://github.com/hemantkumar30590-tech/Equltra-/releases`) to download and install directly on your Android phone.
+            - **🔒 Bass Memory Lock (Default 25% Smooth Bass):** Remembers your preferred bass level across APK updates, preset changes, AI Auto-EQ, and Future-Gen modes so bass never jumps to 78%–100%.
+            - **16 Ultra-Power Live Stage & Argon-4 Quantum DSP Engines:** 360° Binaural Headstage, De-Harshness Filter, Vocal Whisper Proximity, Tartini 16Hz Phantom Sub, Golden-Ratio Reverb, and 96kHz Spectral Upsampler.
+            - **31-Band ISO 1/3-Octave Studio EQ + 15 Device Presets:** Real-time RTA Spectrum + YouTube & System-wide Android `DynamicsProcessing`.
           draft: false
           prerelease: false
           files: |
+            release_apks/Equltra-v2.5-BassLock.apk
             release_apks/Equltra-v1.0.apk
             release_apks/Equltra.apk
         env:

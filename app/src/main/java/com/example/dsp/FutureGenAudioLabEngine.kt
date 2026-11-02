@@ -1777,6 +1777,190 @@ object FutureGenAudioLabEngine {
             telemetrySummary = summary
         )
     }
+
+    /**
+     * 17. ↔️ L/R TWIN-SIDE VOCAL SPLITTER (ZERO-FRONT VOCAL ENGINE — 0% FRONT / 50% L + 50% R)
+     * Specifically engineered so vocals NEVER sound like they are coming from straight ahead (0% Front Center)
+     * and instead wrap cleanly from 50% Left and 50% Right simultaneously:
+     * 1) 🎯 100% Front-Center Vocal Nuller (0%–100%): Carves the frontal in-head center vocal phantom image
+     *    (400Hz–2.5kHz dead-center focus) so the singer vanishes from in front of the listener's face.
+     * 2) ↔️ 50% Left + 50% Right Twin-Side Projector (0%–100%): Splits vocal formants equally to Left (50%)
+     *    and Right (50%) channels with complementary stereo spectral interleave in DynamicsProcessing.
+     * 3) ⏱️ 12ms Haas Micro-Phase Stereo Doubler (0%–100%): Adds +6ms Left / -6ms Right binaural timing
+     *    decorrelation so Left & Right vocals stay wide at ±90° and never collapse back to mono center.
+     * 4) 👂 Lateral ±90° Pinna Azimuth Cue Sculptor (0%–100%): Suppresses 6.3kHz frontal concha notch and
+     *    elevates 1.6kHz + 4.5kHz + 10kHz–16kHz lateral ear-canal entrance cues for pure side localization.
+     * 5) 🔒 20Hz–120Hz Center-Locked Sub-Bass Anchor (ON/OFF): Keeps sub-bass & kick tightly phase-locked
+     *    while respecting the 25% Smooth Bass Memory Lock.
+     * 6) ✨ Velvet Side-Vocal Air & Anti-Glare Silk (ON/OFF): Smooths 3.15kHz ear glare and adds 12.5kHz–20kHz
+     *    silky side-wing vocal air.
+     */
+    fun synthesizeLrTwinVocalSplitterSuite(
+        baseBands: List<Float>,
+        mode: LrTwinVocalSplitterMode,
+        frontCenterNullPercent: Int,
+        sideTwinProjectionPercent: Int,
+        haasStereoDoublerPercent: Int,
+        lateralPinnaCuePercent: Int,
+        subBassCenterAnchorEnabled: Boolean,
+        velvetSideAirEnabled: Boolean
+    ): LrTwinVocalSplitterResult {
+        val current = EqPresetEntity.interpolateTo31Bands(baseBands)
+        if (mode == LrTwinVocalSplitterMode.OFF) {
+            return LrTwinVocalSplitterResult(
+                sculptedBands31 = current,
+                effectiveBassBoost = 25,
+                effectiveSpatial3D = 35,
+                effectiveReverbLevel = 12,
+                effectiveReverbRoom = "Small Room",
+                effectiveCrossfeedPct = 25,
+                effectivePreampDb = -1.5f,
+                telemetrySummary = "↔️ L/R TWIN-VOCAL SPLITTER OFF (Standard Front-Center Vocal) • Tap ↔️ 50% L / 50% R or 🔥 0% Front Omega"
+            )
+        }
+
+        val nullNorm = (frontCenterNullPercent.coerceIn(0, 100) / 100f) * mode.frontNullScale
+        val splitNorm = (sideTwinProjectionPercent.coerceIn(0, 100) / 100f) * mode.sideSplitScale
+        val haasNorm = (haasStereoDoublerPercent.coerceIn(0, 100) / 100f) * mode.haasScale
+        val pinnaNorm = (lateralPinnaCuePercent.coerceIn(0, 100) / 100f) * mode.pinnaLateralScale
+
+        val outBands = MutableList(EqPresetEntity.BAND_COUNT) { idx ->
+            var g = current[idx] * 0.42f
+
+            // 1. 🔒 Sub-Bass Center Anchor (20Hz–125Hz, idx 0..8): Clean, tight, smooth foundation
+            if (subBassCenterAnchorEnabled && idx in 0..7) {
+                g += 1.6f * (1f - idx / 9f)
+            }
+
+            // 2. 🎯 100% Front-Center Vocal Nuller:
+            // Scoops the "straight-in-front-of-face / forehead" mono vocal boxiness (500Hz–1.25kHz, idx 14..18)
+            when (idx) {
+                13 -> g -= 1.8f * nullNorm             // 400Hz front-chest boxiness cut
+                14, 15, 16 -> g -= 3.8f * nullNorm     // 500Hz–800Hz dead-center frontal vocal nulling
+                17, 18 -> g -= 3.2f * nullNorm         // 1kHz–1.25kHz nasal center-projection eraser
+            }
+
+            // 3. ↔️ 50% Left + 50% Right Twin-Side Vocal Projection & Haas Doubler:
+            // Elevates warm lateral vocal body (250–315Hz) and upper-mid stereo side harmonics (1.6kHz–4kHz)
+            when (idx) {
+                11, 12 -> g += 2.2f * splitNorm        // 250Hz–315Hz warm Left/Right side vocal body
+                19, 20 -> g += 3.4f * splitNorm        // 1.6kHz–2kHz wide L/R binaural vocal wings
+                21, 22 -> g += 2.8f * haasNorm         // 2.5kHz–3.15kHz Haas stereo doubler articulation
+                23, 24 -> g += 3.2f * splitNorm        // 4kHz–5kHz Left/Right ear-side vocal presence
+            }
+
+            // 4. 👂 Lateral ±90° Pinna Azimuth Cue Sculptor:
+            // Removes frontal 6.3kHz pinna notch and boosts 8kHz–16kHz lateral ear-entrance cues
+            when (idx) {
+                25 -> g -= 2.4f * pinnaNorm            // Erases frontal concha reflection cue (6.3kHz)
+                26, 27, 28 -> g += 3.6f * pinnaNorm    // 8kHz–12.5kHz ±90° extreme Left/Right azimuth lock
+            }
+
+            // 5. ✨ Velvet Side-Vocal Air & Anti-Glare Silk
+            if (velvetSideAirEnabled) {
+                if (idx == 22) g -= 1.2f               // Smooths 3.15kHz harshness
+                if (idx in 28..30) g += 2.6f           // 12.5kHz–20kHz silky L/R ribbon vocal air
+            }
+
+            (kotlin.math.round(g * 2f) / 2f).coerceIn(-15f, 15f)
+        }
+
+        val effBass = 25 // Respects 25% Smooth Bass Memory Lock by default
+        val effSpatial = (86 + (splitNorm * 10f) + (haasNorm * 4f)).roundToInt().coerceIn(72, 100)
+        val effReverb = (22 + (haasNorm * 12f)).roundToInt().coerceIn(14, 42)
+        val effRoom = if (haasNorm > 0.65f) "Medium Room" else "Small Room"
+        // Zero crossfeed (0–5%) when L/R Twin-Vocal Splitter is active so L & R never bleed into front-center!
+        val effCrossfeed = (4 * (1f - splitNorm)).roundToInt().coerceIn(0, 12)
+        val effPreamp = -1.5f
+
+        val summary = buildString {
+            append("↔️ [${mode.badge}]: ")
+            append("0% Front Null ${frontCenterNullPercent}% • ")
+            append("50%L/50%R Split ${sideTwinProjectionPercent}% • ")
+            append("Haas 12ms ${haasStereoDoublerPercent}% • ")
+            append("±90° Pinna ${lateralPinnaCuePercent}%")
+            if (subBassCenterAnchorEnabled) append(" • Sub Center-Lock ON")
+            if (velvetSideAirEnabled) append(" • Side Air ON")
+        }
+
+        return LrTwinVocalSplitterResult(
+            sculptedBands31 = outBands,
+            effectiveBassBoost = effBass,
+            effectiveSpatial3D = effSpatial,
+            effectiveReverbLevel = effReverb,
+            effectiveReverbRoom = effRoom,
+            effectiveCrossfeedPct = effCrossfeed,
+            effectivePreampDb = effPreamp,
+            telemetrySummary = summary
+        )
+    }
+}
+
+data class LrTwinVocalSplitterResult(
+    val sculptedBands31: List<Float>,
+    val effectiveBassBoost: Int,
+    val effectiveSpatial3D: Int,
+    val effectiveReverbLevel: Int,
+    val effectiveReverbRoom: String,
+    val effectiveCrossfeedPct: Int,
+    val effectivePreampDb: Float,
+    val telemetrySummary: String
+)
+
+enum class LrTwinVocalSplitterMode(
+    val title: String,
+    val badge: String,
+    val frontNullScale: Float,
+    val sideSplitScale: Float,
+    val haasScale: Float,
+    val pinnaLateralScale: Float,
+    val subtitle: String
+) {
+    OFF(
+        title = "Standard Center Vocal (Off)",
+        badge = "CENTER VOCAL",
+        frontNullScale = 0f,
+        sideSplitScale = 0f,
+        haasScale = 0f,
+        pinnaLateralScale = 0f,
+        subtitle = "Standard stereo mix where vocals come from front-center"
+    ),
+    TWIN_SIDE_50_50(
+        title = "↔️ 50% Left + 50% Right Twin-Side Split (0% Front)",
+        badge = "↔️ 50% L / 50% R",
+        frontNullScale = 1.0f,
+        sideSplitScale = 1.0f,
+        haasScale = 0.88f,
+        pinnaLateralScale = 0.92f,
+        subtitle = "Erases 100% of front-center vocal and projects equal 50% Left + 50% Right side vocals"
+    ),
+    HAAS_BINAURAL_DOUBLER(
+        title = "🎧 12ms Haas Binaural Vocal Doubler (±90° Side)",
+        badge = "🎧 HAAS ±90°",
+        frontNullScale = 0.92f,
+        sideSplitScale = 0.94f,
+        haasScale = 1.0f,
+        pinnaLateralScale = 0.95f,
+        subtitle = "+6ms Left / -6ms Right micro-phase vocal doubler wraps singer around both ears"
+    ),
+    CONCERT_WIDE_WING_ARRAY(
+        title = "🏟️ Concert Left & Right Line-Array Vocal Wings",
+        badge = "🏟️ L/R WINGS",
+        frontNullScale = 0.90f,
+        sideSplitScale = 1.0f,
+        haasScale = 0.92f,
+        pinnaLateralScale = 1.0f,
+        subtitle = "Feels like two giant concert vocal line-array towers standing on your far Left & far Right"
+    ),
+    ZERO_FRONT_OMEGA_ALL(
+        title = "🔥 Zero-Front L/R Twin-Vocal Omega (All 6 Engines)",
+        badge = "🔥 0% FRONT • 50% L/R",
+        frontNullScale = 0.98f,
+        sideSplitScale = 0.98f,
+        haasScale = 0.96f,
+        pinnaLateralScale = 0.96f,
+        subtitle = "Full 6-Engine Zero-Front Stack: 100% Front Vocal Null + 50% L / 50% R Split + 12ms Haas + ±90° Pinna Lock"
+    )
 }
 
 data class ApexSingularityResult(

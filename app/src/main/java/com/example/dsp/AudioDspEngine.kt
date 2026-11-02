@@ -256,6 +256,27 @@ class AudioDspEngine(
     @Volatile
     private var frissonVagusResonatorOn: Boolean = true
 
+    @Volatile
+    private var lrTwinVocalActive: Boolean = true
+
+    @Volatile
+    private var frontCenterNullNorm: Float = 0.96f
+
+    @Volatile
+    private var sideTwinProjectionNorm: Float = 0.96f
+
+    @Volatile
+    private var haasStereoDoublerNorm: Float = 0.92f
+
+    @Volatile
+    private var lateralPinnaCueNorm: Float = 0.94f
+
+    @Volatile
+    private var subBassCenterAnchorOn: Boolean = true
+
+    @Volatile
+    private var velvetSideAirOn: Boolean = true
+
     private val _isPlayingTestLoop = MutableStateFlow(false)
     val isPlayingTestLoop: StateFlow<Boolean> = _isPlayingTestLoop.asStateFlow()
 
@@ -395,7 +416,14 @@ class AudioDspEngine(
         vocalFormantUnmaskerPct: Int = 92,
         metamaterialShellCloakPct: Int = 92,
         goldenPhiTriodeTape: Boolean = true,
-        frissonVagusResonator: Boolean = true
+        frissonVagusResonator: Boolean = true,
+        lrTwinVocalEnabled: Boolean = true,
+        frontCenterNullPct: Int = 96,
+        sideTwinProjectionPct: Int = 96,
+        haasStereoDoublerPct: Int = 92,
+        lateralPinnaCuePct: Int = 94,
+        subBassCenterAnchor: Boolean = true,
+        velvetSideAir: Boolean = true
     ) {
         neuralBrainwaveMode = brainwaveMode
         radarAzimuthDeg = azimuthDeg.coerceIn(-180f, 180f)
@@ -461,6 +489,13 @@ class AudioDspEngine(
         metamaterialCloakNorm = (metamaterialShellCloakPct.coerceIn(0, 100) / 100f)
         goldenPhiTriodeTapeOn = goldenPhiTriodeTape
         frissonVagusResonatorOn = frissonVagusResonator
+        lrTwinVocalActive = lrTwinVocalEnabled
+        frontCenterNullNorm = (frontCenterNullPct.coerceIn(0, 100) / 100f)
+        sideTwinProjectionNorm = (sideTwinProjectionPct.coerceIn(0, 100) / 100f)
+        haasStereoDoublerNorm = (haasStereoDoublerPct.coerceIn(0, 100) / 100f)
+        lateralPinnaCueNorm = (lateralPinnaCuePct.coerceIn(0, 100) / 100f)
+        subBassCenterAnchorOn = subBassCenterAnchor
+        velvetSideAirOn = velvetSideAir
     }
 
     fun updateDspState(
@@ -495,7 +530,9 @@ class AudioDspEngine(
             reverbRoom = reverbRoomType,
             spatial = spatialAmount,
             preamp = preampDb,
-            limiter = softLimiterEnabled
+            limiter = softLimiterEnabled,
+            lrTwinVocalEnabled = lrTwinVocalActive,
+            lrTwinVocalPct = (sideTwinProjectionNorm * 100f).roundToInt()
         )
         if (!audioRecordAnalyzer.isCapturing.value) {
             _hardwareStatus.value = globalEffectManager.statusText.value
@@ -848,6 +885,26 @@ class AudioDspEngine(
 
                         outL = (outL + kalmanAnchorL + chestSlamSub + formantSpotlight + planarCloak + phiTriodeFlux) * mayerWave
                         outR = (outR + kalmanAnchorR + chestSlamSub + formantSpotlight + planarCloak + phiTriodeFlux) * mayerWave
+                    }
+
+                    // ↔️ L/R Twin-Side Vocal Splitter (Zero-Front Vocal Engine: 0% Front / 50% Left + 50% Right)
+                    if (active && lrTwinVocalActive) {
+                        // 1. 🎯 100% Front-Center Vocal Nulling: subtract shared mono mid vocal from center
+                        val centerNull = midComp * 0.78f * frontCenterNullNorm
+                        // 2. ⏱️ 12ms Haas Stereo Doubler (529 samples @ 44.1kHz) + 6ms Left tap (264 samples)
+                        val haasTapL = delayLineL[(delayIdxL - 264 + delayLineL.size) % delayLineL.size]
+                        val haasTapR = delayLineR[(delayIdxR - 529 + delayLineR.size) % delayLineR.size]
+                        // 3. ↔️ 50% Left + 50% Right Complementary Twin-Side Vocal Projection (±90° ear wings)
+                        val sideWingL = (midComp * 0.62f + haasTapL * 0.34f * haasStereoDoublerNorm + hiComp * 0.24f * lateralPinnaCueNorm) * sideTwinProjectionNorm
+                        val sideWingR = (-midComp * 0.62f + haasTapR * 0.34f * haasStereoDoublerNorm - hiComp * 0.24f * lateralPinnaCueNorm) * sideTwinProjectionNorm
+                        // 4. 🔒 Sub-Bass Center Anchor: keeps 20–120Hz subComp locked in mono center
+                        val subCenterAnchor = if (subBassCenterAnchorOn) subComp * 0.14f else 0f
+                        // 5. ✨ Velvet Side-Vocal Air
+                        val sideAirL = if (velvetSideAirOn) hiComp * 0.16f else 0f
+                        val sideAirR = if (velvetSideAirOn) -hiComp * 0.16f else 0f
+
+                        outL = (outL - centerNull) + sideWingL + subCenterAnchor + sideAirL
+                        outR = (outR - centerNull) + sideWingR + subCenterAnchor + sideAirR
                     }
 
                     // Analog Vacuum Tube / Tape Harmonic Saturation
