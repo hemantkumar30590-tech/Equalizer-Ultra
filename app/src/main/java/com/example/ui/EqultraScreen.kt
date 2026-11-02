@@ -403,7 +403,29 @@ fun EqultraScreen(
                                 "Applied Holographic Vibe: ${vibe.title}",
                                 Toast.LENGTH_SHORT
                             ).show()
-                        }
+                        },
+                        onSelectLrTwinVocalMode = { mode ->
+                            viewModel.setLrTwinVocalMode(mode)
+                            Toast.makeText(context, "L/R Vocal Split: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onToggleLrTwinVocalSwitch = {
+                            viewModel.toggleLrTwinVocalSplitter()
+                            Toast.makeText(
+                                context,
+                                if (uiState.lrTwinVocalMode == com.example.dsp.LrTwinVocalSplitterMode.OFF) {
+                                    "↔️ L/R Twin-Vocal Split ON (0% Front • 50% Left + 50% Right)"
+                                } else {
+                                    "↔️ L/R Twin-Vocal Split OFF (Standard Front Vocal)"
+                                },
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        },
+                        onUpdateFrontCenterNull = viewModel::updateFrontCenterNullPercent,
+                        onUpdateSideTwinProjection = viewModel::updateSideTwinProjectionPercent,
+                        onUpdateHaasStereoDoubler = viewModel::updateHaasStereoDoublerPercent,
+                        onUpdateLateralPinnaCue = viewModel::updateLateralPinnaCuePercent,
+                        onToggleSubBassCenterAnchor = viewModel::toggleSubBassCenterAnchor,
+                        onToggleVelvetSideAir = viewModel::toggleVelvetSideAir
                     )
 
                     1 -> BassAndSpatialDspTab(
@@ -954,6 +976,28 @@ fun EqultraScreen(
             onUpdateMetamaterialShellCloak = viewModel::updateMetamaterialShellCloakPercent,
             onToggleGoldenPhiTriodeTape = viewModel::toggleGoldenPhiTriodeTape,
             onToggleFrissonVagusResonator = viewModel::toggleFrissonVagusResonator,
+            onSelectLrTwinVocalMode = { mode ->
+                viewModel.setLrTwinVocalMode(mode)
+                Toast.makeText(context, "L/R Vocal Split: ${mode.title}", Toast.LENGTH_SHORT).show()
+            },
+            onToggleLrTwinVocalSwitch = {
+                viewModel.toggleLrTwinVocalSplitter()
+                Toast.makeText(
+                    context,
+                    if (uiState.lrTwinVocalMode == com.example.dsp.LrTwinVocalSplitterMode.OFF) {
+                        "↔️ L/R Twin-Vocal Split ON (0% Front • 50% Left + 50% Right)"
+                    } else {
+                        "↔️ L/R Twin-Vocal Split OFF (Standard Front Vocal)"
+                    },
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            onUpdateFrontCenterNull = viewModel::updateFrontCenterNullPercent,
+            onUpdateSideTwinProjection = viewModel::updateSideTwinProjectionPercent,
+            onUpdateHaasStereoDoubler = viewModel::updateHaasStereoDoublerPercent,
+            onUpdateLateralPinnaCue = viewModel::updateLateralPinnaCuePercent,
+            onToggleSubBassCenterAnchor = viewModel::toggleSubBassCenterAnchor,
+            onToggleVelvetSideAir = viewModel::toggleVelvetSideAir,
             onDismiss = { viewModel.setFutureLabDialogVisible(false) }
         )
     }
@@ -1013,20 +1057,33 @@ private fun StudioTopHeader(
                                 color = TextPrimary,
                                 fontWeight = FontWeight.Bold
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "v1.0 PRO",
+                                text = "v2.6 PRO",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = AmoledBlack,
+                                fontWeight = FontWeight.ExtraBold,
                                 modifier = Modifier
                                     .background(ElectricCyan, RoundedCornerShape(4.dp))
                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                             )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = "↔️ 50%L/50%R",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .background(NeonMagenta, RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 5.dp, vertical = 2.dp)
+                            )
                         }
                         Text(
-                            text = "PRESET: ${activePresetName.uppercase(Locale.US)}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (isEnabled) ElectricCyan else TextMuted
+                            text = "↔️ 0% FRONT VOCAL • 🔒 25% BASS LOCK • ${activePresetName.uppercase(Locale.US)}",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                            color = if (isEnabled) SignalEmerald else TextMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -1229,7 +1286,15 @@ private fun TenBandEqualizerTab(
     onRunSonarSweep: () -> Unit = {},
     onToggleAutoRider: () -> Unit = {},
     onToggleEsportsXray: () -> Unit = {},
-    onApplyHolographicVibe: (com.example.dsp.HolographicVibeProfile) -> Unit = {}
+    onApplyHolographicVibe: (com.example.dsp.HolographicVibeProfile) -> Unit = {},
+    onSelectLrTwinVocalMode: (com.example.dsp.LrTwinVocalSplitterMode) -> Unit = {},
+    onToggleLrTwinVocalSwitch: () -> Unit = {},
+    onUpdateFrontCenterNull: (Int) -> Unit = {},
+    onUpdateSideTwinProjection: (Int) -> Unit = {},
+    onUpdateHaasStereoDoubler: (Int) -> Unit = {},
+    onUpdateLateralPinnaCue: (Int) -> Unit = {},
+    onToggleSubBassCenterAnchor: () -> Unit = {},
+    onToggleVelvetSideAir: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -1250,6 +1315,21 @@ private fun TenBandEqualizerTab(
             stereoVuLevels = stereoVuLevels,
             systemVolumePercent = systemVolumePercent,
             isSystemAudioActive = isSystemAudioActive
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // v2.6 ↔️ L/R TWIN-SIDE VOCAL SPLITTER (ZERO-FRONT VOCAL ENGINE: 0% FRONT • 50% LEFT + 50% RIGHT)
+        LrTwinVocalSplitterCard(
+            uiState = uiState,
+            onSelectMode = onSelectLrTwinVocalMode,
+            onToggleMainSwitch = onToggleLrTwinVocalSwitch,
+            onUpdateFrontCenterNull = onUpdateFrontCenterNull,
+            onUpdateSideTwinProjection = onUpdateSideTwinProjection,
+            onUpdateHaasStereoDoubler = onUpdateHaasStereoDoubler,
+            onUpdateLateralPinnaCue = onUpdateLateralPinnaCue,
+            onToggleSubBassCenterAnchor = onToggleSubBassCenterAnchor,
+            onToggleVelvetSideAir = onToggleVelvetSideAir
         )
 
         Spacer(modifier = Modifier.height(10.dp))

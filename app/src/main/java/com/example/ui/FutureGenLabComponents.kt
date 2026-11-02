@@ -157,14 +157,14 @@ fun FutureGenQuickStripCard(
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "FUTURE-GEN QUANTUM LAB",
+                                text = "v2.6 QUANTUM & L/R VOCAL LAB",
                                 style = MaterialTheme.typography.titleSmall,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "8-IN-1 3D STAGE",
+                                text = "↔️ 50%L/50%R VOCAL",
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
                                 color = AmoledBlack,
                                 fontWeight = FontWeight.Bold,
@@ -174,7 +174,7 @@ fun FutureGenQuickStripCard(
                             )
                         }
                         Text(
-                            text = "3D Instrument & Woofer Stage • Sonar • 40Hz Brainwave • Bio-Ear • X-Ray",
+                            text = "0% Front / 50% L+R Vocal Split • 25% Bass Lock • 3D Stage • Sonar",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                             color = ElectricCyan,
                             maxLines = 1,
@@ -937,6 +937,14 @@ fun FutureGenQuantumLabDialog(
     onUpdateMetamaterialShellCloak: (Int) -> Unit = {},
     onToggleGoldenPhiTriodeTape: () -> Unit = {},
     onToggleFrissonVagusResonator: () -> Unit = {},
+    onSelectLrTwinVocalMode: (LrTwinVocalSplitterMode) -> Unit = {},
+    onToggleLrTwinVocalSwitch: () -> Unit = {},
+    onUpdateFrontCenterNull: (Int) -> Unit = {},
+    onUpdateSideTwinProjection: (Int) -> Unit = {},
+    onUpdateHaasStereoDoubler: (Int) -> Unit = {},
+    onUpdateLateralPinnaCue: (Int) -> Unit = {},
+    onToggleSubBassCenterAnchor: () -> Unit = {},
+    onToggleVelvetSideAir: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -972,13 +980,13 @@ fun FutureGenQuantumLabDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = "EQULTRA APEX SINGULARITY & QUANTUM LAB",
+                                text = "EQULTRA v2.6 L/R TWIN-VOCAL & QUANTUM LAB",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
-                                text = "🌌 Apex Singularity • 🧠 Chrono-Neural • 🎻 Live Stage • 🌬️ Zero-Earbud",
+                                text = "↔️ 0% Front / 50% L+R Vocal • 🌌 Apex • 🧠 Chrono-Neural • 🎻 Live Stage",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ElectricCyan
                             )
@@ -1001,6 +1009,19 @@ fun FutureGenQuantumLabDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // 0000000000. ↔️ L/R TWIN-SIDE VOCAL SPLITTER (ZERO-FRONT VOCAL ENGINE: 0% FRONT • 50% LEFT + 50% RIGHT)
+                    LrTwinVocalSplitterCard(
+                        uiState = uiState,
+                        onSelectMode = onSelectLrTwinVocalMode,
+                        onToggleMainSwitch = onToggleLrTwinVocalSwitch,
+                        onUpdateFrontCenterNull = onUpdateFrontCenterNull,
+                        onUpdateSideTwinProjection = onUpdateSideTwinProjection,
+                        onUpdateHaasStereoDoubler = onUpdateHaasStereoDoubler,
+                        onUpdateLateralPinnaCue = onUpdateLateralPinnaCue,
+                        onToggleSubBassCenterAnchor = onToggleSubBassCenterAnchor,
+                        onToggleVelvetSideAir = onToggleVelvetSideAir
+                    )
+
                     // 000000000. 🌌 APEX SINGULARITY & BIO-ACOUSTIC ENGINE (6-IN-1 ULTRA-POWER SUITE)
                     ApexSingularityCard(
                         uiState = uiState,
