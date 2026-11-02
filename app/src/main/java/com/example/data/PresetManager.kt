@@ -106,17 +106,49 @@ class PresetManager(
     ) {
         val interpolated = EqPresetEntity.interpolateTo31Bands(bandGainsDb)
         val bandsCsv = interpolated.joinToString(",") { String.format(Locale.US, "%.1f", it) }
+        val effectiveBass = if (isBassLockEnabled()) {
+            getUserPreferredBass(bassBoostStrength.coerceIn(0, 100))
+        } else {
+            bassBoostStrength.coerceIn(0, 100)
+        }
 
         activeStateBox.edit()
             .putBoolean(KEY_ENABLED, enabled)
             .putString(KEY_ACTIVE_PRESET, activePresetName)
             .putString(KEY_BANDS_CSV, bandsCsv)
-            .putInt(KEY_BASS_BOOST, bassBoostStrength.coerceIn(0, 100))
+            .putInt(KEY_BASS_BOOST, effectiveBass)
             .putInt(KEY_REVERB_LEVEL, reverbLevel.coerceIn(0, 100))
             .putString(KEY_REVERB_ROOM, reverbRoom)
             .putInt(KEY_SPATIAL_LEVEL, spatialLevel.coerceIn(0, 100))
             .putFloat(KEY_PREAMP_DB, preampDb.coerceIn(-12f, 12f))
             .apply()
+    }
+
+    fun isBassLockEnabled(): Boolean =
+        activeStateBox.getBoolean(KEY_BASS_LOCK_ENABLED, true)
+
+    fun setBassLockEnabled(locked: Boolean) {
+        activeStateBox.edit().putBoolean(KEY_BASS_LOCK_ENABLED, locked).apply()
+    }
+
+    fun getUserPreferredBass(fallback: Int = DEFAULT_SMOOTH_BASS): Int =
+        activeStateBox.getInt(KEY_USER_PREFERRED_BASS, fallback).coerceIn(0, 100)
+
+    fun setUserPreferredBass(strength: Int) {
+        val clamped = strength.coerceIn(0, 100)
+        activeStateBox.edit()
+            .putInt(KEY_USER_PREFERRED_BASS, clamped)
+            .putInt(KEY_BASS_BOOST, clamped)
+            .putBoolean(KEY_BASS_V25_MIGRATED, true)
+            .apply()
+    }
+
+    fun resolveEffectiveBass(candidateBass: Int): Int {
+        return if (isBassLockEnabled()) {
+            getUserPreferredBass(DEFAULT_SMOOTH_BASS)
+        } else {
+            candidateBass.coerceIn(0, 100)
+        }
     }
 
     fun isDspEnabled(): Boolean = activeStateBox.getBoolean(KEY_ENABLED, true)
@@ -148,10 +180,35 @@ class PresetManager(
     }
 
     fun loadSavedActiveProfile(): EqPresetEntity {
-        val defaultPreset = EqPresetEntity.BUILT_IN_PRESETS[1] // Bass Boost
+        val defaultPreset = EqPresetEntity.BUILT_IN_PRESETS[3] // Harman Target (Smooth Balanced)
+        val alreadyMigrated = activeStateBox.getBoolean(KEY_BASS_V25_MIGRATED, false)
+        if (!alreadyMigrated) {
+            val existingBass = activeStateBox.getInt(KEY_BASS_BOOST, -1)
+            val existingPreset = activeStateBox.getString(KEY_ACTIVE_PRESET, null)
+            // Migrate old hardcoded 78%+ Bass Boost default to smooth 25% default on APK upgrade/install
+            val migratedBass = if (existingBass in 0..60) existingBass else DEFAULT_SMOOTH_BASS
+            val editor = activeStateBox.edit()
+                .putBoolean(KEY_BASS_V25_MIGRATED, true)
+                .putInt(KEY_USER_PREFERRED_BASS, migratedBass)
+                .putInt(KEY_BASS_BOOST, migratedBass)
+            if (existingPreset == null || existingPreset == "Bass Boost") {
+                editor.putString(KEY_ACTIVE_PRESET, defaultPreset.name)
+                editor.putString(KEY_BANDS_CSV, defaultPreset.bandsCsv)
+            }
+            if (!activeStateBox.contains(KEY_BASS_LOCK_ENABLED)) {
+                editor.putBoolean(KEY_BASS_LOCK_ENABLED, true)
+            }
+            editor.apply()
+        }
+
         val presetName = activeStateBox.getString(KEY_ACTIVE_PRESET, defaultPreset.name) ?: defaultPreset.name
         val bandsCsv = activeStateBox.getString(KEY_BANDS_CSV, defaultPreset.bandsCsv) ?: defaultPreset.bandsCsv
-        val bassBoost = activeStateBox.getInt(KEY_BASS_BOOST, defaultPreset.bassBoostStrength)
+        val rawSavedBass = activeStateBox.getInt(KEY_BASS_BOOST, DEFAULT_SMOOTH_BASS)
+        val bassBoost = if (isBassLockEnabled()) {
+            getUserPreferredBass(rawSavedBass)
+        } else {
+            rawSavedBass
+        }
         val reverbLevel = activeStateBox.getInt(KEY_REVERB_LEVEL, defaultPreset.reverbLevel)
         val reverbRoom = activeStateBox.getString(KEY_REVERB_ROOM, defaultPreset.reverbRoom) ?: defaultPreset.reverbRoom
         val spatialLevel = activeStateBox.getInt(KEY_SPATIAL_LEVEL, defaultPreset.spatialLevel)
@@ -163,7 +220,7 @@ class PresetManager(
             category = "Active",
             description = "Restored active sound profile",
             bandsCsv = bandsCsv,
-            bassBoostStrength = bassBoost,
+            bassBoostStrength = bassBoost.coerceIn(0, 100),
             reverbLevel = reverbLevel,
             reverbRoom = reverbRoom,
             spatialLevel = spatialLevel,
@@ -175,6 +232,7 @@ class PresetManager(
 
     companion object {
         const val ACTIVE_STATE_BOX_NAME = "equltra_settings_box"
+        const val DEFAULT_SMOOTH_BASS = 25
         private const val KEY_ENABLED = "enabled"
         private const val KEY_BG_SERVICE_ENABLED = "bg_service_enabled"
         private const val KEY_AI_PRO_UNLOCKED = "ai_pro_unlocked"
@@ -182,6 +240,9 @@ class PresetManager(
         private const val KEY_ACTIVE_PRESET = "preset"
         private const val KEY_BANDS_CSV = "bands_csv"
         private const val KEY_BASS_BOOST = "bass_boost"
+        private const val KEY_USER_PREFERRED_BASS = "user_preferred_bass"
+        private const val KEY_BASS_LOCK_ENABLED = "bass_lock_enabled"
+        private const val KEY_BASS_V25_MIGRATED = "bass_v25_smooth_migrated"
         private const val KEY_REVERB_LEVEL = "reverb_level"
         private const val KEY_REVERB_ROOM = "reverb_room"
         private const val KEY_SPATIAL_LEVEL = "spatial_level"

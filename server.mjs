@@ -250,6 +250,49 @@ const HTML_PAGE = `<!DOCTYPE html>
   </header>
 
   <main>
+    <!-- 🌌 Apex Singularity & Bio-Acoustic Engine (6-in-1 Ultra-Power Suite) -->
+    <div class="quantum-card" style="border-color: var(--emerald);">
+      <div class="card-header">
+        <div>
+          <span class="card-title" style="color:var(--emerald);">🌌 APEX SINGULARITY &amp; BIO-ACOUSTIC ENGINE (6-IN-1 ULTRA-POWER SUITE — NEW!)</span>
+          <div id="apexSingularityStatus" style="font-size:11.5px;color:var(--cyan);margin-top:3px;font-family:monospace;">
+            🌌 [🌌 APEX SINGULARITY]: Gyro 360° 95% • 18Hz Chest-Slam 94% • Vocal Unmask 92% • Planar Cloak 92% • φ-Triode ON • Frisson 3x ON
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="chip" onclick="setApexMode('off', 'Standard Signal Path (Off)', 0, 0, 0, 0)">⏹️ Standard (Off)</button>
+          <button class="chip" onclick="setApexMode('gyro', '🧭 Gyro-Spatial 360° Inertial Stage Lock', 100, 82, 88, 85)">🧭 Gyro 360° Lock</button>
+          <button class="chip" onclick="setApexMode('slam', '💥 Tactile 18Hz–35Hz Chest-Slam Sub Synth', 82, 100, 84, 82)">💥 18Hz Chest-Slam</button>
+          <button class="chip" onclick="setApexMode('vocal', '🎙️ Holographic Vocal Formant Unmasker (3ft)', 86, 78, 100, 90)">🎙️ Vocal Unmasker</button>
+          <button class="chip" onclick="setApexMode('cloak', '🛡️ Metamaterial Shell Cloak (Planar Ribbon)', 84, 80, 88, 100)">🛡️ Planar Cloak</button>
+          <button class="chip active" onclick="setApexMode('omega', '🌌 Apex Singularity Omega (All 6 Ultra Engines)', 95, 94, 92, 92)">🌌 Apex Singularity (All 6)</button>
+        </div>
+      </div>
+
+      <div class="quantum-grid">
+        <div class="q-box">
+          <h4><span>🧭 Gyro-Spatial 360° Stage Anchor</span><span id="apGyroVal" style="color:var(--cyan);">95%</span></h4>
+          <p>Kalman-filtered ITD/ILD binaural tracking locks singer &amp; instruments in fixed room coordinates</p>
+          <input id="apGyroSlider" type="range" min="0" max="100" value="95" style="width:100%;accent-color:var(--cyan);" oninput="updateApexSlider('gyro', this.value)" />
+        </div>
+        <div class="q-box">
+          <h4><span>💥 Tactile 18Hz–35Hz Chest-Slam Sub</span><span id="apSlamVal" style="color:var(--magenta);">94%</span></h4>
+          <p>Nonlinear Volterra somatosensory sub synthesis creates visceral IMAX physical chest-thump with zero clipping</p>
+          <input id="apSlamSlider" type="range" min="0" max="100" value="94" style="width:100%;accent-color:var(--magenta);" oninput="updateApexSlider('slam', this.value)" />
+        </div>
+        <div class="q-box">
+          <h4><span>🎙️ Vocal Unmasker &amp; 🛡️ Planar Cloak</span><span id="apVocVal" style="color:var(--amber);">92% | Cloak 92%</span></h4>
+          <p>Spectral formant side-chain carves mud for 3ft vocals + Metamaterial anti-boxiness planar ribbon air</p>
+          <input id="apVocSlider" type="range" min="0" max="100" value="92" style="width:100%;accent-color:var(--amber);" oninput="updateApexSlider('voc', this.value)" />
+          <input id="apCloakSlider" type="range" min="0" max="100" value="92" style="width:100%;accent-color:var(--emerald);margin-top:6px;" oninput="updateApexSlider('cloak', this.value)" />
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">
+            <button class="chip active" id="apPhiBtn" onclick="toggleApexPhi()">✨ φ=1.618 Tube &amp; Tape: ON</button>
+            <button class="chip active" id="apFrisBtn" onclick="toggleApexFrisson()">⚡ 0.1Hz Frisson 3x: ON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 🧠 Chrono-Neural & Sub-Quantum Biomimetic Engine (6-in-1 Neuro-Physics Suite) -->
     <div class="quantum-card" style="border-color: var(--cyan);">
       <div class="card-header">
@@ -1824,6 +1867,80 @@ const HTML_PAGE = `<!DOCTYPE html>
       cnFib = !cnFib;
       document.getElementById("cnFibBtn").textContent = "🌌 φ-Fibonacci Tape Silk: " + (cnFib ? "ON" : "OFF");
       applyChronoCurve();
+    }
+
+    let apGyro = 95;
+    let apSlam = 94;
+    let apVoc = 92;
+    let apCloak = 92;
+    let apPhi = true;
+    let apFris = true;
+    let apLabel = "🌌 Apex Singularity";
+
+    function applyApexCurve() {
+      const gy = apGyro / 100.0;
+      const sl = apSlam / 100.0;
+      const vc = apVoc / 100.0;
+      const ck = apCloak / 100.0;
+      for (let i = 0; i < 31; i++) {
+        let g = gains[i] * 0.38;
+        if (i <= 2) g += sl * 4.5 + (apFris ? 1.4 : 0);
+        if (i >= 3 && i <= 6) g += sl * 4.0 + gy * 2.4;
+        if (apPhi && i >= 6 && i <= 8) g += 1.6;
+        if (i >= 9 && i <= 12) g -= vc * 2.5 + sl * 1.4;
+        if (i >= 13 && i <= 14) g -= ck * 2.6;
+        if (i >= 15 && i <= 17) g += vc * 1.8 + (apPhi ? 1.5 : 0);
+        if (i >= 18 && i <= 21) g += vc * 3.4 + gy * 2.4;
+        if (apPhi && i === 23) g -= 1.2;
+        if (i >= 24 && i <= 25) g -= ck * 2.2 + gy * 1.2;
+        if (i >= 26 && i <= 28) g += gy * 2.8 + vc * 2.0 + (apFris ? 1.8 : 0);
+        if (i >= 29) g += ck * 3.5 + vc * 2.2 + (apFris ? 1.8 : 0);
+        gains[i] = Math.max(-15, Math.min(15, Math.round(g * 2) / 2));
+      }
+      document.getElementById("apVocVal").textContent = apVoc + "% | Cloak " + apCloak + "%";
+      document.getElementById("apexSingularityStatus").textContent =
+        "🌌 [" + apLabel.toUpperCase() + "]: Gyro 360° " + apGyro +
+        "% • 18Hz Chest-Slam " + apSlam + "% • Vocal Unmask " + apVoc +
+        "% • Planar Cloak " + apCloak + "% • " +
+        (apPhi ? "φ-Triode ON" : "Triode OFF") + " • " +
+        (apFris ? "Frisson 3x ON" : "Frisson OFF");
+      renderBands();
+    }
+
+    function setApexMode(key, label, gyro, slam, voc, cloak) {
+      apLabel = label;
+      apGyro = gyro;
+      apSlam = slam;
+      apVoc = voc;
+      apCloak = cloak;
+      document.getElementById("apGyroVal").textContent = gyro + "%";
+      document.getElementById("apGyroSlider").value = gyro;
+      document.getElementById("apSlamVal").textContent = slam + "%";
+      document.getElementById("apSlamSlider").value = slam;
+      document.getElementById("apVocSlider").value = voc;
+      document.getElementById("apCloakSlider").value = cloak;
+      applyApexCurve();
+    }
+
+    function updateApexSlider(which, val) {
+      const v = parseInt(val, 10);
+      if (which === 'gyro') { apGyro = v; document.getElementById("apGyroVal").textContent = v + "%"; }
+      if (which === 'slam') { apSlam = v; document.getElementById("apSlamVal").textContent = v + "%"; }
+      if (which === 'voc') { apVoc = v; }
+      if (which === 'cloak') { apCloak = v; }
+      applyApexCurve();
+    }
+
+    function toggleApexPhi() {
+      apPhi = !apPhi;
+      document.getElementById("apPhiBtn").textContent = "✨ φ=1.618 Tube & Tape: " + (apPhi ? "ON" : "OFF");
+      applyApexCurve();
+    }
+
+    function toggleApexFrisson() {
+      apFris = !apFris;
+      document.getElementById("apFrisBtn").textContent = "⚡ 0.1Hz Frisson 3x: " + (apFris ? "ON" : "OFF");
+      applyApexCurve();
     }
 
     renderPresets();

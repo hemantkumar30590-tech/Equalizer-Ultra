@@ -71,7 +71,7 @@ class EqForegroundService : Service() {
                     enabled = true,
                     activePresetName = nextPreset.name,
                     bandGainsDb = nextPreset.getBandGains(),
-                    bassBoostStrength = nextPreset.bassBoostStrength,
+                    bassBoostStrength = presetManager.resolveEffectiveBass(nextPreset.bassBoostStrength),
                     reverbLevel = nextPreset.reverbLevel,
                     reverbRoom = nextPreset.reverbRoom,
                     spatialLevel = nextPreset.spatialLevel,

@@ -47,7 +47,7 @@ class AudioDspEngine(
     private var currentBandsDb: FloatArray = FloatArray(EqPresetEntity.BAND_COUNT) { 0f }
 
     @Volatile
-    private var bassStrength: Int = 78 // 0..100
+    private var bassStrength: Int = 25 // 0..100 (Smooth 25% default)
 
     @Volatile
     private var reverbAmount: Int = 12 // 0..100
@@ -86,7 +86,7 @@ class AudioDspEngine(
     private var stageHighPanLR: Float = 0f
 
     @Volatile
-    private var subHarmonicSynthNorm: Float = 0.35f
+    private var subHarmonicSynthNorm: Float = 0.25f
 
     @Volatile
     private var stemVocalGain: Float = 1.0f
@@ -137,7 +137,7 @@ class AudioDspEngine(
     private var sovereign2030Active: Boolean = false
 
     @Volatile
-    private var phantomSub16Norm: Float = 0.82f
+    private var phantomSub16Norm: Float = 0.28f
 
     @Volatile
     private var dopplerEraserOn: Boolean = true
@@ -227,13 +227,34 @@ class AudioDspEngine(
     private var stapediusSilkNorm: Float = 0.92f
 
     @Volatile
-    private var tartiniSubNorm: Float = 0.92f
+    private var tartiniSubNorm: Float = 0.28f
 
     @Volatile
     private var microSaccadicSwayOn: Boolean = true
 
     @Volatile
     private var fibonacciTapeSilkOn: Boolean = true
+
+    @Volatile
+    private var apexSingularityActive: Boolean = false
+
+    @Volatile
+    private var gyroStageAnchorNorm: Float = 0.95f
+
+    @Volatile
+    private var tactileChestSlamNorm: Float = 0.28f
+
+    @Volatile
+    private var vocalFormantUnmaskNorm: Float = 0.92f
+
+    @Volatile
+    private var metamaterialCloakNorm: Float = 0.92f
+
+    @Volatile
+    private var goldenPhiTriodeTapeOn: Boolean = true
+
+    @Volatile
+    private var frissonVagusResonatorOn: Boolean = true
 
     private val _isPlayingTestLoop = MutableStateFlow(false)
     val isPlayingTestLoop: StateFlow<Boolean> = _isPlayingTestLoop.asStateFlow()
@@ -367,7 +388,14 @@ class AudioDspEngine(
         stapediusReflexDisarmerPct: Int = 92,
         tartiniOtoacousticSubPct: Int = 92,
         microSaccadicStageSway: Boolean = true,
-        fibonacciGoldenTapeSilk: Boolean = true
+        fibonacciGoldenTapeSilk: Boolean = true,
+        apexSingularityEnabled: Boolean = false,
+        gyroStageAnchorPct: Int = 95,
+        tactileChestSlamSubPct: Int = 94,
+        vocalFormantUnmaskerPct: Int = 92,
+        metamaterialShellCloakPct: Int = 92,
+        goldenPhiTriodeTape: Boolean = true,
+        frissonVagusResonator: Boolean = true
     ) {
         neuralBrainwaveMode = brainwaveMode
         radarAzimuthDeg = azimuthDeg.coerceIn(-180f, 180f)
@@ -426,6 +454,13 @@ class AudioDspEngine(
         tartiniSubNorm = (tartiniOtoacousticSubPct.coerceIn(0, 100) / 100f)
         microSaccadicSwayOn = microSaccadicStageSway
         fibonacciTapeSilkOn = fibonacciGoldenTapeSilk
+        apexSingularityActive = apexSingularityEnabled
+        gyroStageAnchorNorm = (gyroStageAnchorPct.coerceIn(0, 100) / 100f)
+        tactileChestSlamNorm = (tactileChestSlamSubPct.coerceIn(0, 100) / 100f)
+        vocalFormantUnmaskNorm = (vocalFormantUnmaskerPct.coerceIn(0, 100) / 100f)
+        metamaterialCloakNorm = (metamaterialShellCloakPct.coerceIn(0, 100) / 100f)
+        goldenPhiTriodeTapeOn = goldenPhiTriodeTape
+        frissonVagusResonatorOn = frissonVagusResonator
     }
 
     fun updateDspState(
@@ -784,6 +819,35 @@ class AudioDspEngine(
 
                         outL = (outL * (1f + bioSway)) + cochlearAlign + slowMoDetail + stapediusSilk + tartiniWave + fibSilk
                         outR = (outR * (1f - bioSway)) + cochlearAlign + slowMoDetail + stapediusSilk + tartiniWave + fibSilk
+                    }
+
+                    // 🌌 Apex Singularity & Bio-Acoustic Engine (6-in-1 Ultra-Power Suite)
+                    if (active && apexSingularityActive) {
+                        // 1. 🧭 Gyro-Spatial 360° Inertial Stage Anchor (Kalman ITD/ILD front stage lock)
+                        val kalmanAnchorL = (skullShadowR * 0.22f + tapFloorL * 0.16f) * gyroStageAnchorNorm
+                        val kalmanAnchorR = (skullShadowL * 0.22f + tapDeskR * 0.16f) * gyroStageAnchorNorm
+                        // 2. 💥 Tactile 18Hz–35Hz Chest-Slam Sub Synthesizer (Volterra series somatosensory illusion)
+                        val chestSlamSub = (
+                            (sin(2.0 * PI * 24.0 * t) * 0.48 +
+                                sin(2.0 * PI * 48.0 * t) * 0.36 +
+                                sin(2.0 * PI * 72.0 * t) * 0.22) * kickEnv * 0.24 * tactileChestSlamNorm
+                            ).toFloat()
+                        // 3. 🎙️ Holographic Vocal Formant Unmasker (spectral side-chain carve on mud + 3ft vocal spotlight)
+                        val vocalEnvelope = abs(midComp)
+                        val formantSpotlight = (midComp * 0.23f - lpSub * (vocalEnvelope * 0.20f)) * vocalFormantUnmaskNorm
+                        // 4. 🛡️ Acoustic Metamaterial Shell De-Resonator (inverse cavity anti-boxiness + planar ribbon air)
+                        val planarCloak = (-lpMid * 0.14f + hiComp * 0.21f) * metamaterialCloakNorm
+                        // 5. ✨ Golden-Ratio (φ=1.618) Vacuum Tube & Magnetic Tape Flux Master
+                        val phiTriodeFlux = if (goldenPhiTriodeTapeOn) {
+                            ((eqSignal * eqSignal * 0.085f) * 1.618f * 0.5f + (subComp * 0.09f))
+                        } else 0f
+                        // 6. ⚡ Frisson (Goosebumps) & 0.1Hz Mayer-Wave Vagus-Nerve Harmonic Resonator
+                        val mayerWave = if (frissonVagusResonatorOn) {
+                            (1.0f + (sin(2.0 * PI * 0.10 * t) * 0.065).toFloat())
+                        } else 1.0f
+
+                        outL = (outL + kalmanAnchorL + chestSlamSub + formantSpotlight + planarCloak + phiTriodeFlux) * mayerWave
+                        outR = (outR + kalmanAnchorR + chestSlamSub + formantSpotlight + planarCloak + phiTriodeFlux) * mayerWave
                     }
 
                     // Analog Vacuum Tube / Tape Harmonic Saturation

@@ -414,6 +414,21 @@ fun EqultraScreen(
                         systemVolumePercent = systemVolumePercent,
                         peakDb = peakDb,
                         onBassChanged = viewModel::updateBassBoost,
+                        onToggleBassLock = {
+                            if (isHapticsEnabled) {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                            }
+                            viewModel.toggleBassBoostLock()
+                            Toast.makeText(
+                                context,
+                                if (!uiState.isBassBoostLocked) {
+                                    "🔒 Bass Memory LOCKED at ${uiState.bassBoostStrength}% — Modes won't increase Bass!"
+                                } else {
+                                    "🔓 Bass Memory Unlocked — Presets can change Bass"
+                                },
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        },
                         onSpatialChanged = viewModel::updateSpatialLevel,
                         onReverbChanged = viewModel::updateReverbLevel,
                         onReverbRoomChanged = { room ->
@@ -539,7 +554,17 @@ fun EqultraScreen(
                         onUpdateStapediusReflexDisarmer = viewModel::updateStapediusReflexDisarmerPercent,
                         onUpdateTartiniOtoacousticSub = viewModel::updateTartiniOtoacousticSubPercent,
                         onToggleMicroSaccadicStageSway = viewModel::toggleMicroSaccadicStageSway,
-                        onToggleFibonacciGoldenTapeSilk = viewModel::toggleFibonacciGoldenTapeSilk
+                        onToggleFibonacciGoldenTapeSilk = viewModel::toggleFibonacciGoldenTapeSilk,
+                        onSelectApexSingularityMode = { mode ->
+                            viewModel.setApexSingularityMode(mode)
+                            Toast.makeText(context, "Apex Singularity: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdateGyroStageAnchor = viewModel::updateGyroStageAnchorPercent,
+                        onUpdateTactileChestSlamSub = viewModel::updateTactileChestSlamSubPercent,
+                        onUpdateVocalFormantUnmasker = viewModel::updateVocalFormantUnmaskerPercent,
+                        onUpdateMetamaterialShellCloak = viewModel::updateMetamaterialShellCloakPercent,
+                        onToggleGoldenPhiTriodeTape = viewModel::toggleGoldenPhiTriodeTape,
+                        onToggleFrissonVagusResonator = viewModel::toggleFrissonVagusResonator
                     )
 
                     2 -> DevicePresetsTab(
@@ -897,6 +922,16 @@ fun EqultraScreen(
             onUpdateTartiniOtoacousticSub = viewModel::updateTartiniOtoacousticSubPercent,
             onToggleMicroSaccadicStageSway = viewModel::toggleMicroSaccadicStageSway,
             onToggleFibonacciGoldenTapeSilk = viewModel::toggleFibonacciGoldenTapeSilk,
+            onSelectApexSingularityMode = { mode ->
+                viewModel.setApexSingularityMode(mode)
+                Toast.makeText(context, "Apex Singularity: ${mode.title}", Toast.LENGTH_SHORT).show()
+            },
+            onUpdateGyroStageAnchor = viewModel::updateGyroStageAnchorPercent,
+            onUpdateTactileChestSlamSub = viewModel::updateTactileChestSlamSubPercent,
+            onUpdateVocalFormantUnmasker = viewModel::updateVocalFormantUnmaskerPercent,
+            onUpdateMetamaterialShellCloak = viewModel::updateMetamaterialShellCloakPercent,
+            onToggleGoldenPhiTriodeTape = viewModel::toggleGoldenPhiTriodeTape,
+            onToggleFrissonVagusResonator = viewModel::toggleFrissonVagusResonator,
             onDismiss = { viewModel.setFutureLabDialogVisible(false) }
         )
     }
@@ -1474,7 +1509,11 @@ private fun TenBandEqualizerTab(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                DspMiniStat("BASS BOOST", "${uiState.bassBoostStrength}%", NeonMagenta)
+                DspMiniStat(
+                    label = if (uiState.isBassBoostLocked) "BASS LOCKED 🔒" else "BASS BOOST",
+                    value = "${uiState.bassBoostStrength}%",
+                    color = if (uiState.isBassBoostLocked) SignalEmerald else NeonMagenta
+                )
                 DspMiniStat("SPATIAL 3D", "${uiState.spatialLevel}%", ElectricCyan)
                 DspMiniStat("REVERB (${uiState.reverbRoom.uppercase(Locale.US)})", "${uiState.reverbLevel}%", HyperViolet)
                 DspMiniStat("PREAMP", String.format(Locale.US, "%+.1fdB", uiState.preampDb), SignalEmerald)
@@ -1511,6 +1550,7 @@ private fun BassAndSpatialDspTab(
     systemVolumePercent: Int,
     peakDb: Float,
     onBassChanged: (Int) -> Unit,
+    onToggleBassLock: () -> Unit = {},
     onSpatialChanged: (Int) -> Unit,
     onReverbChanged: (Int) -> Unit,
     onReverbRoomChanged: (String) -> Unit,
@@ -1582,7 +1622,14 @@ private fun BassAndSpatialDspTab(
     onUpdateStapediusReflexDisarmer: (Int) -> Unit,
     onUpdateTartiniOtoacousticSub: (Int) -> Unit,
     onToggleMicroSaccadicStageSway: () -> Unit,
-    onToggleFibonacciGoldenTapeSilk: () -> Unit
+    onToggleFibonacciGoldenTapeSilk: () -> Unit,
+    onSelectApexSingularityMode: (com.example.dsp.ApexSingularityMode) -> Unit,
+    onUpdateGyroStageAnchor: (Int) -> Unit,
+    onUpdateTactileChestSlamSub: (Int) -> Unit,
+    onUpdateVocalFormantUnmasker: (Int) -> Unit,
+    onUpdateMetamaterialShellCloak: (Int) -> Unit,
+    onToggleGoldenPhiTriodeTape: () -> Unit,
+    onToggleFrissonVagusResonator: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -1599,6 +1646,123 @@ private fun BassAndSpatialDspTab(
             peakDb = peakDb,
             bassBoostPercent = uiState.bassBoostStrength,
             spatialPercent = uiState.spatialLevel
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 🔒 BASS MEMORY LOCK & QUICK BASS CONTROLLER CARD (Top of Bass & DSP Tab)
+        Surface(
+            color = ObsidianCard,
+            shape = RoundedCornerShape(18.dp),
+            border = BorderStroke(
+                width = 1.5.dp,
+                color = if (uiState.isBassBoostLocked) SignalEmerald else NeonMagenta
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (uiState.isBassBoostLocked) {
+                                "🔒 Bass Memory Lock: ACTIVE (${uiState.bassBoostStrength}%)"
+                            } else {
+                                "🔓 Bass Memory Lock: OFF (${uiState.bassBoostStrength}%)"
+                            },
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (uiState.isBassBoostLocked) SignalEmerald else NeonMagenta,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = if (uiState.isBassBoostLocked) {
+                                "Switching Presets, AI Modes or upgrading APK will NEVER increase your Bass!"
+                            } else {
+                                "Presets & Future-Gen modes are allowed to change Bass Boost automatically"
+                            },
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            color = TextSecondary
+                        )
+                    }
+                    Switch(
+                        checked = uiState.isBassBoostLocked,
+                        onCheckedChange = { onToggleBassLock() },
+                        modifier = Modifier.testTag("bass_memory_lock_switch"),
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = AmoledBlack,
+                            checkedTrackColor = SignalEmerald,
+                            uncheckedThumbColor = TextSecondary,
+                            uncheckedTrackColor = AmoledBlack
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Slider(
+                    value = uiState.bassBoostStrength.toFloat(),
+                    onValueChange = { onBassChanged(it.toInt()) },
+                    valueRange = 0f..100f,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("quick_top_bass_slider"),
+                    colors = SliderDefaults.colors(
+                        thumbColor = if (uiState.isBassBoostLocked) SignalEmerald else NeonMagenta,
+                        activeTrackColor = if (uiState.isBassBoostLocked) SignalEmerald else NeonMagenta,
+                        inactiveTrackColor = AmoledBlack
+                    )
+                )
+
+                val quickBassPresets = listOf(
+                    0 to "0% Flat",
+                    15 to "15% Soft",
+                    25 to "25% Smooth ⭐",
+                    40 to "40% Warm",
+                    60 to "60% Punch"
+                )
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(quickBassPresets, key = { it.first }) { (pct, label) ->
+                        val isSelected = uiState.bassBoostStrength == pct
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { onBassChanged(pct) },
+                            label = {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = SignalEmerald,
+                                selectedLabelColor = AmoledBlack,
+                                containerColor = AmoledBlack,
+                                labelColor = TextSecondary
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 🌌 Apex Singularity & Bio-Acoustic Engine (6-in-1 Ultra-Power Suite) directly at top of Bass & 3D Tab
+        ApexSingularityCard(
+            uiState = uiState,
+            onSelectMode = onSelectApexSingularityMode,
+            onUpdateGyroStageAnchor = onUpdateGyroStageAnchor,
+            onUpdateTactileChestSlamSub = onUpdateTactileChestSlamSub,
+            onUpdateVocalFormantUnmasker = onUpdateVocalFormantUnmasker,
+            onUpdateMetamaterialShellCloak = onUpdateMetamaterialShellCloak,
+            onToggleGoldenPhiTriodeTape = onToggleGoldenPhiTriodeTape,
+            onToggleFrissonVagusResonator = onToggleFrissonVagusResonator
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -1939,7 +2103,7 @@ private fun ApkAndGithubGuideTab() {
                         inStream.copyTo(outStream)
                     }
                 }
-                Toast.makeText(context, "Saved Equltra-v1.0.apk successfully!", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Saved Equltra-v2.5-BassLock.apk successfully!", Toast.LENGTH_LONG).show()
             }.onFailure {
                 Toast.makeText(context, "Export failed: ${it.localizedMessage}", Toast.LENGTH_LONG).show()
             }
@@ -1966,18 +2130,25 @@ private fun ApkAndGithubGuideTab() {
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "Direct APK Download & Export",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = TextPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column {
+                        Text(
+                            text = "Equltra v2.5 (Bass-Lock Edition) APK",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "🔒 25% Smooth Default Bass • Bass Memory Lock • Direct Upgrade",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
-                    onClick = { exportApkLauncher.launch("Equltra-v1.0.apk") },
+                    onClick = { exportApkLauncher.launch("Equltra-v2.5-BassLock.apk") },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = ElectricCyan,
                         contentColor = AmoledBlack
@@ -1990,12 +2161,12 @@ private fun ApkAndGithubGuideTab() {
                 ) {
                     Icon(
                         imageVector = Icons.Default.Download,
-                        contentDescription = "Save Equltra-v1.0.apk",
+                        contentDescription = "Save Equltra-v2.5-BassLock.apk",
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "EXPORT EQULTRA-V1.0.APK TO FILES",
+                        text = "EXPORT EQULTRA-V2.5-BASSLOCK.APK TO FILES",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold
                     )

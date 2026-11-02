@@ -75,7 +75,7 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
     private var currentBandsDb: FloatArray = FloatArray(EqPresetEntity.BAND_COUNT) { 0f }
 
     @Volatile
-    private var bassStrength: Int = 78 // 0..100
+    private var bassStrength: Int = 25 // 0..100 (Smooth 25% default)
 
     @Volatile
     private var reverbAmount: Int = 12 // 0..100
@@ -350,7 +350,7 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         val limit = softLimiterEnabled
 
         // Sub-bass extra shelf in dB from the Bass Boost knob across 20Hz..125Hz (bands 0..8)
-        val maxSubBoostDb = if (active) (bass / 100f) * 9.5f else 0f
+        val maxSubBoostDb = if (active) (bass / 100f) * 5.8f else 0f
 
         // Spatial 3D presence air shelf on upper bands (4kHz..20kHz, bands 23..30) when Spatial > 0
         val spatialAirDb = if (active) (spatial / 100f) * 3.5f else 0f
@@ -379,13 +379,13 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
                             dp.setPostEqBandAllChannelsTo(b, postBand)
                         }
 
-                        // Boost low MBC postGain when Bass Boost is turned up
+                        // Boost low MBC postGain smoothly when Bass Boost is turned up
                         val mbcCutoffs = floatArrayOf(85f, 220f, 750f, 2500f, 7000f, 20000f)
                         for (m in 0 until 6) {
                             val mbcPostGain = when {
                                 !active -> 0f
-                                m == 0 -> (bass / 100f) * 5.5f
-                                m == 1 -> (bass / 100f) * 3.0f
+                                m == 0 -> (bass / 100f) * 3.0f
+                                m == 1 -> (bass / 100f) * 1.5f
                                 m >= 4 -> (spatial / 100f) * 2.0f
                                 else -> 0f
                             }

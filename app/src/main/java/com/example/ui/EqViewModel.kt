@@ -18,6 +18,7 @@ import com.example.dsp.AudioDspEngine
 import com.example.dsp.EqHapticFeedbackManager
 import com.example.dsp.AcousticVenueClone
 import com.example.dsp.AnalogSaturationMode
+import com.example.dsp.ApexSingularityMode
 import com.example.dsp.ChronoNeuralBiomimeticMode
 import com.example.dsp.EsportsThreatRadarState
 import com.example.dsp.FutureGenAudioLabEngine
@@ -54,9 +55,10 @@ data class EqUiState(
     val selectedTab: Int = 0, // 0: 31-Band EQ, 1: Bass & DSP, 2: Device Presets, 3: Presets, 4: Get APK
     val selectedBandZone: Int = 0, // 0: All 31, 1: Sub/Bass, 2: Low-Mids, 3: High-Mids, 4: Treble/Air
     val deviceSearchQuery: String = "",
-    val activePresetName: String = "Bass Boost",
-    val bandGainsDb: List<Float> = EqPresetEntity.BUILT_IN_PRESETS[1].getBandGains(),
-    val bassBoostStrength: Int = 78, // 0..100
+    val activePresetName: String = "Harman Target",
+    val bandGainsDb: List<Float> = EqPresetEntity.BUILT_IN_PRESETS[3].getBandGains(),
+    val bassBoostStrength: Int = 25, // 0..100 (Smooth 25% default)
+    val isBassBoostLocked: Boolean = true, // Locks user's Bass Boost across presets, modes & APK updates
     val reverbLevel: Int = 12, // 0..100
     val reverbRoom: String = "Small Room",
     val spatialLevel: Int = 35, // 0..100
@@ -108,7 +110,7 @@ data class EqUiState(
     // 2030 Hyper-Matrix 10-Engine Suite
     val gyroHeadTrackingMode: GyroHeadTrackingMode = GyroHeadTrackingMode.OFF,
     val gyroLiveYawDeg: Float = 0f,
-    val subHarmonicSynthPercent: Int = 45, // Missing Fundamental 18" Sub Synthesizer
+    val subHarmonicSynthPercent: Int = 25, // Missing Fundamental 18" Sub Synthesizer (Smooth 25% default)
     val stemVocalPercent: Int = 100,       // Live 4-Stem De-Mixer: 0..200%
     val stemDrumPercent: Int = 100,
     val stemBassPercent: Int = 100,
@@ -143,7 +145,7 @@ data class EqUiState(
     val globalTriadTelemetryText: String = "GLOBAL TRIAD READY • Tap 🇯🇵 Japan DSEE, 🇨🇳 China R2R+Beryllium, 🇺🇸 USA Vegas Sphere or 🌐 Triad Omega",
     // 🛸 2030 Sovereign R&D Lab (🇯🇵 NTT 16Hz + Doppler-0 • 🇨🇳 DSD1024 + Bio De-Esser • 🇺🇸 MIT 64-WFS + De-Squasher)
     val sovereign2030Mode: Sovereign2030RndMode = Sovereign2030RndMode.OFF,
-    val phantomSub16HzPercent: Int = 82,
+    val phantomSub16HzPercent: Int = 28,
     val isDopplerEraserEnabled: Boolean = true,
     val dsd1024DampingPercent: Int = 85,
     val isBioEarDeEsserEnabled: Boolean = true,
@@ -182,10 +184,19 @@ data class EqUiState(
     val cochlearDispersionSyncPercent: Int = 94,
     val gamma40HzTimeDilationPercent: Int = 90,
     val stapediusReflexDisarmerPercent: Int = 92,
-    val tartiniOtoacousticSubPercent: Int = 92,
+    val tartiniOtoacousticSubPercent: Int = 28,
     val isMicroSaccadicStageSwayEnabled: Boolean = true,
     val isFibonacciGoldenTapeSilkEnabled: Boolean = true,
-    val chronoNeuralTelemetryText: String = "🧠 CHRONO-NEURAL BIOMIMETIC READY • Tap 🌀 Cochlear 6ms Sync, ⚡ 40Hz Slow-Mo HD, 🛡️ Eardrum Silk or 🧠 Neuro-Omega"
+    val chronoNeuralTelemetryText: String = "🧠 CHRONO-NEURAL BIOMIMETIC READY • Tap 🌀 Cochlear 6ms Sync, ⚡ 40Hz Slow-Mo HD, 🛡️ Eardrum Silk or 🧠 Neuro-Omega",
+    // 🌌 Apex Singularity & Bio-Acoustic Engine (6-in-1 Ultra-Power Suite)
+    val apexSingularityMode: ApexSingularityMode = ApexSingularityMode.OFF,
+    val gyroStageAnchorPercent: Int = 95,
+    val tactileChestSlamSubPercent: Int = 28,
+    val vocalFormantUnmaskerPercent: Int = 92,
+    val metamaterialShellCloakPercent: Int = 92,
+    val isGoldenPhiTriodeTapeEnabled: Boolean = true,
+    val isFrissonVagusResonatorEnabled: Boolean = true,
+    val apexSingularityTelemetryText: String = "🌌 APEX SINGULARITY READY • Tap 🧭 Gyro 360° Lock, 💥 18Hz Chest-Slam, 🎙️ Vocal Unmasker or 🌌 Apex Singularity"
 )
 
 class EqViewModel(application: Application) : AndroidViewModel(application) {
@@ -195,7 +206,7 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
     private val voiceEngine: AiVoiceControlEngine
     val hapticManager: EqHapticFeedbackManager
 
-    private var lastSelectedNonFlatPreset: EqPresetEntity = EqPresetEntity.BUILT_IN_PRESETS[1]
+    private var lastSelectedNonFlatPreset: EqPresetEntity = EqPresetEntity.BUILT_IN_PRESETS[3]
 
     private val _uiState: MutableStateFlow<EqUiState>
     val uiState: StateFlow<EqUiState>
@@ -254,13 +265,15 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         }
         val bgEnabled = presetManager.isBackgroundServiceEnabled()
         val proUnlocked = presetManager.isAiProUnlocked()
+        val bassLocked = presetManager.isBassLockEnabled()
         _uiState = MutableStateFlow(
             EqUiState(
                 isMasterEnabled = presetManager.isDspEnabled(),
                 isBackgroundServiceEnabled = bgEnabled,
                 isAiProUnlocked = proUnlocked,
+                isBassBoostLocked = bassLocked,
                 activePresetName = restored.name,
-                bandGainsDb = restored.getBandGains(),
+                bandGainsDb = applyBassLockToBands(restored.getBandGains(), restored.bassBoostStrength, bassLocked),
                 bassBoostStrength = restored.bassBoostStrength,
                 reverbLevel = restored.reverbLevel,
                 reverbRoom = restored.reverbRoom,
@@ -329,12 +342,15 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         val restored = presetManager.loadSavedActiveProfile()
         val enabled = presetManager.isDspEnabled()
         val bgEnabled = presetManager.isBackgroundServiceEnabled()
+        val bassLocked = presetManager.isBassLockEnabled()
+        val effectiveBands = applyBassLockToBands(restored.getBandGains(), restored.bassBoostStrength, bassLocked)
         _uiState.update {
             it.copy(
                 isMasterEnabled = enabled,
                 isBackgroundServiceEnabled = bgEnabled,
+                isBassBoostLocked = bassLocked,
                 activePresetName = restored.name,
-                bandGainsDb = restored.getBandGains(),
+                bandGainsDb = effectiveBands,
                 bassBoostStrength = restored.bassBoostStrength,
                 reverbLevel = restored.reverbLevel,
                 reverbRoom = restored.reverbRoom,
@@ -344,7 +360,7 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         }
         dspEngine.updateDspState(
             enabled = enabled,
-            bandsDb = restored.getBandGains(),
+            bandsDb = effectiveBands,
             bass = restored.bassBoostStrength,
             reverb = restored.reverbLevel,
             reverbRoom = restored.reverbRoom,
@@ -352,6 +368,35 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             preamp = restored.preampDb,
             limiter = _uiState.value.softLimiterEnabled
         )
+    }
+
+    private fun resolveBass(candidateBass: Int, state: EqUiState = _uiState.value): Int {
+        return if (state.isBassBoostLocked) {
+            state.bassBoostStrength.coerceIn(0, 100)
+        } else {
+            candidateBass.coerceIn(0, 100)
+        }
+    }
+
+    private fun applyBassLockToBands(
+        bands: List<Float>,
+        lockedBass: Int = _uiState.value.bassBoostStrength,
+        isLocked: Boolean = _uiState.value.isBassBoostLocked
+    ): List<Float> {
+        val interpolated = EqPresetEntity.interpolateTo31Bands(bands)
+        if (!isLocked) return interpolated
+        // When Bass Lock is ON, cap excessive sub-bass spikes on bands 0..8 (20Hz..125Hz)
+        // proportional to the user's chosen Bass Boost slider so modes never secretly boom.
+        val maxAllowedSubDb = ((lockedBass / 100f) * 8.5f + 1.0f).coerceIn(1.0f, 12.0f)
+        return interpolated.mapIndexed { idx, db ->
+            if (idx <= 8 && db > maxAllowedSubDb) {
+                val blend = (idx / 9f).coerceIn(0f, 1f)
+                val capped = maxAllowedSubDb * (1f - blend * 0.35f) + db * (blend * 0.35f)
+                (kotlin.math.round(capped * 10f) / 10f).coerceIn(-15f, 15f)
+            } else {
+                db
+            }
+        }
     }
 
     fun selectTab(tabIndex: Int) {
@@ -448,7 +493,34 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updateBassBoost(strength: Int) {
-        _uiState.update { it.copy(bassBoostStrength = strength.coerceIn(0, 100)) }
+        val clamped = strength.coerceIn(0, 100)
+        presetManager.setUserPreferredBass(clamped)
+        _uiState.update { state ->
+            state.copy(
+                bassBoostStrength = clamped,
+                bandGainsDb = applyBassLockToBands(state.bandGainsDb, clamped, state.isBassBoostLocked)
+            )
+        }
+        syncDspEngine()
+    }
+
+    fun toggleBassBoostLock() {
+        val next = !_uiState.value.isBassBoostLocked
+        setBassBoostLock(next)
+    }
+
+    fun setBassBoostLock(locked: Boolean) {
+        presetManager.setBassLockEnabled(locked)
+        if (locked) {
+            presetManager.setUserPreferredBass(_uiState.value.bassBoostStrength)
+        }
+        _uiState.update { state ->
+            state.copy(
+                isBassBoostLocked = locked,
+                bandGainsDb = applyBassLockToBands(state.bandGainsDb, state.bassBoostStrength, locked)
+            )
+        }
+        hapticManager.onPresetToggled(locked, if (locked) "Bass Memory Locked 🔒" else "Bass Memory Unlocked 🔓")
         syncDspEngine()
     }
 
@@ -507,7 +579,7 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                     state.copy(
                         activePresetName = flatPreset.name,
                         bandGainsDb = flatPreset.getBandGains(),
-                        bassBoostStrength = flatPreset.bassBoostStrength,
+                        bassBoostStrength = resolveBass(flatPreset.bassBoostStrength, state),
                         reverbLevel = flatPreset.reverbLevel,
                         reverbRoom = flatPreset.reverbRoom,
                         spatialLevel = flatPreset.spatialLevel,
@@ -520,11 +592,12 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             } else if (!lastSelectedNonFlatPreset.name.equals(flatPreset.name, ignoreCase = true)) {
                 val restored = lastSelectedNonFlatPreset
                 _uiState.update { state ->
+                    val effectiveBass = resolveBass(restored.bassBoostStrength, state)
                     state.copy(
                         isMasterEnabled = true,
                         activePresetName = restored.name,
-                        bandGainsDb = restored.getBandGains(),
-                        bassBoostStrength = restored.bassBoostStrength,
+                        bandGainsDb = applyBassLockToBands(restored.getBandGains(), effectiveBass, state.isBassBoostLocked),
+                        bassBoostStrength = effectiveBass,
                         reverbLevel = restored.reverbLevel,
                         reverbRoom = restored.reverbRoom,
                         spatialLevel = restored.spatialLevel,
@@ -542,11 +615,12 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         _uiState.update { state ->
+            val effectiveBass = resolveBass(preset.bassBoostStrength, state)
             state.copy(
                 isMasterEnabled = true,
                 activePresetName = preset.name,
-                bandGainsDb = preset.getBandGains(),
-                bassBoostStrength = preset.bassBoostStrength,
+                bandGainsDb = applyBassLockToBands(preset.getBandGains(), effectiveBass, state.isBassBoostLocked),
+                bassBoostStrength = effectiveBass,
                 reverbLevel = preset.reverbLevel,
                 reverbRoom = preset.reverbRoom,
                 spatialLevel = preset.spatialLevel,
@@ -817,13 +891,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                 result.preset
             }
 
-            _uiState.update {
-                it.copy(
+            _uiState.update { s ->
+                val effectiveBass = resolveBass(finalPreset.bassBoostStrength, s)
+                s.copy(
                     isGeneratingAiEq = false,
                     isMasterEnabled = true,
                     activePresetName = finalPreset.name,
-                    bandGainsDb = finalPreset.getBandGains(),
-                    bassBoostStrength = finalPreset.bassBoostStrength,
+                    bandGainsDb = applyBassLockToBands(finalPreset.getBandGains(), effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
                     reverbLevel = finalPreset.reverbLevel,
                     reverbRoom = finalPreset.reverbRoom,
                     spatialLevel = finalPreset.spatialLevel,
@@ -947,13 +1022,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                 liveSpectrumBins = spectrumBins.value,
                 targetDeviceName = _uiState.value.aiSelectedDevice
             )
-            _uiState.update {
-                it.copy(
+            _uiState.update { s ->
+                val effectiveBass = resolveBass(report.recommendedBass, s)
+                s.copy(
                     isRunningSonarScan = false,
                     isMasterEnabled = true,
                     activePresetName = "Sonar Room Calibrated",
-                    bandGainsDb = report.compensationBands31,
-                    bassBoostStrength = report.recommendedBass,
+                    bandGainsDb = applyBassLockToBands(report.compensationBands31, effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
                     spatialLevel = report.recommendedSpatial,
                     reverbRoom = report.recommendedReverbRoom,
                     sonarTelemetryText = report.telemetrySummary
@@ -1049,13 +1125,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleEsportsXray() {
         val next = !_uiState.value.isEsportsXrayEnabled
         if (next) {
-            _uiState.update {
-                it.copy(
+            _uiState.update { s ->
+                val effectiveBass = resolveBass(34, s)
+                s.copy(
                     isEsportsXrayEnabled = true,
                     isMasterEnabled = true,
                     activePresetName = "Esports Tactical X-Ray",
-                    bandGainsDb = FutureGenAudioLabEngine.getEsportsTacticalXrayBands(),
-                    bassBoostStrength = 34,
+                    bandGainsDb = applyBassLockToBands(FutureGenAudioLabEngine.getEsportsTacticalXrayBands(), effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
                     spatialLevel = 92,
                     reverbRoom = "None",
                     reverbLevel = 0
@@ -1069,12 +1146,13 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun applyHolographicVibe(vibe: HolographicVibeProfile) {
-        _uiState.update {
-            it.copy(
+        _uiState.update { s ->
+            val effectiveBass = resolveBass(vibe.bassBoost, s)
+            s.copy(
                 isMasterEnabled = true,
                 activePresetName = vibe.title,
-                bandGainsDb = vibe.bands31,
-                bassBoostStrength = vibe.bassBoost,
+                bandGainsDb = applyBassLockToBands(vibe.bands31, effectiveBass, s.isBassBoostLocked),
+                bassBoostStrength = effectiveBass,
                 spatialLevel = vibe.spatial3D,
                 reverbLevel = vibe.reverbLevel,
                 reverbRoom = vibe.reverbRoom,
@@ -1108,12 +1186,13 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                 wooferPhaseInvert180 = state.wooferPhaseInvert180,
                 centerVocalLock = state.centerVocalLock
             )
+            val effectiveBass = resolveBass(synth.effectiveBassBoost, state)
             state.copy(
                 isMasterEnabled = true,
                 activePresetName = "3D Stage: ${state.selectedStageFormation.title}",
                 stageNodes = updatedNodes,
-                bandGainsDb = synth.sculptedBands31,
-                bassBoostStrength = synth.effectiveBassBoost,
+                bandGainsDb = applyBassLockToBands(synth.sculptedBands31, effectiveBass, state.isBassBoostLocked),
+                bassBoostStrength = effectiveBass,
                 spatialLevel = synth.effectiveSpatial3D,
                 reverbLevel = synth.effectiveReverbMix,
                 stageSubPanLR = synth.subBandPanLR,
@@ -1137,12 +1216,13 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                 wooferPhaseInvert180 = state.wooferPhaseInvert180,
                 centerVocalLock = state.centerVocalLock
             )
+            val effectiveBass = resolveBass(synth.effectiveBassBoost, state)
             state.copy(
                 isMasterEnabled = true,
                 activePresetName = "3D Stage Custom",
                 stageNodes = updatedNodes,
-                bandGainsDb = synth.sculptedBands31,
-                bassBoostStrength = synth.effectiveBassBoost,
+                bandGainsDb = applyBassLockToBands(synth.sculptedBands31, effectiveBass, state.isBassBoostLocked),
+                bassBoostStrength = effectiveBass,
                 spatialLevel = synth.effectiveSpatial3D,
                 reverbLevel = synth.effectiveReverbMix,
                 stageSubPanLR = synth.subBandPanLR,
@@ -1211,14 +1291,15 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             wooferPhaseInvert180 = s.wooferPhaseInvert180,
             centerVocalLock = s.centerVocalLock
         )
-        _uiState.update {
-            it.copy(
+        _uiState.update { state ->
+            val effectiveBass = resolveBass(synth.effectiveBassBoost, state)
+            state.copy(
                 isMasterEnabled = true,
                 activePresetName = "Stage: ${formation.title}",
                 selectedStageFormation = formation,
                 stageNodes = nodes,
-                bandGainsDb = synth.sculptedBands31,
-                bassBoostStrength = synth.effectiveBassBoost,
+                bandGainsDb = applyBassLockToBands(synth.sculptedBands31, effectiveBass, state.isBassBoostLocked),
+                bassBoostStrength = effectiveBass,
                 spatialLevel = synth.effectiveSpatial3D,
                 reverbLevel = synth.effectiveReverbMix,
                 stageSubPanLR = synth.subBandPanLR,
@@ -1309,7 +1390,7 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             )
             s.copy(
                 isMasterEnabled = true,
-                bandGainsDb = sculpted,
+                bandGainsDb = applyBassLockToBands(sculpted, s.bassBoostStrength, s.isBassBoostLocked),
                 hyperMatrixSummary = summary
             )
         }
@@ -1450,13 +1531,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.update { it.copy(activeVenueClone = venue) }
             return
         }
-        _uiState.update {
-            it.copy(
+        _uiState.update { s ->
+            val effectiveBass = resolveBass(venue.bassBoost, s)
+            s.copy(
                 isMasterEnabled = true,
                 activeVenueClone = venue,
                 activePresetName = "Venue: ${venue.title}",
-                bandGainsDb = venue.bands31,
-                bassBoostStrength = venue.bassBoost,
+                bandGainsDb = applyBassLockToBands(venue.bands31, effectiveBass, s.isBassBoostLocked),
+                bassBoostStrength = effectiveBass,
                 spatialLevel = venue.spatial3D,
                 reverbLevel = venue.reverbLevel,
                 reverbRoom = venue.reverbRoom,
@@ -1509,11 +1591,12 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                     outOfHeadTelemetryText = result.telemetrySummary
                 )
             } else {
+                val effectiveBass = resolveBass(result.effectiveBassBoost, s)
                 s.copy(
                     isMasterEnabled = true,
                     activePresetName = "Out-Of-Head: ${s.outOfHeadMode.title}",
-                    bandGainsDb = result.sculptedBands31,
-                    bassBoostStrength = result.effectiveBassBoost,
+                    bandGainsDb = applyBassLockToBands(result.sculptedBands31, effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
                     spatialLevel = result.effectiveSpatial3D,
                     reverbLevel = result.effectiveReverbLevel,
                     reverbRoom = result.effectiveReverbRoom,
@@ -1596,11 +1679,12 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             if (s.globalTriadMode == GlobalTriadMode.OFF) {
                 s.copy(globalTriadTelemetryText = result.telemetrySummary)
             } else {
+                val effectiveBass = resolveBass(result.effectiveBassBoost, s)
                 s.copy(
                     isMasterEnabled = true,
                     activePresetName = s.globalTriadMode.title,
-                    bandGainsDb = result.sculptedBands31,
-                    bassBoostStrength = result.effectiveBassBoost,
+                    bandGainsDb = applyBassLockToBands(result.sculptedBands31, effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
                     spatialLevel = result.effectiveSpatial3D,
                     reverbLevel = result.effectiveReverbLevel,
                     reverbRoom = result.effectiveReverbRoom,
@@ -1683,11 +1767,12 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             if (s.sovereign2030Mode == Sovereign2030RndMode.OFF) {
                 s.copy(sovereign2030TelemetryText = result.telemetrySummary)
             } else {
+                val effectiveBass = resolveBass(result.effectiveBassBoost, s)
                 s.copy(
                     isMasterEnabled = true,
                     activePresetName = s.sovereign2030Mode.title,
-                    bandGainsDb = result.sculptedBands31,
-                    bassBoostStrength = result.effectiveBassBoost,
+                    bandGainsDb = applyBassLockToBands(result.sculptedBands31, effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
                     spatialLevel = result.effectiveSpatial3D,
                     reverbLevel = result.effectiveReverbLevel,
                     reverbRoom = result.effectiveReverbRoom,
@@ -1790,11 +1875,12 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             if (s.omegaPrimeMode == OmegaPrimeMode.OFF) {
                 s.copy(omegaPrimeTelemetryText = result.telemetrySummary)
             } else {
+                val effectiveBass = resolveBass(result.effectiveBassBoost, s)
                 s.copy(
                     isMasterEnabled = true,
                     activePresetName = s.omegaPrimeMode.title,
-                    bandGainsDb = result.sculptedBands31,
-                    bassBoostStrength = result.effectiveBassBoost,
+                    bandGainsDb = applyBassLockToBands(result.sculptedBands31, effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
                     spatialLevel = result.effectiveSpatial3D,
                     reverbLevel = result.effectiveReverbLevel,
                     reverbRoom = result.effectiveReverbRoom,
@@ -1905,11 +1991,12 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             if (s.zeroEarbudMode == ZeroEarbudOpenAirMode.OFF) {
                 s.copy(zeroEarbudTelemetryText = result.telemetrySummary)
             } else {
+                val effectiveBass = resolveBass(result.effectiveBassBoost, s)
                 s.copy(
                     isMasterEnabled = true,
                     activePresetName = s.zeroEarbudMode.title,
-                    bandGainsDb = result.sculptedBands31,
-                    bassBoostStrength = result.effectiveBassBoost,
+                    bandGainsDb = applyBassLockToBands(result.sculptedBands31, effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
                     spatialLevel = result.effectiveSpatial3D,
                     reverbLevel = result.effectiveReverbLevel,
                     reverbRoom = result.effectiveReverbRoom,
@@ -2011,11 +2098,12 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             if (s.liveInstrumentMode == HolographicLiveInstrumentMode.OFF) {
                 s.copy(liveInstrumentTelemetryText = result.telemetrySummary)
             } else {
+                val effectiveBass = resolveBass(result.effectiveBassBoost, s)
                 s.copy(
                     isMasterEnabled = true,
                     activePresetName = s.liveInstrumentMode.title,
-                    bandGainsDb = result.sculptedBands31,
-                    bassBoostStrength = result.effectiveBassBoost,
+                    bandGainsDb = applyBassLockToBands(result.sculptedBands31, effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
                     spatialLevel = result.effectiveSpatial3D,
                     reverbLevel = result.effectiveReverbLevel,
                     reverbRoom = result.effectiveReverbRoom,
@@ -2118,11 +2206,12 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             if (s.chronoNeuralMode == ChronoNeuralBiomimeticMode.OFF) {
                 s.copy(chronoNeuralTelemetryText = result.telemetrySummary)
             } else {
+                val effectiveBass = resolveBass(result.effectiveBassBoost, s)
                 s.copy(
                     isMasterEnabled = true,
                     activePresetName = s.chronoNeuralMode.title,
-                    bandGainsDb = result.sculptedBands31,
-                    bassBoostStrength = result.effectiveBassBoost,
+                    bandGainsDb = applyBassLockToBands(result.sculptedBands31, effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
                     spatialLevel = result.effectiveSpatial3D,
                     reverbLevel = result.effectiveReverbLevel,
                     reverbRoom = result.effectiveReverbRoom,
@@ -2206,6 +2295,114 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         recomputeAndApplyChronoNeural()
     }
 
+    // =========================================================================
+    // 🌌 APEX SINGULARITY & BIO-ACOUSTIC ENGINE (6-IN-1 ULTRA-POWER SUITE)
+    // =========================================================================
+
+    private fun recomputeAndApplyApexSingularity() {
+        _uiState.update { s ->
+            val result = FutureGenAudioLabEngine.synthesizeApexSingularitySuite(
+                baseBands = s.bandGainsDb,
+                mode = s.apexSingularityMode,
+                gyroStageAnchorPercent = s.gyroStageAnchorPercent,
+                tactileChestSlamSubPercent = s.tactileChestSlamSubPercent,
+                vocalFormantUnmaskerPercent = s.vocalFormantUnmaskerPercent,
+                metamaterialShellCloakPercent = s.metamaterialShellCloakPercent,
+                goldenPhiTriodeTapeEnabled = s.isGoldenPhiTriodeTapeEnabled,
+                frissonVagusResonatorEnabled = s.isFrissonVagusResonatorEnabled
+            )
+            if (s.apexSingularityMode == ApexSingularityMode.OFF) {
+                s.copy(apexSingularityTelemetryText = result.telemetrySummary)
+            } else {
+                val effectiveBass = resolveBass(result.effectiveBassBoost, s)
+                s.copy(
+                    isMasterEnabled = true,
+                    activePresetName = s.apexSingularityMode.title,
+                    bandGainsDb = applyBassLockToBands(result.sculptedBands31, effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
+                    spatialLevel = result.effectiveSpatial3D,
+                    reverbLevel = result.effectiveReverbLevel,
+                    reverbRoom = result.effectiveReverbRoom,
+                    crossfeedStrengthPercent = result.effectiveCrossfeedPct,
+                    analogDrivePercent = result.effectiveAnalogDrivePct,
+                    preampDb = result.effectivePreampDb,
+                    apexSingularityTelemetryText = result.telemetrySummary
+                )
+            }
+        }
+        syncDspEngine()
+    }
+
+    fun setApexSingularityMode(mode: ApexSingularityMode) {
+        _uiState.update { it.copy(apexSingularityMode = mode) }
+        hapticManager.onAiPresetApplied("Apex ${mode.badge}")
+        recomputeAndApplyApexSingularity()
+    }
+
+    fun updateGyroStageAnchorPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.apexSingularityMode == ApexSingularityMode.OFF) {
+                ApexSingularityMode.GYRO_360_STAGE_ANCHOR
+            } else state.apexSingularityMode
+            state.copy(
+                apexSingularityMode = nextMode,
+                gyroStageAnchorPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyApexSingularity()
+    }
+
+    fun updateTactileChestSlamSubPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.apexSingularityMode == ApexSingularityMode.OFF) {
+                ApexSingularityMode.TACTILE_18HZ_CHEST_SLAM
+            } else state.apexSingularityMode
+            state.copy(
+                apexSingularityMode = nextMode,
+                tactileChestSlamSubPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyApexSingularity()
+    }
+
+    fun updateVocalFormantUnmaskerPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.apexSingularityMode == ApexSingularityMode.OFF) {
+                ApexSingularityMode.VOCAL_FORMANT_SPOTLIGHT
+            } else state.apexSingularityMode
+            state.copy(
+                apexSingularityMode = nextMode,
+                vocalFormantUnmaskerPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyApexSingularity()
+    }
+
+    fun updateMetamaterialShellCloakPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.apexSingularityMode == ApexSingularityMode.OFF) {
+                ApexSingularityMode.METAMATERIAL_SHELL_CLOAK
+            } else state.apexSingularityMode
+            state.copy(
+                apexSingularityMode = nextMode,
+                metamaterialShellCloakPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyApexSingularity()
+    }
+
+    fun toggleGoldenPhiTriodeTape() {
+        _uiState.update { it.copy(isGoldenPhiTriodeTapeEnabled = !it.isGoldenPhiTriodeTapeEnabled) }
+        hapticManager.onControlTick("Golden-Ratio φ=1.618 Triode & Tape Flux")
+        recomputeAndApplyApexSingularity()
+    }
+
+    fun toggleFrissonVagusResonator() {
+        _uiState.update { it.copy(isFrissonVagusResonatorEnabled = !it.isFrissonVagusResonatorEnabled) }
+        hapticManager.onControlTick("0.1Hz Vagus-Nerve Frisson Resonator")
+        recomputeAndApplyApexSingularity()
+    }
+
     private fun startFutureGenCoordinator() {
         viewModelScope.launch {
             var tickCount = 0
@@ -2281,7 +2478,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                         stapediusReflexDisarmerPct = s.stapediusReflexDisarmerPercent,
                         tartiniOtoacousticSubPct = s.tartiniOtoacousticSubPercent,
                         microSaccadicStageSway = s.isMicroSaccadicStageSwayEnabled,
-                        fibonacciGoldenTapeSilk = s.isFibonacciGoldenTapeSilkEnabled
+                        fibonacciGoldenTapeSilk = s.isFibonacciGoldenTapeSilkEnabled,
+                        apexSingularityEnabled = s.apexSingularityMode != ApexSingularityMode.OFF,
+                        gyroStageAnchorPct = s.gyroStageAnchorPercent,
+                        tactileChestSlamSubPct = s.tactileChestSlamSubPercent,
+                        vocalFormantUnmaskerPct = s.vocalFormantUnmaskerPercent,
+                        metamaterialShellCloakPct = s.metamaterialShellCloakPercent,
+                        goldenPhiTriodeTape = s.isGoldenPhiTriodeTapeEnabled,
+                        frissonVagusResonator = s.isFrissonVagusResonatorEnabled
                     )
                 }
                 // Bass-to-Haptic Sub-Woofer Tactile Engine: pulse phone vibrator on sub-bass hits
@@ -2399,7 +2603,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             stapediusReflexDisarmerPct = s.stapediusReflexDisarmerPercent,
             tartiniOtoacousticSubPct = s.tartiniOtoacousticSubPercent,
             microSaccadicStageSway = s.isMicroSaccadicStageSwayEnabled,
-            fibonacciGoldenTapeSilk = s.isFibonacciGoldenTapeSilkEnabled
+            fibonacciGoldenTapeSilk = s.isFibonacciGoldenTapeSilkEnabled,
+            apexSingularityEnabled = s.apexSingularityMode != ApexSingularityMode.OFF,
+            gyroStageAnchorPct = s.gyroStageAnchorPercent,
+            tactileChestSlamSubPct = s.tactileChestSlamSubPercent,
+            vocalFormantUnmaskerPct = s.vocalFormantUnmaskerPercent,
+            metamaterialShellCloakPct = s.metamaterialShellCloakPercent,
+            goldenPhiTriodeTape = s.isGoldenPhiTriodeTapeEnabled,
+            frissonVagusResonator = s.isFrissonVagusResonatorEnabled
         )
         dspEngine.updateDspState(
             enabled = s.isMasterEnabled,

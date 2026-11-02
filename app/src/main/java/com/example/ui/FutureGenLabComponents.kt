@@ -70,6 +70,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.dsp.AcousticVenueClone
 import com.example.dsp.AnalogSaturationMode
+import com.example.dsp.ApexSingularityMode
 import com.example.dsp.ChronoNeuralBiomimeticMode
 import com.example.dsp.EsportsThreatRadarState
 import com.example.dsp.FutureGenAudioLabEngine
@@ -928,6 +929,13 @@ fun FutureGenQuantumLabDialog(
     onUpdateTartiniOtoacousticSub: (Int) -> Unit = {},
     onToggleMicroSaccadicStageSway: () -> Unit = {},
     onToggleFibonacciGoldenTapeSilk: () -> Unit = {},
+    onSelectApexSingularityMode: (ApexSingularityMode) -> Unit = {},
+    onUpdateGyroStageAnchor: (Int) -> Unit = {},
+    onUpdateTactileChestSlamSub: (Int) -> Unit = {},
+    onUpdateVocalFormantUnmasker: (Int) -> Unit = {},
+    onUpdateMetamaterialShellCloak: (Int) -> Unit = {},
+    onToggleGoldenPhiTriodeTape: () -> Unit = {},
+    onToggleFrissonVagusResonator: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -963,13 +971,13 @@ fun FutureGenQuantumLabDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = "EQULTRA CHRONO-NEURAL & LIVE STAGE LAB",
+                                text = "EQULTRA APEX SINGULARITY & QUANTUM LAB",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
-                                text = "🧠 Chrono-Neural • 🎻 Live Instruments • 🌬️ Zero-Earbud • 🧬 Omega-Prime",
+                                text = "🌌 Apex Singularity • 🧠 Chrono-Neural • 🎻 Live Stage • 🌬️ Zero-Earbud",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ElectricCyan
                             )
@@ -992,6 +1000,18 @@ fun FutureGenQuantumLabDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // 000000000. 🌌 APEX SINGULARITY & BIO-ACOUSTIC ENGINE (6-IN-1 ULTRA-POWER SUITE)
+                    ApexSingularityCard(
+                        uiState = uiState,
+                        onSelectMode = onSelectApexSingularityMode,
+                        onUpdateGyroStageAnchor = onUpdateGyroStageAnchor,
+                        onUpdateTactileChestSlamSub = onUpdateTactileChestSlamSub,
+                        onUpdateVocalFormantUnmasker = onUpdateVocalFormantUnmasker,
+                        onUpdateMetamaterialShellCloak = onUpdateMetamaterialShellCloak,
+                        onToggleGoldenPhiTriodeTape = onToggleGoldenPhiTriodeTape,
+                        onToggleFrissonVagusResonator = onToggleFrissonVagusResonator
+                    )
+
                     // 00000000. 🧠 CHRONO-NEURAL & SUB-QUANTUM BIOMIMETIC ENGINE (6-IN-1 NEURO-ACOUSTIC SUITE)
                     ChronoNeuralBiomimeticCard(
                         uiState = uiState,
@@ -4030,4 +4050,296 @@ fun ChronoNeuralBiomimeticCard(
         }
     }
 }
+
+@Composable
+fun ApexSingularityCard(
+    uiState: EqUiState,
+    onSelectMode: (ApexSingularityMode) -> Unit,
+    onUpdateGyroStageAnchor: (Int) -> Unit,
+    onUpdateTactileChestSlamSub: (Int) -> Unit,
+    onUpdateVocalFormantUnmasker: (Int) -> Unit,
+    onUpdateMetamaterialShellCloak: (Int) -> Unit,
+    onToggleGoldenPhiTriodeTape: () -> Unit,
+    onToggleFrissonVagusResonator: () -> Unit
+) {
+    val isActive = uiState.apexSingularityMode != ApexSingularityMode.OFF
+    Surface(
+        color = ObsidianCard,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            width = 2.2.dp,
+            brush = Brush.horizontalGradient(
+                listOf(NeonMagenta, ElectricCyan, SignalEmerald, StudioAmber, HyperViolet)
+            )
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = "Apex Singularity & Bio-Acoustic Engine",
+                            tint = NeonMagenta,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "🌌 APEX SINGULARITY ENGINE (6-IN-1 ULTRA-POWER SUITE)",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Gyro 360° Stage Anchor • 18Hz Chest-Slam Sub • Vocal Formant Unmasker • Planar Cloak • Frisson 3x",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = SignalEmerald
+                    )
+                }
+                Text(
+                    text = uiState.apexSingularityMode.badge,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = AmoledBlack,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier
+                        .background(
+                            if (isActive) SignalEmerald else TextSecondary,
+                            RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+
+            // Live Telemetry Banner
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, if (isActive) SignalEmerald.copy(alpha = 0.7f) else ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = uiState.apexSingularityTelemetryText,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = if (isActive) SignalEmerald else TextSecondary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                )
+            }
+
+            // 1-Tap Apex Singularity Mode Chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ApexSingularityMode.entries.forEach { mode ->
+                    val selected = uiState.apexSingularityMode == mode
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectMode(mode) },
+                        label = {
+                            Text(
+                                text = mode.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = SignalEmerald,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        )
+                    )
+                }
+            }
+
+            // 4 Ultra-Power Physics Sliders
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    // 1. 🧭 Gyro-Spatial 360° Inertial Stage Anchor
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🧭 Gyro-Spatial 360° Inertial Stage Lock (Kalman ITD/ILD)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.gyroStageAnchorPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.gyroStageAnchorPercent.toFloat(),
+                        onValueChange = { onUpdateGyroStageAnchor(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = ElectricCyan,
+                            activeTrackColor = ElectricCyan
+                        )
+                    )
+
+                    // 2. 💥 Tactile 18Hz–35Hz Chest-Slam Sub Synthesizer
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "💥 Tactile 18Hz–35Hz Somatosensory Chest-Slam Sub Synth",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.tactileChestSlamSubPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.tactileChestSlamSubPercent.toFloat(),
+                        onValueChange = { onUpdateTactileChestSlamSub(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = NeonMagenta,
+                            activeTrackColor = NeonMagenta
+                        )
+                    )
+
+                    // 3. 🎙️ Holographic Vocal Formant Unmasker (3ft Center Spotlight)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🎙️ Holographic Vocal Breath & Formant Unmasker (3ft Center)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.vocalFormantUnmaskerPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.vocalFormantUnmaskerPercent.toFloat(),
+                        onValueChange = { onUpdateVocalFormantUnmasker(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = StudioAmber,
+                            activeTrackColor = StudioAmber
+                        )
+                    )
+
+                    // 4. 🛡️ Acoustic Metamaterial Shell De-Resonator (Planar Ribbon Cloak)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🛡️ Metamaterial Shell Cloak (Zero-Plastic Planar Ribbon)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.metamaterialShellCloakPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.metamaterialShellCloakPercent.toFloat(),
+                        onValueChange = { onUpdateMetamaterialShellCloak(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = SignalEmerald,
+                            activeTrackColor = SignalEmerald
+                        )
+                    )
+                }
+            }
+
+            // 5 & 6. ✨ Golden-Ratio (φ=1.618) Triode/Tape Flux + ⚡ Frisson (Goosebumps) Vagus Resonator
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = uiState.isGoldenPhiTriodeTapeEnabled,
+                    onClick = onToggleGoldenPhiTriodeTape,
+                    label = {
+                        Text(
+                            text = if (uiState.isGoldenPhiTriodeTapeEnabled) {
+                                "✨ Golden-Ratio (φ=1.618) Vacuum Tube & Tape Flux: ON"
+                            } else {
+                                "✨ Golden-Ratio (φ=1.618) Tube & Tape Flux: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = StudioAmber,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+
+                FilterChip(
+                    selected = uiState.isFrissonVagusResonatorEnabled,
+                    onClick = onToggleFrissonVagusResonator,
+                    label = {
+                        Text(
+                            text = if (uiState.isFrissonVagusResonatorEnabled) {
+                                "⚡ 0.1Hz Vagus-Nerve & Frisson (Goosebumps 3x) Resonator: ON"
+                            } else {
+                                "⚡ 0.1Hz Vagus-Nerve Frisson Resonator: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = NeonMagenta,
+                        selectedLabelColor = Color.White,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+            }
+        }
+    }
+}
+
 
