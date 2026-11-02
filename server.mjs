@@ -4,10 +4,10 @@ import crypto from 'node:crypto';
 
 const PORT = 3000;
 const APK_PATHS = [
-  '/app/applet/Equltra-v2.7-EarDirect-ZeroBrain.apk',
+  '/app/applet/Equltra-v2.9-CarbonOmega-50BassLock.apk',
   '/app/applet/app/build/outputs/apk/debug/app-debug.apk',
   '/app/applet/.build-outputs/app-debug.apk',
-  '/app/applet/Equltra-v2.6-TwinVocal-LR.apk',
+  '/app/applet/Equltra-v2.8-GodTier-50BassLock.apk',
   '/app/applet/Equltra.apk',
 ];
 
@@ -25,9 +25,12 @@ function getApkMeta() {
   const hash = crypto.createHash('sha256').update(fs.readFileSync(apk)).digest('hex').slice(0, 16).toUpperCase();
   return {
     ready: true,
-    fileName: 'Equltra-v2.7-EarDirect-ZeroBrain.apk',
-    versionName: '2.7.0',
-    versionCode: 27,
+    fileName: 'Equltra-v2.9-CarbonOmega-50BassLock.apk',
+    versionName: '2.9.0',
+    versionCode: 30,
+    bassLockDefaultPercent: 50,
+    antiKhirichVelvetSilk: true,
+    carbonOmegaArchitecture: true,
     sizeBytes: stat.size,
     sizeMb: (stat.size / (1024 * 1024)).toFixed(2) + ' MB',
     sha256Short: hash,
@@ -259,30 +262,30 @@ const HTML_PAGE = `<!DOCTYPE html>
     <div class="brand">
       <div class="logo-badge">EQ</div>
       <div>
-        <h1>EQULTRA v2.7 QUANTUM PRO (0% BRAIN • 100% EAR-DIRECT)</h1>
-        <p>👂 0% Inside-Brain Null • 50% L / 50% R Ear-Direct Vocal &amp; Music • 🔒 25% Smooth Bass Lock • 31-Band ISO EQ</p>
+        <h1>EQULTRA v2.9 CARBON-OMEGA QUANTUM ARCHITECTURE (0° FIR • ✨ 0% KHIRICH • 🔒 50% BASS LOCK)</h1>
+        <p>💎 64-Tap 0° FIR Phase • 🎧 LDAC 96kHz Upscaler • 👂 7kHz Ear-Canal Spike Eraser • 🫀 De-Clipper • 🔊 Isobaric Dual-Sub • 🔒 50% Bass Lock</p>
       </div>
     </div>
     <div class="header-actions">
       <button class="btn" id="testAudioBtn" onclick="toggleSynth()">▶ Play Test Synth</button>
       <button class="btn btn-magenta" onclick="runSonarSweep()">📡 Sonar Room Scan</button>
-      <a class="btn btn-primary" href="/download/Equltra-v2.7-EarDirect-ZeroBrain.apk?v=27" target="_blank" rel="noopener" download="Equltra-v2.7-EarDirect-ZeroBrain.apk">⬇ Download APK v2.7 (Verified)</a>
+      <a class="btn btn-primary" href="/download/Equltra-v2.9-CarbonOmega-50BassLock.apk?v=30" target="_blank" rel="noopener" download="Equltra-v2.9-CarbonOmega-50BassLock.apk">⬇ Download APK v2.9 (Carbon-Omega)</a>
     </div>
   </header>
 
   <main>
-    <!-- 📦 VERIFIED v2.7.0 (BUILD 27) DIRECT APK DOWNLOAD & VERIFICATION HUB -->
-    <div class="quantum-card" style="border: 2px solid var(--emerald); background: linear-gradient(135deg, rgba(6,28,22,0.96), rgba(13,18,28,0.98));">
+    <!-- 📦 VERIFIED v2.9.0 (BUILD 30) DIRECT APK DOWNLOAD & VERIFICATION HUB -->
+    <div class="quantum-card" style="border: 2px solid var(--cyan); background: linear-gradient(135deg, rgba(8,24,32,0.96), rgba(13,18,28,0.98));">
       <div class="card-header">
         <div>
-          <span class="card-title" style="color:var(--emerald); font-size:14px;">✅ VERIFIED EQULTRA v2.7.0 (BUILD 27) — DIRECT DOWNLOADABLE APK</span>
+          <span class="card-title" style="color:var(--cyan); font-size:14px;">💎 VERIFIED EQULTRA v2.9.0 (BUILD 30) — CARBON-OMEGA 8-ENGINE + ✨ 0% KHIRICH + 🔒 50% BASS LOCK APK</span>
           <div id="apkVerifyMeta" style="font-size:11.5px; color:var(--text); margin-top:4px; font-family:monospace;">
-            📦 File: Equltra-v2.7-EarDirect-ZeroBrain.apk • Version: 2.7.0 (Code 27) • Verifying binary size &amp; SHA-256...
+            📦 File: Equltra-v2.9-CarbonOmega-50BassLock.apk • Version: 2.9.0 (Code 30) • 🔒 Bass Lock: 50% • ✨ 0% Khirich Velvet Silk • Verifying...
           </div>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <a class="btn btn-primary" href="/download/Equltra-v2.7-EarDirect-ZeroBrain.apk?v=27" target="_blank" rel="noopener" download="Equltra-v2.7-EarDirect-ZeroBrain.apk" style="font-size:13px; padding:10px 16px;">
-            ⬇ Direct Download APK (Equltra-v2.7-EarDirect-ZeroBrain.apk)
+          <a class="btn btn-primary" href="/download/Equltra-v2.9-CarbonOmega-50BassLock.apk?v=30" target="_blank" rel="noopener" download="Equltra-v2.9-CarbonOmega-50BassLock.apk" style="font-size:13px; padding:10px 16px;">
+            ⬇ Direct Download APK (Equltra-v2.9-CarbonOmega-50BassLock.apk)
           </a>
           <button class="btn btn-magenta" id="blobDownloadBtn" onclick="forceBlobDownload()" style="font-size:12.5px; padding:10px 14px;">
             ⚡ Force Stream Save to Phone (100% Iframe-Safe)
@@ -290,8 +293,8 @@ const HTML_PAGE = `<!DOCTYPE html>
         </div>
       </div>
       <div style="font-size:11.5px; color:var(--muted); display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:space-between;">
-        <span>✨ <b>In-App Verified (v2.7 PRO):</b> Top badge shows <b>v2.7 PRO • 👂 0% BRAIN • 100% EAR-DIRECT</b> + Home Screen (Tab 1) &amp; Bass/DSP Tab feature the <b>👂 Ear-Direct Zero-Brain Engine (0% Inside-Brain / 100% L+R Ear-Direct)</b>!</span>
-        <span id="blobProgressText" style="color:var(--cyan); font-weight:800; font-family:monospace;">READY FOR DOWNLOAD</span>
+        <span>✨ <b>In-App Verified (v2.9 CARBON-OMEGA):</b> Top badge shows <b>v2.9 CARBON-OMEGA • ✨ 0% KHIRICH • 🔒 50% BASS</b> + <b>💎 8 Carbon-Omega Quantum Engines</b> + <b>🔒 50% Bass Memory Lock Default</b>!</span>
+        <span id="blobProgressText" style="color:var(--emerald); font-weight:800; font-family:monospace;">READY FOR DOWNLOAD</span>
       </div>
     </div>
 
@@ -2184,7 +2187,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       try {
         if (btn) btn.disabled = true;
         if (status) status.textContent = '⏳ STREAMING APK (0%)...';
-        const response = await fetch('/download/Equltra-v2.7-EarDirect-ZeroBrain.apk?v=27&t=' + Date.now());
+        const response = await fetch('/download/Equltra-v2.9-CarbonOmega-50BassLock.apk?v=30&t=' + Date.now());
         if (!response.ok) throw new Error('HTTP ' + response.status);
         const total = parseInt(response.headers.get('Content-Length') || '19220000', 10);
         const reader = response.body.getReader();
@@ -2202,17 +2205,17 @@ const HTML_PAGE = `<!DOCTYPE html>
         const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = blobUrl;
-        a.download = 'Equltra-v2.7-EarDirect-ZeroBrain.apk';
+        a.download = 'Equltra-v2.9-CarbonOmega-50BassLock.apk';
         document.body.appendChild(a);
         a.click();
         setTimeout(() => {
           document.body.removeChild(a);
           URL.revokeObjectURL(blobUrl);
         }, 4000);
-        if (status) status.textContent = '✅ SAVED Equltra-v2.7-EarDirect-ZeroBrain.apk TO DOWNLOADS!';
+        if (status) status.textContent = '✅ SAVED Equltra-v2.9-CarbonOmega-50BassLock.apk TO DOWNLOADS!';
       } catch (err) {
         if (status) status.textContent = '⚠️ Opening direct download tab...';
-        window.open('/download/Equltra-v2.7-EarDirect-ZeroBrain.apk?v=27', '_blank');
+        window.open('/download/Equltra-v2.9-CarbonOmega-50BassLock.apk?v=30', '_blank');
       } finally {
         if (btn) btn.disabled = false;
       }
@@ -2260,8 +2263,8 @@ const server = http.createServer((req, res) => {
       return;
     }
     const stat = fs.statSync(apk);
-    const reqFile = url.split('/').pop() || 'Equltra-v2.7-EarDirect-ZeroBrain.apk';
-    const outName = reqFile.endsWith('.apk') ? reqFile : 'Equltra-v2.7-EarDirect-ZeroBrain.apk';
+    const reqFile = url.split('/').pop() || 'Equltra-v2.9-CarbonOmega-50BassLock.apk';
+    const outName = reqFile.endsWith('.apk') ? reqFile : 'Equltra-v2.9-CarbonOmega-50BassLock.apk';
     const headers = {
       'Content-Type': 'application/vnd.android.package-archive',
       'Content-Length': stat.size,
@@ -2271,7 +2274,7 @@ const server = http.createServer((req, res) => {
       'Expires': '0',
       'Accept-Ranges': 'bytes',
       'Access-Control-Allow-Origin': '*',
-      'X-Equltra-Version': '2.7.0-code27',
+      'X-Equltra-Version': '2.9.0-code30',
     };
     if (req.method === 'HEAD') {
       res.writeHead(200, headers);

@@ -451,7 +451,67 @@ fun EqultraScreen(
                         onUpdateSubRumbleEar = viewModel::updateSubRumbleEarPercent,
                         onUpdateKickThumpPunch = viewModel::updateKickThumpPunchPercent,
                         onToggleSkullBoneDrain = viewModel::toggleSkullBoneDrain,
-                        onToggleVelvetEarCanalSilk = viewModel::toggleVelvetEarCanalSilk
+                        onToggleVelvetEarCanalSilk = viewModel::toggleVelvetEarCanalSilk,
+                        onSelectGodTierMode = { mode ->
+                            viewModel.setGodTierMode(mode)
+                            Toast.makeText(context, "👑 God-Tier OS: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onToggleGodTierSwitch = {
+                            viewModel.toggleGodTierSovereignOs()
+                            Toast.makeText(
+                                context,
+                                if (uiState.godTierMode == com.example.dsp.GodTierSovereignMode.OFF) {
+                                    "👑 God-Tier Sovereign Audio OS ON (16-Driver • 0% Dimag • 50% Bass Lock)"
+                                } else {
+                                    "👑 God-Tier Sovereign Audio OS OFF"
+                                },
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        },
+                        onSelectMultiDriverArray = { array ->
+                            viewModel.setMultiDriverHybridArray(array)
+                            Toast.makeText(context, "🎛️ Driver Array: ${array.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onSelectAppRouterProfile = { router ->
+                            viewModel.setAppAudioRouterProfile(router)
+                            Toast.makeText(context, "🔊 App Router: ${router.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdateDualEarMatch = viewModel::updateDualEarBiometricMatchPercent,
+                        onUpdateMultiDriverCrossover = viewModel::updateMultiDriverCrossoverPercent,
+                        onUpdateSpectralVocalPocket = viewModel::updateSpectralVocalPocketPercent,
+                        onUpdateEvenOddHarmonic = viewModel::updateEvenOddHarmonicMatrixPercent,
+                        onToggleVolumeEqualLoudness = viewModel::toggleVolumeEqualLoudnessSync,
+                        onToggleTruePeakBrickwall = viewModel::toggleTruePeakBrickwall,
+                        onSelectCarbonMode = { mode ->
+                            viewModel.setCarbonOmegaMode(mode)
+                            Toast.makeText(context, "💎 Carbon-Omega: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onToggleCarbonSwitch = {
+                            viewModel.toggleCarbonOmegaSwitch()
+                            Toast.makeText(
+                                context,
+                                if (uiState.carbonOmegaMode == com.example.dsp.CarbonOmegaMode.OFF) {
+                                    "💎 Carbon-Omega Quantum Engine ON (0° FIR • 0% Khirich • 50% Bass Lock)"
+                                } else {
+                                    "💎 Carbon-Omega Quantum Engine OFF"
+                                },
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        },
+                        onSelectBtCodecProfile = { codec ->
+                            viewModel.setBtCodecUpscalerProfile(codec)
+                            Toast.makeText(context, "🎧 BT Upscaler: ${codec.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onSelectCarbonMacro = { macro ->
+                            viewModel.setCarbonMasterMacro(macro)
+                            Toast.makeText(context, "⚡ Carbon Macro: ${macro.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdateLinearPhaseFir = viewModel::updateLinearPhaseFirPercent,
+                        onUpdateDeClipperCrest = viewModel::updateDeClipperCrestPercent,
+                        onUpdateEarCanalAntinode = viewModel::updateEarCanalAntinodeCancelPercent,
+                        onUpdateDualSubIsobaric = viewModel::updateDualSubIsobaricSplitPercent,
+                        onTogglePinna3dSphere = viewModel::togglePinna3dSphere,
+                        onToggleLufsAutoGainGuard = viewModel::toggleLufsAutoGainGuard
                     )
 
                     1 -> BassAndSpatialDspTab(
@@ -660,7 +720,67 @@ fun EqultraScreen(
                         onUpdateSubRumbleEar = viewModel::updateSubRumbleEarPercent,
                         onUpdateKickThumpPunch = viewModel::updateKickThumpPunchPercent,
                         onToggleSkullBoneDrain = viewModel::toggleSkullBoneDrain,
-                        onToggleVelvetEarCanalSilk = viewModel::toggleVelvetEarCanalSilk
+                        onToggleVelvetEarCanalSilk = viewModel::toggleVelvetEarCanalSilk,
+                        onSelectGodTierMode = { mode ->
+                            viewModel.setGodTierMode(mode)
+                            Toast.makeText(context, "👑 God-Tier OS: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onToggleGodTierSwitch = {
+                            viewModel.toggleGodTierSovereignOs()
+                            Toast.makeText(
+                                context,
+                                if (uiState.godTierMode == com.example.dsp.GodTierSovereignMode.OFF) {
+                                    "👑 God-Tier Sovereign Audio OS ON (16-Driver • 0% Dimag • 50% Bass Lock)"
+                                } else {
+                                    "👑 God-Tier Sovereign Audio OS OFF"
+                                },
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        },
+                        onSelectMultiDriverArray = { array ->
+                            viewModel.setMultiDriverHybridArray(array)
+                            Toast.makeText(context, "🎛️ Driver Array: ${array.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onSelectAppRouterProfile = { router ->
+                            viewModel.setAppAudioRouterProfile(router)
+                            Toast.makeText(context, "🔊 App Router: ${router.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdateDualEarMatch = viewModel::updateDualEarBiometricMatchPercent,
+                        onUpdateMultiDriverCrossover = viewModel::updateMultiDriverCrossoverPercent,
+                        onUpdateSpectralVocalPocket = viewModel::updateSpectralVocalPocketPercent,
+                        onUpdateEvenOddHarmonic = viewModel::updateEvenOddHarmonicMatrixPercent,
+                        onToggleVolumeEqualLoudness = viewModel::toggleVolumeEqualLoudnessSync,
+                        onToggleTruePeakBrickwall = viewModel::toggleTruePeakBrickwall,
+                        onSelectCarbonMode = { mode ->
+                            viewModel.setCarbonOmegaMode(mode)
+                            Toast.makeText(context, "💎 Carbon-Omega: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onToggleCarbonSwitch = {
+                            viewModel.toggleCarbonOmegaSwitch()
+                            Toast.makeText(
+                                context,
+                                if (uiState.carbonOmegaMode == com.example.dsp.CarbonOmegaMode.OFF) {
+                                    "💎 Carbon-Omega Quantum Engine ON (0° FIR • 0% Khirich • 50% Bass Lock)"
+                                } else {
+                                    "💎 Carbon-Omega Quantum Engine OFF"
+                                },
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        },
+                        onSelectBtCodecProfile = { codec ->
+                            viewModel.setBtCodecUpscalerProfile(codec)
+                            Toast.makeText(context, "🎧 BT Upscaler: ${codec.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onSelectCarbonMacro = { macro ->
+                            viewModel.setCarbonMasterMacro(macro)
+                            Toast.makeText(context, "⚡ Carbon Macro: ${macro.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdateLinearPhaseFir = viewModel::updateLinearPhaseFirPercent,
+                        onUpdateDeClipperCrest = viewModel::updateDeClipperCrestPercent,
+                        onUpdateEarCanalAntinode = viewModel::updateEarCanalAntinodeCancelPercent,
+                        onUpdateDualSubIsobaric = viewModel::updateDualSubIsobaricSplitPercent,
+                        onTogglePinna3dSphere = viewModel::togglePinna3dSphere,
+                        onToggleLufsAutoGainGuard = viewModel::toggleLufsAutoGainGuard
                     )
 
                     2 -> DevicePresetsTab(
@@ -1126,7 +1246,7 @@ private fun StudioTopHeader(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "v2.7 PRO",
+                                text = "v2.9 CARBON-OMEGA",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = AmoledBlack,
                                 fontWeight = FontWeight.ExtraBold,
@@ -1136,7 +1256,7 @@ private fun StudioTopHeader(
                             )
                             Spacer(modifier = Modifier.width(5.dp))
                             Text(
-                                text = "👂 100% KAAN • 0% DIMAG",
+                                text = "✨ 0% KHIRICH • 🔒 50% BASS",
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
                                 color = AmoledBlack,
                                 fontWeight = FontWeight.Bold,
@@ -1146,7 +1266,7 @@ private fun StudioTopHeader(
                             )
                         }
                         Text(
-                            text = "👂 KAAN-DIRECT • 🧠🚫 0% DIMAG • 🔒 25% BASS LOCK • ${activePresetName.uppercase(Locale.US)}",
+                            text = "💎 CARBON-8 • 0° FIR • 👂 100% KAAN • ✨ 0% KHIRICH • 🔒 50% BASS • ${activePresetName.uppercase(Locale.US)}",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                             color = if (isEnabled) SignalEmerald else TextMuted,
                             maxLines = 1,
@@ -1370,7 +1490,27 @@ private fun TenBandEqualizerTab(
     onUpdateSubRumbleEar: (Int) -> Unit = {},
     onUpdateKickThumpPunch: (Int) -> Unit = {},
     onToggleSkullBoneDrain: () -> Unit = {},
-    onToggleVelvetEarCanalSilk: () -> Unit = {}
+    onToggleVelvetEarCanalSilk: () -> Unit = {},
+    onSelectGodTierMode: (com.example.dsp.GodTierSovereignMode) -> Unit = {},
+    onToggleGodTierSwitch: () -> Unit = {},
+    onSelectMultiDriverArray: (com.example.dsp.MultiDriverHybridArray) -> Unit = {},
+    onSelectAppRouterProfile: (com.example.dsp.AppAudioRouterProfile) -> Unit = {},
+    onUpdateDualEarMatch: (Int) -> Unit = {},
+    onUpdateMultiDriverCrossover: (Int) -> Unit = {},
+    onUpdateSpectralVocalPocket: (Int) -> Unit = {},
+    onUpdateEvenOddHarmonic: (Int) -> Unit = {},
+    onToggleVolumeEqualLoudness: () -> Unit = {},
+    onToggleTruePeakBrickwall: () -> Unit = {},
+    onSelectCarbonMode: (com.example.dsp.CarbonOmegaMode) -> Unit = {},
+    onToggleCarbonSwitch: () -> Unit = {},
+    onSelectBtCodecProfile: (com.example.dsp.BluetoothCodecUpscalerProfile) -> Unit = {},
+    onSelectCarbonMacro: (com.example.dsp.CarbonMasterMacro) -> Unit = {},
+    onUpdateLinearPhaseFir: (Int) -> Unit = {},
+    onUpdateDeClipperCrest: (Int) -> Unit = {},
+    onUpdateEarCanalAntinode: (Int) -> Unit = {},
+    onUpdateDualSubIsobaric: (Int) -> Unit = {},
+    onTogglePinna3dSphere: () -> Unit = {},
+    onToggleLufsAutoGainGuard: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -1391,6 +1531,40 @@ private fun TenBandEqualizerTab(
             stereoVuLevels = stereoVuLevels,
             systemVolumePercent = systemVolumePercent,
             isSystemAudioActive = isSystemAudioActive
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // v2.9 💎 CARBON-OMEGA QUANTUM AUDIO ARCHITECTURE (8 CARBON-CLASS UPGRADES + 0% KHIRICH + 50% BASS LOCK)
+        CarbonOmegaQuantumCard(
+            uiState = uiState,
+            onSelectCarbonMode = onSelectCarbonMode,
+            onToggleMainSwitch = onToggleCarbonSwitch,
+            onSelectBtCodecProfile = onSelectBtCodecProfile,
+            onSelectCarbonMacro = onSelectCarbonMacro,
+            onUpdateLinearPhaseFir = onUpdateLinearPhaseFir,
+            onUpdateDeClipperCrest = onUpdateDeClipperCrest,
+            onUpdateEarCanalAntinode = onUpdateEarCanalAntinode,
+            onUpdateDualSubIsobaric = onUpdateDualSubIsobaric,
+            onTogglePinna3dSphere = onTogglePinna3dSphere,
+            onToggleLufsAutoGainGuard = onToggleLufsAutoGainGuard
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // v2.8 👑 GOD-TIER SOVEREIGN AUDIO OS (7 UNBEATABLE HARDWARE-LEVEL ENGINES + 50% BASS LOCK)
+        GodTierSovereignOsCard(
+            uiState = uiState,
+            onSelectGodTierMode = onSelectGodTierMode,
+            onToggleMainSwitch = onToggleGodTierSwitch,
+            onSelectMultiDriverArray = onSelectMultiDriverArray,
+            onSelectAppRouterProfile = onSelectAppRouterProfile,
+            onUpdateDualEarMatch = onUpdateDualEarMatch,
+            onUpdateMultiDriverCrossover = onUpdateMultiDriverCrossover,
+            onUpdateSpectralVocalPocket = onUpdateSpectralVocalPocket,
+            onUpdateEvenOddHarmonics = onUpdateEvenOddHarmonic,
+            onToggleVolumeEqualLoudness = onToggleVolumeEqualLoudness,
+            onToggleTruePeakBrickwall = onToggleTruePeakBrickwall
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -1844,7 +2018,27 @@ private fun BassAndSpatialDspTab(
     onUpdateSubRumbleEar: (Int) -> Unit = {},
     onUpdateKickThumpPunch: (Int) -> Unit = {},
     onToggleSkullBoneDrain: () -> Unit = {},
-    onToggleVelvetEarCanalSilk: () -> Unit = {}
+    onToggleVelvetEarCanalSilk: () -> Unit = {},
+    onSelectGodTierMode: (com.example.dsp.GodTierSovereignMode) -> Unit = {},
+    onToggleGodTierSwitch: () -> Unit = {},
+    onSelectMultiDriverArray: (com.example.dsp.MultiDriverHybridArray) -> Unit = {},
+    onSelectAppRouterProfile: (com.example.dsp.AppAudioRouterProfile) -> Unit = {},
+    onUpdateDualEarMatch: (Int) -> Unit = {},
+    onUpdateMultiDriverCrossover: (Int) -> Unit = {},
+    onUpdateSpectralVocalPocket: (Int) -> Unit = {},
+    onUpdateEvenOddHarmonic: (Int) -> Unit = {},
+    onToggleVolumeEqualLoudness: () -> Unit = {},
+    onToggleTruePeakBrickwall: () -> Unit = {},
+    onSelectCarbonMode: (com.example.dsp.CarbonOmegaMode) -> Unit = {},
+    onToggleCarbonSwitch: () -> Unit = {},
+    onSelectBtCodecProfile: (com.example.dsp.BluetoothCodecUpscalerProfile) -> Unit = {},
+    onSelectCarbonMacro: (com.example.dsp.CarbonMasterMacro) -> Unit = {},
+    onUpdateLinearPhaseFir: (Int) -> Unit = {},
+    onUpdateDeClipperCrest: (Int) -> Unit = {},
+    onUpdateEarCanalAntinode: (Int) -> Unit = {},
+    onUpdateDualSubIsobaric: (Int) -> Unit = {},
+    onTogglePinna3dSphere: () -> Unit = {},
+    onToggleLufsAutoGainGuard: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -1861,6 +2055,40 @@ private fun BassAndSpatialDspTab(
             peakDb = peakDb,
             bassBoostPercent = uiState.bassBoostStrength,
             spatialPercent = uiState.spatialLevel
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // v2.9 💎 CARBON-OMEGA QUANTUM AUDIO ARCHITECTURE (8 CARBON-CLASS UPGRADES + 0% KHIRICH + 50% BASS LOCK)
+        CarbonOmegaQuantumCard(
+            uiState = uiState,
+            onSelectCarbonMode = onSelectCarbonMode,
+            onToggleMainSwitch = onToggleCarbonSwitch,
+            onSelectBtCodecProfile = onSelectBtCodecProfile,
+            onSelectCarbonMacro = onSelectCarbonMacro,
+            onUpdateLinearPhaseFir = onUpdateLinearPhaseFir,
+            onUpdateDeClipperCrest = onUpdateDeClipperCrest,
+            onUpdateEarCanalAntinode = onUpdateEarCanalAntinode,
+            onUpdateDualSubIsobaric = onUpdateDualSubIsobaric,
+            onTogglePinna3dSphere = onTogglePinna3dSphere,
+            onToggleLufsAutoGainGuard = onToggleLufsAutoGainGuard
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // v2.8 👑 GOD-TIER SOVEREIGN AUDIO OS (7 UNBEATABLE HARDWARE-LEVEL ENGINES + 50% BASS LOCK)
+        GodTierSovereignOsCard(
+            uiState = uiState,
+            onSelectGodTierMode = onSelectGodTierMode,
+            onToggleMainSwitch = onToggleGodTierSwitch,
+            onSelectMultiDriverArray = onSelectMultiDriverArray,
+            onSelectAppRouterProfile = onSelectAppRouterProfile,
+            onUpdateDualEarMatch = onUpdateDualEarMatch,
+            onUpdateMultiDriverCrossover = onUpdateMultiDriverCrossover,
+            onUpdateSpectralVocalPocket = onUpdateSpectralVocalPocket,
+            onUpdateEvenOddHarmonics = onUpdateEvenOddHarmonic,
+            onToggleVolumeEqualLoudness = onToggleVolumeEqualLoudness,
+            onToggleTruePeakBrickwall = onToggleTruePeakBrickwall
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -1949,10 +2177,10 @@ private fun BassAndSpatialDspTab(
 
                 val quickBassPresets = listOf(
                     0 to "0% Flat",
-                    15 to "15% Soft",
-                    25 to "25% Smooth ⭐",
+                    25 to "25% Smooth",
                     40 to "40% Warm",
-                    60 to "60% Punch"
+                    50 to "50% Locked ⭐",
+                    65 to "65% Deep"
                 )
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -2349,7 +2577,7 @@ private fun ApkAndGithubGuideTab() {
                         inStream.copyTo(outStream)
                     }
                 }
-                Toast.makeText(context, "Saved Equltra-v2.7-EarDirect-ZeroBrain.apk successfully!", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Saved Equltra-v2.9-CarbonOmega-50BassLock.apk successfully!", Toast.LENGTH_LONG).show()
             }.onFailure {
                 Toast.makeText(context, "Export failed: ${it.localizedMessage}", Toast.LENGTH_LONG).show()
             }
@@ -2378,13 +2606,13 @@ private fun ApkAndGithubGuideTab() {
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "Equltra v2.7 (Kaan-Direct + 7-Woofer Box + Bass-Lock) APK",
+                            text = "Equltra v2.9 (Carbon-Omega 8-Engine + 0% Khirich + 50% Bass Lock) APK",
                             style = MaterialTheme.typography.titleLarge,
                             color = TextPrimary,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "👂 100% Kaan • 🧠🚫 0% Dimag • 📦 7 Woofer Boxes • ↔️ L/R Vocal • 🔒 25% Bass Lock",
+                            text = "💎 Carbon-Omega 8 • 0° FIR Phase • 👂 100% Kaan • ✨ 0% Khirich • 🔒 50% Bass Lock",
                             style = MaterialTheme.typography.labelSmall,
                             color = SignalEmerald
                         )
@@ -2394,7 +2622,7 @@ private fun ApkAndGithubGuideTab() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
-                    onClick = { exportApkLauncher.launch("Equltra-v2.7-EarDirect-ZeroBrain.apk") },
+                    onClick = { exportApkLauncher.launch("Equltra-v2.9-CarbonOmega-50BassLock.apk") },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = ElectricCyan,
                         contentColor = AmoledBlack
@@ -2407,12 +2635,12 @@ private fun ApkAndGithubGuideTab() {
                 ) {
                     Icon(
                         imageVector = Icons.Default.Download,
-                        contentDescription = "Save Equltra-v2.7-EarDirect-ZeroBrain.apk",
+                        contentDescription = "Save Equltra-v2.9-CarbonOmega-50BassLock.apk",
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "EXPORT EQULTRA-V2.7-EARDIRECT-ZEROBRAIN.APK",
+                        text = "EXPORT EQULTRA-V2.9-CARBONOMEGA-50BASSLOCK.APK",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold
                     )

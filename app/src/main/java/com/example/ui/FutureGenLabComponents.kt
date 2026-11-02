@@ -91,6 +91,12 @@ import com.example.dsp.StemDeMixerPreset
 import com.example.dsp.WooferEnclosureType
 import com.example.dsp.ZeroEarbudOpenAirMode
 import com.example.dsp.EarDirectZeroBrainMode
+import com.example.dsp.GodTierSovereignMode
+import com.example.dsp.MultiDriverHybridArray
+import com.example.dsp.AppAudioRouterProfile
+import com.example.dsp.CarbonOmegaMode
+import com.example.dsp.BluetoothCodecUpscalerProfile
+import com.example.dsp.CarbonMasterMacro
 import com.example.ui.theme.AmoledBlack
 import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.HyperViolet
@@ -5115,3 +5121,863 @@ fun EarDirectZeroBrainAndWooferCard(
         }
     }
 }
+
+@Composable
+fun GodTierSovereignOsCard(
+    uiState: EqUiState,
+    onSelectGodTierMode: (GodTierSovereignMode) -> Unit,
+    onToggleMainSwitch: () -> Unit,
+    onSelectMultiDriverArray: (MultiDriverHybridArray) -> Unit,
+    onSelectAppRouterProfile: (AppAudioRouterProfile) -> Unit,
+    onUpdateDualEarMatch: (Int) -> Unit,
+    onUpdateMultiDriverCrossover: (Int) -> Unit,
+    onUpdateSpectralVocalPocket: (Int) -> Unit,
+    onUpdateEvenOddHarmonics: (Int) -> Unit,
+    onToggleVolumeEqualLoudness: () -> Unit,
+    onToggleTruePeakBrickwall: () -> Unit
+) {
+    val activeMode = uiState.godTierMode
+    val isActive = activeMode != GodTierSovereignMode.OFF
+    val activeDriver = uiState.multiDriverArray
+    val activeRouter = uiState.appRouterProfile
+
+    Surface(
+        color = ObsidianCard,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            width = 1.8.dp,
+            brush = Brush.horizontalGradient(
+                listOf(
+                    if (isActive) StudioAmber else ObsidianBorder,
+                    if (isActive) SignalEmerald else ObsidianBorder,
+                    if (isActive) ElectricCyan else ObsidianBorder
+                )
+            )
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("god_tier_sovereign_os_card")
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            // Header Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(StudioAmber, SignalEmerald, ElectricCyan)
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = "God-Tier Sovereign Audio OS",
+                            tint = AmoledBlack,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "👑 GOD-TIER SOVEREIGN AUDIO OS",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = TextPrimary,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Surface(
+                                color = if (isActive) StudioAmber.copy(alpha = 0.22f) else AmoledBlack,
+                                shape = RoundedCornerShape(6.dp),
+                                border = BorderStroke(1.dp, if (isActive) StudioAmber else ObsidianBorder)
+                            ) {
+                                Text(
+                                    text = "v2.8 • 🔒 50% BASS LOCK",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
+                                    color = if (isActive) StudioAmber else TextSecondary,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = "7 Unbeatable Engines: Dual-Ear L/R • 16-Driver Hybrid • 2ms Vocal Pocket • App Router • -0.1dBFS Guard",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            color = SignalEmerald,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                Switch(
+                    checked = isActive,
+                    onCheckedChange = { onToggleMainSwitch() },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = AmoledBlack,
+                        checkedTrackColor = StudioAmber,
+                        uncheckedThumbColor = TextSecondary,
+                        uncheckedTrackColor = AmoledBlack
+                    )
+                )
+            }
+
+            // Live Telemetry Banner
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, StudioAmber.copy(alpha = 0.55f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = uiState.godTierTelemetryText,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                    color = if (isActive) StudioAmber else TextSecondary,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                )
+            }
+
+            // 1. God-Tier Sovereign Modes
+            Text(
+                text = "1️⃣ Select God-Tier Sovereign Mastering Mode:",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = StudioAmber,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                GodTierSovereignMode.entries.forEach { mode ->
+                    val selected = activeMode == mode
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectGodTierMode(mode) },
+                        label = {
+                            Text(
+                                text = mode.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = StudioAmber,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        )
+                    )
+                }
+            }
+
+            // 2. 5-Zone Multi-Driver IEM Hybrid Array Selector
+            Text(
+                text = "2️⃣ 5-Zone Multi-Driver IEM Hybrid Array Simulator (DD + BA + Quad EST):",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = SignalEmerald,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                MultiDriverHybridArray.entries.forEach { array ->
+                    val selected = activeDriver == array
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectMultiDriverArray(array) },
+                        label = {
+                            Text(
+                                text = array.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = SignalEmerald,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        )
+                    )
+                }
+            }
+
+            // Active Hybrid Array Spec Banner
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, SignalEmerald.copy(alpha = 0.55f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                    Text(
+                        text = "${activeDriver.title}  •  [${activeDriver.badge}]",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                        color = SignalEmerald,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        text = activeDriver.shortSpec,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = TextSecondary
+                    )
+                }
+            }
+
+            // 3. Per-App Smart Audio Profile Router
+            Text(
+                text = "3️⃣ Per-App Smart Audio Profile Router (Reels / Spotify / YouTube / OTT / BGMI):",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = ElectricCyan,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                AppAudioRouterProfile.entries.forEach { profile ->
+                    val selected = activeRouter == profile
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectAppRouterProfile(profile) },
+                        label = {
+                            Text(
+                                text = profile.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ElectricCyan,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        )
+                    )
+                }
+            }
+
+            // 4. Precision God-Tier Mastering Sliders
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    // Slider 1: 🧬 Dual-Ear Biometric L/R Independent 0.1dB Match
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🧬 Dual-Ear Biometric L/R Independent 0.1dB Match (0% Brain)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.dualEarBiometricMatchPercent}% L/R",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.dualEarBiometricMatchPercent.toFloat(),
+                        onValueChange = { onUpdateDualEarMatch(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = StudioAmber,
+                            activeTrackColor = StudioAmber
+                        )
+                    )
+
+                    // Slider 2: 🎛️ 5-Zone Multi-Driver Crossover Separation
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🎛️ 5-Zone Hybrid Driver Crossover (DD + BA + Quad EST)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.multiDriverCrossoverPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.multiDriverCrossoverPercent.toFloat(),
+                        onValueChange = { onUpdateMultiDriverCrossover(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = SignalEmerald,
+                            activeTrackColor = SignalEmerald
+                        )
+                    )
+
+                    // Slider 3: ⚡ 2ms Dynamic Spectral Unmasking (Kick vs Vocal Pocket)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "⚡ 2ms Dynamic Vocal Auto-Pocket (50% Bass Never Masks Vocal)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.spectralVocalPocketPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.spectralVocalPocketPercent.toFloat(),
+                        onValueChange = { onUpdateSpectralVocalPocket(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = ElectricCyan,
+                            activeTrackColor = ElectricCyan
+                        )
+                    )
+
+                    // Slider 4: 🧪 2nd Harmonic Velvet + 3rd Harmonic Live Bite Matrix
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🧪 Even (2nd Velvet Silk) + Odd (3rd Live Bite) Harmonic Matrix",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.evenOddHarmonicMatrixPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.evenOddHarmonicMatrixPercent.toFloat(),
+                        onValueChange = { onUpdateEvenOddHarmonics(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = NeonMagenta,
+                            activeTrackColor = NeonMagenta
+                        )
+                    )
+                }
+            }
+
+            // 5. Fletcher-Munson Volume Sync + -0.1dBFS True-Peak Brickwall Switches
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = uiState.isVolumeEqualLoudnessSyncEnabled,
+                    onClick = onToggleVolumeEqualLoudness,
+                    label = {
+                        Text(
+                            text = if (uiState.isVolumeEqualLoudnessSyncEnabled) {
+                                "🎚️ Fletcher-Munson Hardware Volume Sync (Night/Max Vol): ON"
+                            } else {
+                                "🎚️ Fletcher-Munson Volume Sync: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = StudioAmber,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+
+                FilterChip(
+                    selected = uiState.isTruePeakBrickwallEnabled,
+                    onClick = onToggleTruePeakBrickwall,
+                    label = {
+                        Text(
+                            text = if (uiState.isTruePeakBrickwallEnabled) {
+                                "🛡️ -0.1 dBFS True-Peak Brickwall Limiter (Zero Crackling): ON"
+                            } else {
+                                "🛡️ -0.1 dBFS True-Peak Brickwall Limiter: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = SignalEmerald,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun CarbonOmegaQuantumCard(
+    uiState: EqUiState,
+    onSelectCarbonMode: (CarbonOmegaMode) -> Unit,
+    onToggleMainSwitch: () -> Unit,
+    onSelectBtCodecProfile: (BluetoothCodecUpscalerProfile) -> Unit,
+    onSelectCarbonMacro: (CarbonMasterMacro) -> Unit,
+    onUpdateLinearPhaseFir: (Int) -> Unit,
+    onUpdateDeClipperCrest: (Int) -> Unit,
+    onUpdateEarCanalAntinode: (Int) -> Unit,
+    onUpdateDualSubIsobaric: (Int) -> Unit,
+    onTogglePinna3dSphere: () -> Unit,
+    onToggleLufsAutoGainGuard: () -> Unit
+) {
+    val isActive = uiState.carbonOmegaMode != CarbonOmegaMode.OFF
+
+    Surface(
+        color = ObsidianCard,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            width = 2.dp,
+            brush = Brush.horizontalGradient(
+                listOf(ElectricCyan, SignalEmerald, StudioAmber, HyperViolet)
+            )
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("carbon_omega_quantum_card")
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // Header Row + Master ON/OFF Switch
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(11.dp))
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(ElectricCyan, SignalEmerald, HyperViolet)
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = "Carbon-Omega Quantum Audio Architecture",
+                            tint = AmoledBlack,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "💎 CARBON-OMEGA QUANTUM ARCHITECTURE",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = ElectricCyan,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                color = if (isActive) SignalEmerald else ObsidianBorder,
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = if (isActive) "v2.9 • 0% KHIRICH" else "BYPASS",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                    color = if (isActive) AmoledBlack else TextSecondary,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = "0° FIR Linear-Phase • LDAC 96kHz Upscaler • Ear-Canal 7kHz Spike Eraser • De-Clipper • Isobaric Dual-Sub • 🔒 50% Bass Lock",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Switch(
+                    checked = isActive,
+                    onCheckedChange = { onToggleMainSwitch() },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = AmoledBlack,
+                        checkedTrackColor = ElectricCyan,
+                        uncheckedThumbColor = TextSecondary,
+                        uncheckedTrackColor = AmoledBlack
+                    )
+                )
+            }
+
+            // Live Telemetry Readout Banner
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, ElectricCyan.copy(alpha = 0.5f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Text(
+                        text = uiState.carbonOmegaTelemetryText,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                        color = if (isActive) SignalEmerald else TextSecondary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = "${uiState.carbonOmegaMode.subtitle} • ${uiState.btCodecUpscalerProfile.shortSpec} • ${uiState.carbonMasterMacro.subtitle}",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = StudioAmber
+                    )
+                }
+            }
+
+            // 1. Carbon-Omega Core Architecture Selector
+            Text(
+                text = "💎 1. CARBON-OMEGA 8-ENGINE ARCHITECTURE MODE:",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = ElectricCyan,
+                fontWeight = FontWeight.ExtraBold
+            )
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(CarbonOmegaMode.entries.toList(), key = { it.name }) { mode ->
+                    val selected = uiState.carbonOmegaMode == mode
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectCarbonMode(mode) },
+                        label = {
+                            Text(
+                                text = mode.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ElectricCyan,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = selected,
+                            borderColor = ObsidianBorder,
+                            selectedBorderColor = ElectricCyan
+                        )
+                    )
+                }
+            }
+
+            // 2. 1-Tap Carbon Master Macro Selector
+            Text(
+                text = "⚡ 2. 1-TAP CARBON MASTER MACRO (INSTANT ACOUSTIC TUNING):",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = StudioAmber,
+                fontWeight = FontWeight.ExtraBold
+            )
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(CarbonMasterMacro.entries.toList(), key = { it.name }) { macro ->
+                    val selected = uiState.carbonMasterMacro == macro
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectCarbonMacro(macro) },
+                        label = {
+                            Text(
+                                text = macro.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = StudioAmber,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = selected,
+                            borderColor = ObsidianBorder,
+                            selectedBorderColor = StudioAmber
+                        )
+                    )
+                }
+            }
+
+            // 3. Bluetooth Codec Lossless Restorer (SBC/AAC -> LDAC 990 / aptX Lossless / LHDC 5.0 / 32-Bit DAC)
+            Text(
+                text = "🎧 3. BLUETOOTH CODEC LOSSLESS RESTORER (SBR 12.5kHz–20kHz):",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = SignalEmerald,
+                fontWeight = FontWeight.ExtraBold
+            )
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(BluetoothCodecUpscalerProfile.entries.toList(), key = { it.name }) { codec ->
+                    val selected = uiState.btCodecUpscalerProfile == codec
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectBtCodecProfile(codec) },
+                        label = {
+                            Text(
+                                text = codec.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = SignalEmerald,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = selected,
+                            borderColor = ObsidianBorder,
+                            selectedBorderColor = SignalEmerald
+                        )
+                    )
+                }
+            }
+
+            // 4. Precision Carbon-Omega Hardware-Physics Sliders
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    // Slider 1: 64-Tap Linear-Phase FIR Zero-Group-Delay Aligner
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "💎 64-Tap Linear-Phase FIR Zero-Delay (0.0° Phase Alignment)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.linearPhaseFirPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.linearPhaseFirPercent.toFloat(),
+                        onValueChange = { onUpdateLinearPhaseFir(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = ElectricCyan,
+                            activeTrackColor = ElectricCyan
+                        )
+                    )
+
+                    // Slider 2: Quarter-Wave Ear-Canal Antinode Canceller (6.3–8kHz Silicone Tip Spike Eraser)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "👂 Ear-Canal 6.3–8kHz Antinode Canceller (0% Khirich Velvet Silk)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.earCanalAntinodeCancelPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.earCanalAntinodeCancelPercent.toFloat(),
+                        onValueChange = { onUpdateEarCanalAntinode(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = SignalEmerald,
+                            activeTrackColor = SignalEmerald
+                        )
+                    )
+
+                    // Slider 3: Dynamic Crest-Factor De-Clipper (YouTube / Reels Transient Restorer)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🫀 Dynamic Crest-Factor De-Clipper (YouTube / Reels Un-Squasher)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.deClipperCrestPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.deClipperCrestPercent.toFloat(),
+                        onValueChange = { onUpdateDeClipperCrest(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = StudioAmber,
+                            activeTrackColor = StudioAmber
+                        )
+                    )
+
+                    // Slider 4: Dual-Subwoofer Isobaric Split (20–40Hz Patal Sub vs 63–100Hz Tight Kick)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🔊 Dual-Sub Isobaric Split (20–40Hz Sub vs 80Hz Kick • 🔒 50% Lock)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.dualSubIsobaricSplitPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.dualSubIsobaricSplitPercent.toFloat(),
+                        onValueChange = { onUpdateDualSubIsobaric(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = NeonMagenta,
+                            activeTrackColor = NeonMagenta
+                        )
+                    )
+                }
+            }
+
+            // 5. Pinna 3D Velvet Sphere + ITU-R BS.1770 LUFS Auto-Gain Guard Switches
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = uiState.isPinna3dSphereEnabled,
+                    onClick = onTogglePinna3dSphere,
+                    label = {
+                        Text(
+                            text = if (uiState.isPinna3dSphereEnabled) {
+                                "🧭 Pinna Concha 3D Velvet Sphere (100% L+R Kaan / 0% Dimag): ON"
+                            } else {
+                                "🧭 Pinna Concha 3D Velvet Sphere: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = ElectricCyan,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+
+                FilterChip(
+                    selected = uiState.isLufsAutoGainGuardEnabled,
+                    onClick = onToggleLufsAutoGainGuard,
+                    label = {
+                        Text(
+                            text = if (uiState.isLufsAutoGainGuardEnabled) {
+                                "🛡️ ITU-R BS.1770 LUFS Auto-Headroom Guard (0% Clipping): ON"
+                            } else {
+                                "🛡️ ITU-R BS.1770 LUFS Auto-Headroom Guard: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = SignalEmerald,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+            }
+        }
+    }
+}
+
+

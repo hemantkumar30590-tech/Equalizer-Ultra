@@ -75,7 +75,7 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
     private var currentBandsDb: FloatArray = FloatArray(EqPresetEntity.BAND_COUNT) { 0f }
 
     @Volatile
-    private var bassStrength: Int = 25 // 0..100 (Smooth 25% default)
+    private var bassStrength: Int = 50 // 0..100 (Locked 50% default)
 
     @Volatile
     private var reverbAmount: Int = 12 // 0..100
@@ -107,7 +107,19 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
     @Volatile
     private var wooferBoxType: WooferEnclosureType = WooferEnclosureType.PORTED_BASS_REFLEX
 
-    private val _statusText = MutableStateFlow("Global YouTube & System DSP Active (31-Band + 👂 Kaan-Direct 0% Dimag + ↔️ L/R Vocal)")
+    @Volatile
+    private var godTierSovereignActive: Boolean = true
+
+    @Volatile
+    private var godTierDualEarStrength: Int = 96 // 0..100
+
+    @Volatile
+    private var multiDriverArrayType: MultiDriverHybridArray = MultiDriverHybridArray.GOD_TIER_16_DRIVER_OMEGA
+
+    @Volatile
+    private var truePeakBrickwallActive: Boolean = true
+
+    private val _statusText = MutableStateFlow("Global YouTube & System DSP Active (👑 God-Tier 16-Driver + 🔒 50% Bass + 👂 Kaan-Direct 0% Dimag)")
     val statusText: StateFlow<String> = _statusText.asStateFlow()
 
     private val _isExternalMediaPlaying = MutableStateFlow(false)
@@ -338,7 +350,11 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         lrTwinVocalPct: Int = lrTwinVocalStrength,
         earDirectEnabled: Boolean = earDirectZeroBrainActive,
         zeroBrainPct: Int = zeroBrainPressureStrength,
-        wooferBox: WooferEnclosureType = wooferBoxType
+        wooferBox: WooferEnclosureType = wooferBoxType,
+        godTierEnabled: Boolean = godTierSovereignActive,
+        godTierDualEarPct: Int = godTierDualEarStrength,
+        multiDriverArray: MultiDriverHybridArray = multiDriverArrayType,
+        truePeakBrickwall: Boolean = truePeakBrickwallActive
     ) {
         isMasterEnabled = enabled
         val interpolated = EqPresetEntity.interpolateTo31Bands(bandsDb)
@@ -358,6 +374,10 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         earDirectZeroBrainActive = earDirectEnabled
         zeroBrainPressureStrength = zeroBrainPct.coerceIn(0, 100)
         wooferBoxType = wooferBox
+        godTierSovereignActive = godTierEnabled
+        godTierDualEarStrength = godTierDualEarPct.coerceIn(0, 100)
+        multiDriverArrayType = multiDriverArray
+        truePeakBrickwallActive = truePeakBrickwall
 
         ensureSessionHooked(0, "GlobalOutputMix")
         applyParametersToAllSessions()
@@ -378,15 +398,25 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         val earDirectOn = earDirectZeroBrainActive && zeroBrainPressureStrength > 0
         val zeroBrainNorm = if (earDirectOn) (zeroBrainPressureStrength / 100f).coerceIn(0f, 1f) else 0f
         val wooferOffsets = wooferBoxType.bandOffsets9
+        val godTierOn = godTierSovereignActive && godTierDualEarStrength > 0
+        val godTierNorm = if (godTierOn) (godTierDualEarStrength / 100f).coerceIn(0f, 1f) else 0f
 
-        // Sub-bass extra shelf in dB from the Bass Boost knob across 20Hz..125Hz (bands 0..8)
-        val maxSubBoostDb = if (active) (bass / 100f) * 5.8f else 0f
+        // Smooth sub-bass shelf from Bass Boost knob across 20Hz..125Hz (bands 0..8) — capped cleanly to avoid mud
+        val maxSubBoostDb = if (active) (bass / 100f) * 3.2f else 0f
 
-        // Spatial 3D presence air shelf on upper bands (4kHz..20kHz, bands 23..30) when Spatial > 0
-        val spatialAirDb = if (active) (spatial / 100f) * 3.5f else 0f
+        // Gentle spatial air lift on upper bands (10kHz..20kHz, bands 27..30)
+        val spatialAirDb = if (active) (spatial / 100f) * 1.4f else 0f
+
+        // Calculate automatic anti-clipping headroom compensation based on peak positive EQ band + sub boost
+        val maxPositiveBandDb = if (active) (bands.maxOrNull() ?: 0f).coerceAtLeast(0f) else 0f
+        val autoHeadroomCutDb = if (active) {
+            -((maxPositiveBandDb + maxSubBoostDb) * 0.52f + 1.8f).coerceIn(1.5f, 8.5f)
+        } else 0f
 
         sessionBundles.values.forEach { bundle ->
-            // 1. Apply 31-band EQ + Bass Boost + 7-Woofer Box + Ear-Direct Zero-Brain + L/R Twin-Vocal Split to DynamicsProcessing (API 28+)
+            val hasActiveDp = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && bundle.dynamicsProcessing != null
+
+            // 1. Apply 31-band EQ + Smooth Ear-Direct L/R Contour + Velvet Limiter to DynamicsProcessing (API 28+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 runCatching {
                     bundle.dynamicsProcessing?.let { dp ->
@@ -394,200 +424,179 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
                         val cutoffHz = EqPresetEntity.FREQUENCY_HZ
                         val bandCount = EqPresetEntity.BAND_COUNT
                         for (b in 0 until bandCount) {
-                            val wooferShapeDb = if (active && earDirectOn && b <= 8) {
-                                wooferOffsets.getOrElse(b) { 0f } * 0.45f * (bass / 25f).coerceIn(0.4f, 1.4f)
+                            // Only add a gentle woofer contour if God-Tier hasn't already sculpted the 31 bands
+                            val wooferShapeDb = if (active && earDirectOn && !godTierOn && b <= 8) {
+                                wooferOffsets.getOrElse(b) { 0f } * 0.22f * (bass / 50f).coerceIn(0.4f, 1.2f)
                             } else 0f
                             val extraBass = if (b <= 8) {
                                 maxSubBoostDb * (1f - (b / 10f)) + wooferShapeDb
                             } else 0f
-                            val extraAir = if (b >= 23) spatialAirDb else 0f
+                            val extraAir = if (b >= 27) spatialAirDb else 0f
 
-                            // 🦴 Skull-Bone 160–250Hz Drain & 🧠🚫 Zero-Brain Center Pressure Relief
-                            val antiBrainCutDb = if (active && earDirectOn) {
+                            // 🦴 Smooth Skull-Bone 160–250Hz Drain & 3.15kHz Anti-Harshness Silk
+                            // (Prevents boom and eliminates 3–8kHz "khirich-khirich" sibilance/glare)
+                            val antiHarshnessCutDb = if (active && (earDirectOn || godTierOn)) {
+                                val nullNorm = max(zeroBrainNorm, godTierNorm)
                                 when (b) {
-                                    9, 10 -> -2.6f * zeroBrainNorm   // 160–200Hz skull-bone resonance drain
-                                    11 -> -1.4f * zeroBrainNorm      // 250Hz anti-mud relief
-                                    15, 16 -> -2.4f * zeroBrainNorm  // 630–800Hz forehead center phantom null
-                                    22 -> -2.0f * zeroBrainNorm      // 3.15kHz cranial nerve glare cut
+                                    9, 10 -> -1.6f * nullNorm   // 160–200Hz skull-bone resonance drain
+                                    11 -> -1.0f * nullNorm      // 250Hz anti-mud relief
+                                    22, 23 -> -1.4f * nullNorm  // 3.15k–4kHz anti-glare & anti-scratch relief
+                                    25, 26 -> -1.2f * nullNorm  // 6.3k–8kHz anti-sibilance ("khirich-khirich" eraser)
                                     else -> 0f
                                 }
                             } else 0f
 
                             val baseBandDb = if (active) {
-                                (bands.getOrElse(b) { 0f } + extraBass + extraAir + antiBrainCutDb).coerceIn(-18f, 18f)
+                                (bands.getOrElse(b) { 0f } + extraBass + extraAir + antiHarshnessCutDb)
+                                    .coerceIn(-12f, 9.5f)
                             } else 0f
 
-                            if (active && (twinVocalOn || earDirectOn) && b >= 11) {
-                                // ↔️ L/R Twin-Side Vocal Splitter + 👂 Ear-Direct Outer-Pinna Coupling:
-                                // Sub-bass (b <= 10) stays 100% center-locked (Channel 0 == Channel 1).
-                                // Bands 11..30 receive complementary Left/Right Ear-Pinna HRTF & stereo comb-matrix
-                                // offsets so 0% sound sits inside the brain/skull and 100% hugs the Left & Right ears!
-                                val combinedSplitNorm = max(twinVocalNorm, zeroBrainNorm)
-                                val centerNotch = when (b) {
-                                    14, 15, 16 -> -2.8f * combinedSplitNorm // 500–800Hz dead-center frontal/skull null
-                                    17, 18 -> -2.4f * combinedSplitNorm     // 1k–1.25kHz in-head mono lock cut
-                                    25 -> -2.2f * combinedSplitNorm         // 6.3kHz frontal pinna cue cut
+                            if (active && (twinVocalOn || earDirectOn || godTierOn) && b >= 12) {
+                                // Smooth Wide-Zone L/R Binaural Ear Contour (NO alternating b%2 comb zig-zag!)
+                                // Wide multi-band zones prevent biquad filter-bank ringing ("khirich-khirich")
+                                // while keeping vocals & instruments 100% in the Left & Right ears (0% inside brain).
+                                val splitNorm = max(max(twinVocalNorm, zeroBrainNorm), godTierNorm)
+                                val smoothZoneTiltDb = when (b) {
+                                    in 12..15 -> 0.9f * splitNorm    // Left ear warm lower-vocal body (315–630Hz)
+                                    in 16..18 -> -0.8f * splitNorm   // Right ear complementary upper-mid body (800–1.25kHz)
+                                    in 19..21 -> 1.1f * splitNorm    // Left ear presence lock (1.6k–2.5kHz)
+                                    in 22..24 -> -0.9f * splitNorm   // Right ear presence lock (3.15k–5kHz)
+                                    in 27..30 -> 0.8f * splitNorm    // Silky ribbon air differential (10k–20kHz)
                                     else -> 0f
                                 }
-                                val sideWingLift = when (b) {
-                                    11, 12, 13 -> 2.2f * combinedSplitNorm  // 250–400Hz warm Left/Right outer-ear cup cushion
-                                    19, 20, 21 -> 3.0f * combinedSplitNorm  // 1.6k–2.5kHz direct Left/Right ear-canal entrance lock
-                                    23, 24 -> 2.6f * combinedSplitNorm      // 4k–5kHz lateral pinna concha rim focus
-                                    26, 27, 28 -> 3.2f * combinedSplitNorm  // 8k–12.5kHz ±90° outer-ear velvet air
-                                    else -> 0f
-                                }
-                                // Complementary L/R stereo comb decorrelation across vocal & pinna formants (b in 11..28)
-                                val polarity = if (b % 2 == 0) 1f else -1f
-                                val combSpreadDb = when (b) {
-                                    in 11..13 -> 3.8f * combinedSplitNorm
-                                    in 14..22 -> 5.2f * combinedSplitNorm
-                                    in 23..28 -> 4.2f * combinedSplitNorm
-                                    else -> 2.2f * combinedSplitNorm
-                                }
-                                val leftTotalDb = (baseBandDb + centerNotch + sideWingLift + polarity * combSpreadDb)
-                                    .coerceIn(-18f, 18f)
-                                val rightTotalDb = (baseBandDb + centerNotch + sideWingLift - polarity * combSpreadDb)
-                                    .coerceIn(-18f, 18f)
+                                val leftTotalDb = (baseBandDb + smoothZoneTiltDb).coerceIn(-12f, 9.5f)
+                                val rightTotalDb = (baseBandDb - smoothZoneTiltDb).coerceIn(-12f, 9.5f)
 
-                                val preL = DynamicsProcessing.EqBand(true, cutoffHz[b], leftTotalDb * 0.55f)
-                                val postL = DynamicsProcessing.EqBand(true, cutoffHz[b], leftTotalDb * 0.45f)
-                                val preR = DynamicsProcessing.EqBand(true, cutoffHz[b], rightTotalDb * 0.55f)
-                                val postR = DynamicsProcessing.EqBand(true, cutoffHz[b], rightTotalDb * 0.45f)
+                                val preL = DynamicsProcessing.EqBand(true, cutoffHz[b], leftTotalDb * 0.50f)
+                                val postL = DynamicsProcessing.EqBand(true, cutoffHz[b], leftTotalDb * 0.50f)
+                                val preR = DynamicsProcessing.EqBand(true, cutoffHz[b], rightTotalDb * 0.50f)
+                                val postR = DynamicsProcessing.EqBand(true, cutoffHz[b], rightTotalDb * 0.50f)
 
                                 dp.setPreEqBandByChannelIndex(0, b, preL)
                                 dp.setPostEqBandByChannelIndex(0, b, postL)
                                 dp.setPreEqBandByChannelIndex(1, b, preR)
                                 dp.setPostEqBandByChannelIndex(1, b, postR)
                             } else {
-                                // Standard symmetric L/R (or sub-bass bands 0..10 which stay center-locked)
-                                val preBand = DynamicsProcessing.EqBand(active, cutoffHz[b], baseBandDb * 0.55f)
-                                val postBand = DynamicsProcessing.EqBand(active, cutoffHz[b], baseBandDb * 0.45f)
+                                // Symmetric L/R (all sub-bass & bass bands 0..11 stay 100% phase-locked)
+                                val preBand = DynamicsProcessing.EqBand(active, cutoffHz[b], baseBandDb * 0.50f)
+                                val postBand = DynamicsProcessing.EqBand(active, cutoffHz[b], baseBandDb * 0.50f)
                                 dp.setPreEqBandAllChannelsTo(b, preBand)
                                 dp.setPostEqBandAllChannelsTo(b, postBand)
                             }
                         }
 
-                        // Boost low MBC postGain smoothly when Bass Boost is turned up,
-                        // and apply dynamic Haas L/R attack/release offset on vocal MBC bands when Twin-Vocal or Ear-Direct is ON!
+                        // Phase-Coherent 6-Band Multi-Band Compressor (MBC) with smooth attack/release
+                        // Prevents bass-wave chopping and eliminates intermodulation "khirich-khirich" distortion!
                         val mbcCutoffs = floatArrayOf(85f, 220f, 750f, 2500f, 7000f, 20000f)
-                        val earSplitNorm = max(twinVocalNorm, zeroBrainNorm)
                         for (m in 0 until 6) {
                             val mbcPostGain = when {
                                 !active -> 0f
-                                m == 0 -> (bass / 100f) * 3.0f
-                                m == 1 -> (bass / 100f) * 1.2f - (if (earDirectOn) 1.0f * zeroBrainNorm else 0f) // Drains 85-220Hz skull boom
-                                m == 3 && (twinVocalOn || earDirectOn) -> 2.6f * earSplitNorm // 750Hz–2.5kHz L/R ear-entrance lift
-                                m >= 4 -> (spatial / 100f) * 2.0f + (if (twinVocalOn || earDirectOn) 1.8f * earSplitNorm else 0f)
-                                else -> 0f
+                                m == 0 -> (bass / 100f) * 1.4f
+                                m == 1 -> -0.6f // Keeps 85–220Hz upper-bass clean and mud-free
+                                m == 2 -> 0.4f  // Warm vocal body
+                                m == 3 -> 0.5f  // Clear vocal presence without harshness
+                                m == 4 -> -0.5f // Tames 2.5k–7kHz harshness & sibilance ("khirich-khirich" guard)
+                                else -> 0.4f    // Silky 7k–20kHz air
                             }
-                            if (active && (twinVocalOn || earDirectOn) && m in 2..4) {
-                                // Dynamic Haas L/R Micro-Timing Split on ear/vocal bands (Left fast 2.8ms attack, Right 14ms attack)
-                                val mbcLeft = DynamicsProcessing.MbcBand(
-                                    true,
-                                    mbcCutoffs[m],
-                                    if (m % 2 == 0) 2.8f else 14.0f,
-                                    if (m % 2 == 0) 62f else 98f,
-                                    1.8f,
-                                    -18f,
-                                    6f,
-                                    -65f,
-                                    1.0f,
-                                    0f,
-                                    mbcPostGain + (if (m % 2 == 0) 1.4f * earSplitNorm else -1.0f * earSplitNorm)
-                                )
-                                val mbcRight = DynamicsProcessing.MbcBand(
-                                    true,
-                                    mbcCutoffs[m],
-                                    if (m % 2 == 0) 14.0f else 2.8f,
-                                    if (m % 2 == 0) 98f else 62f,
-                                    1.8f,
-                                    -18f,
-                                    6f,
-                                    -65f,
-                                    1.0f,
-                                    0f,
-                                    mbcPostGain + (if (m % 2 == 0) -1.0f * earSplitNorm else 1.4f * earSplitNorm)
-                                )
-                                dp.setMbcBandByChannelIndex(0, m, mbcLeft)
-                                dp.setMbcBandByChannelIndex(1, m, mbcRight)
-                            } else {
-                                val mbcBand = DynamicsProcessing.MbcBand(
-                                    active,
-                                    mbcCutoffs[m],
-                                    5f,
-                                    80f,
-                                    if (bass > 50 && m <= 1) 2.5f else 1.8f,
-                                    -16f,
-                                    6f,
-                                    -65f,
-                                    1.0f,
-                                    0f,
-                                    mbcPostGain
-                                )
-                                dp.setMbcBandAllChannelsTo(m, mbcBand)
-                            }
+                            val mbcBand = DynamicsProcessing.MbcBand(
+                                active,
+                                mbcCutoffs[m],
+                                if (m <= 1) 18f else 12f,  // Smooth 18ms bass attack so 50Hz waves never distort
+                                if (m <= 1) 160f else 110f, // Smooth 160ms release — zero waveform chatter
+                                1.35f,                      // Gentle audiophile 1.35:1 compression ratio
+                                -18f,                       // Threshold dB
+                                8f,                         // Wide 8dB soft knee for velvet transitions
+                                -70f,                       // Noise gate threshold
+                                1.0f,                       // Expander ratio
+                                -1.0f,                      // -1.0dB MBC input cushion
+                                mbcPostGain
+                            )
+                            dp.setMbcBandAllChannelsTo(m, mbcBand)
                         }
 
-                        dp.setInputGainAllChannelsTo(if (active) preamp else 0f)
+                        // Apply Preamp + Automatic Anti-Clipping Headroom so PreEQ + PostEQ never overload 0 dBFS
+                        val safeInputGainDb = if (active) {
+                            (preamp + autoHeadroomCutDb).coerceIn(-12f, 1.5f)
+                        } else 0f
+                        dp.setInputGainAllChannelsTo(safeInputGainDb)
+
+                        // Velvet Mastering Limiter: 8ms attack & 140ms release prevents bass-cycle wave chopping!
+                        val brickwallOn = limit || truePeakBrickwallActive
                         val limiterCfg = DynamicsProcessing.Limiter(
-                            active && limit,
+                            active && brickwallOn,
                             true,
                             0,
-                            2f,
-                            45f,
-                            4.0f,
-                            -1.2f,
-                            if (active) (preamp * 0.5f).coerceIn(-6f, 6f) else 0f
+                            8.0f,   // Smooth 8ms attack (never chops low/mid waveforms)
+                            140.0f, // Silky 140ms release (zero buzzing / zero khirich-khirich IMD)
+                            2.5f,   // Gentle 2.5:1 soft-knee mastering ratio
+                            -2.2f,  // -2.2 dBFS threshold cushion
+                            if (active) -0.6f else 0f // Clean -0.6 dBFS true-peak output ceiling
                         )
                         dp.setLimiterAllChannelsTo(limiterCfg)
                     }
                 }
             }
 
-            // 2. Apply to standard Hardware Equalizer
+            // 2. Standard Hardware Equalizer:
+            // CRITICAL FIX: Only apply legacy Equalizer when DynamicsProcessing is NOT present on this session!
+            // Applying both DynamicsProcessing AND Equalizer simultaneously doubled the EQ gain (+25dB) and caused crackling!
             runCatching {
                 bundle.equalizer?.let { eq ->
-                    eq.enabled = active
-                    val numBands = eq.numberOfBands.toInt()
-                    val range = eq.bandLevelRange
-                    val minMb = range[0].toInt()
-                    val maxMb = range[1].toInt()
-                    val maxIdx = EqPresetEntity.BAND_COUNT - 1
-                    for (b in 0 until numBands) {
-                        val mappedIdx = ((b.toFloat() / max(1, numBands - 1)) * maxIdx).roundToInt().coerceIn(0, maxIdx)
-                        val extraBass = if (mappedIdx <= 8) {
-                            maxSubBoostDb * 0.6f * (1f - mappedIdx / 10f)
-                        } else 0f
-                        val targetDb = if (active) (bands.getOrElse(mappedIdx) { 0f } + extraBass) else 0f
-                        val targetMb = (targetDb * 100f).toInt().coerceIn(minMb, maxMb).toShort()
-                        eq.setBandLevel(b.toShort(), targetMb)
+                    if (hasActiveDp) {
+                        val numBands = eq.numberOfBands.toInt()
+                        for (b in 0 until numBands) {
+                            eq.setBandLevel(b.toShort(), 0.toShort())
+                        }
+                        eq.enabled = false
+                    } else {
+                        eq.enabled = active
+                        val numBands = eq.numberOfBands.toInt()
+                        val range = eq.bandLevelRange
+                        val minMb = range[0].toInt()
+                        val maxMb = range[1].toInt()
+                        val maxIdx = EqPresetEntity.BAND_COUNT - 1
+                        for (b in 0 until numBands) {
+                            val mappedIdx = ((b.toFloat() / max(1, numBands - 1)) * maxIdx).roundToInt().coerceIn(0, maxIdx)
+                            val extraBass = if (mappedIdx <= 8) {
+                                maxSubBoostDb * 0.5f * (1f - mappedIdx / 10f)
+                            } else 0f
+                            val targetDb = if (active) (bands.getOrElse(mappedIdx) { 0f } * 0.7f + extraBass) else 0f
+                            val targetMb = (targetDb * 100f).toInt().coerceIn(minMb, maxMb).toShort()
+                            eq.setBandLevel(b.toShort(), targetMb)
+                        }
                     }
                 }
             }
 
-            // 3. Apply to Hardware BassBoost
+            // 3. Hardware BassBoost: scaled gently when DynamicsProcessing is active so sub-bass stays punchy without clipping
             runCatching {
                 bundle.bassBoost?.let { bb ->
                     bb.enabled = active && bass > 0
                     if (bb.strengthSupported) {
-                        bb.setStrength((if (active) bass * 10 else 0).coerceIn(0, 1000).toShort())
+                        val scaledStrength = if (!active) 0 else if (hasActiveDp) (bass * 4).coerceIn(0, 450) else (bass * 8).coerceIn(0, 800)
+                        bb.setStrength(scaledStrength.toShort())
                     }
                 }
             }
 
-            // 4. Apply to Hardware Virtualizer (Spatial 3D + Ear-Direct / L/R Twin-Vocal Wide Stage)
+            // 4. Hardware Virtualizer (Spatial 3D + Ear-Direct / L/R Twin-Vocal Wide Stage)
+            // Capped at 650/1000 so hardware phase-shifter never creates metallic comb-filter artifacts
             runCatching {
                 bundle.virtualizer?.let { virt ->
-                    val earSplitNorm = max(twinVocalNorm, zeroBrainNorm)
-                    val effectiveSpatial = if (twinVocalOn || earDirectOn) max(spatial, (90 + earSplitNorm * 10f).roundToInt()) else spatial
+                    val earSplitNorm = max(max(twinVocalNorm, zeroBrainNorm), godTierNorm)
+                    val effectiveSpatial = if (twinVocalOn || earDirectOn || godTierOn) {
+                        max(spatial, (72 + earSplitNorm * 13f).roundToInt()).coerceIn(0, 85)
+                    } else {
+                        spatial.coerceIn(0, 85)
+                    }
                     virt.enabled = active && effectiveSpatial > 0
                     if (virt.strengthSupported) {
-                        virt.setStrength((if (active) effectiveSpatial * 10 else 0).coerceIn(0, 1000).toShort())
+                        virt.setStrength((if (active) effectiveSpatial * 7 else 0).coerceIn(0, 650).toShort())
                     }
                 }
             }
 
-            // 5. Apply to Hardware PresetReverb
+            // 5. Hardware PresetReverb
             runCatching {
                 bundle.presetReverb?.let { rev ->
                     rev.enabled = active && revLevel > 0 && revRoom != "None"
@@ -601,18 +610,23 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
                 }
             }
 
-            // 6. Apply to Hardware LoudnessEnhancer (millibels: 1 dB = 100 mB)
+            // 6. Hardware LoudnessEnhancer:
+            // CRITICAL FIX: Never add positive LoudnessEnhancer gain on top of DynamicsProcessing unless user explicitly pushes Preamp > +2dB!
             runCatching {
                 bundle.loudnessEnhancer?.let { le ->
-                    le.enabled = active
-                    // Include positive EQ boost average + preamp so YouTube loudness/EQ jump is immediately audible
-                    val avgPositiveEq = bands.filter { it > 0f }.average().let {
-                        if (it.isNaN()) 0f else it.toFloat() * 0.35f
+                    if (hasActiveDp) {
+                        val cleanBoostMb = if (active && preamp > 1.0f) {
+                            ((preamp - 1.0f) * 60f).toInt().coerceIn(0, 300)
+                        } else 0
+                        le.setTargetGain(cleanBoostMb)
+                        le.enabled = active && cleanBoostMb > 0
+                    } else {
+                        le.enabled = active
+                        val totalGainMb = if (active) {
+                            (preamp * 80f).toInt().coerceIn(-800, 400)
+                        } else 0
+                        le.setTargetGain(totalGainMb)
                     }
-                    val totalGainMb = if (active) {
-                        ((preamp + avgPositiveEq + (bass / 100f) * 2.5f) * 100f).toInt().coerceIn(-1200, 1500)
-                    } else 0
-                    le.setTargetGain(totalGainMb)
                 }
             }
         }
@@ -623,19 +637,19 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         val hasEq = sessionBundles[0]?.equalizer != null
         val externalPlaying = _isExternalMediaPlaying.value
         val count = sessionBundles.size
-        val earTag = if (earDirectZeroBrainActive) " • 👂 Kaan-Direct (0% Dimag) • ${wooferBoxType.badge}" else ""
-        val twinTag = if (lrTwinVocalSplitterActive) " • ↔️ L/R Vocal" else ""
+        val godTag = if (godTierSovereignActive) " • 👑 ${multiDriverArrayType.badge} • 🔒 ${bassStrength}% Bass" else ""
+        val earTag = if (earDirectZeroBrainActive) " • 👂 Kaan-Direct (0% Dimag)" else ""
 
         _statusText.value = when {
             !isMasterEnabled -> "DSP Bypassed • Tap Power to Enable on YouTube & Apps"
             externalPlaying && hasDp ->
-                "YouTube / Media Hooked! (31-Band$earTag$twinTag • $count Session${if (count > 1) "s" else ""})"
+                "YouTube / Media Hooked! (31-Band$godTag$earTag • $count Session${if (count > 1) "s" else ""})"
             hasDp ->
-                "Global YouTube & System Hook Active (31-Band$earTag$twinTag)"
+                "Global YouTube & System Hook Active (31-Band$godTag$earTag)"
             hasEq ->
-                "Global Hardware AudioFX Hook Active ($count Session${if (count > 1) "s" else ""}$earTag$twinTag)"
+                "Global Hardware AudioFX Hook Active ($count Session${if (count > 1) "s" else ""}$godTag$earTag)"
             else ->
-                "System DSP Active • Ready for YouTube & Media Apps$earTag$twinTag"
+                "System DSP Active • Ready for YouTube & Media Apps$godTag$earTag"
         }
     }
 

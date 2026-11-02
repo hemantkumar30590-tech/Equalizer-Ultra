@@ -40,6 +40,12 @@ import com.example.dsp.VoiceControlAction
 import com.example.dsp.WooferEnclosureType
 import com.example.dsp.ZeroEarbudOpenAirMode
 import com.example.dsp.EarDirectZeroBrainMode
+import com.example.dsp.GodTierSovereignMode
+import com.example.dsp.MultiDriverHybridArray
+import com.example.dsp.AppAudioRouterProfile
+import com.example.dsp.CarbonOmegaMode
+import com.example.dsp.BluetoothCodecUpscalerProfile
+import com.example.dsp.CarbonMasterMacro
 import com.example.service.EqForegroundService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,8 +66,8 @@ data class EqUiState(
     val deviceSearchQuery: String = "",
     val activePresetName: String = "Harman Target",
     val bandGainsDb: List<Float> = EqPresetEntity.BUILT_IN_PRESETS[3].getBandGains(),
-    val bassBoostStrength: Int = 25, // 0..100 (Smooth 25% default)
-    val isBassBoostLocked: Boolean = true, // Locks user's Bass Boost across presets, modes & APK updates
+    val bassBoostStrength: Int = 50, // 0..100 (Locked 50% default)
+    val isBassBoostLocked: Boolean = true, // Locks user's 50% Bass Boost across presets, modes & APK updates
     val reverbLevel: Int = 12, // 0..100
     val reverbRoom: String = "Small Room",
     val spatialLevel: Int = 35, // 0..100
@@ -121,7 +127,7 @@ data class EqUiState(
     val selectedStemPreset: StemDeMixerPreset = StemDeMixerPreset.STUDIO_BALANCED,
     val speedCruiseMode: SpeedCruiseMode = SpeedCruiseMode.OFF,
     val analogSaturationMode: AnalogSaturationMode = AnalogSaturationMode.CLEAN_DIGITAL,
-    val analogDrivePercent: Int = 35,
+    val analogDrivePercent: Int = 0,
     val isTinnitusShieldEnabled: Boolean = false,
     val tinnitusNotchFreqHz: Int = 7500,
     val safeListeningDbText: String = "SAFE DOSE: 74 dB SPL • Zero Ear-Fatigue Guard Ready",
@@ -218,7 +224,29 @@ data class EqUiState(
     val kickThumpPunchPercent: Int = 90,
     val isSkullBoneDrainEnabled: Boolean = true,
     val isVelvetEarCanalSilkEnabled: Boolean = true,
-    val earDirectTelemetryText: String = "👂 [🔥 KAAN OMEGA • 0% DIMAG • 📦 PORTED REFLEX]: 0% Dimag Null 98% • 100% Kaan Pinna 98% • Sub-Rumble 88% • Kick-Punch 90% • Skull-Drain ON"
+    val earDirectTelemetryText: String = "👂 [🔥 KAAN OMEGA • 0% DIMAG • 📦 PORTED REFLEX]: 0% Dimag Null 98% • 100% Kaan Pinna 98% • Sub-Rumble 88% • Kick-Punch 90% • Skull-Drain ON",
+    // 👑 God-Tier Sovereign Audio OS v2.8 (7 Unbeatable Engines + 🔒 50% Bass Lock + 👂 0% Brain / 100% Kaan-Direct)
+    val godTierMode: GodTierSovereignMode = GodTierSovereignMode.GOD_TIER_OMEGA_ALL,
+    val multiDriverArray: MultiDriverHybridArray = MultiDriverHybridArray.GOD_TIER_16_DRIVER_OMEGA,
+    val appRouterProfile: AppAudioRouterProfile = AppAudioRouterProfile.AUTO_ADAPTIVE,
+    val dualEarBiometricMatchPercent: Int = 96,
+    val multiDriverCrossoverPercent: Int = 95,
+    val spectralVocalPocketPercent: Int = 94,
+    val evenOddHarmonicMatrixPercent: Int = 92,
+    val isVolumeEqualLoudnessSyncEnabled: Boolean = true,
+    val isTruePeakBrickwallEnabled: Boolean = true,
+    val godTierTelemetryText: String = "👑 [👑 GOD-TIER OMEGA • 👑 16-DRIVER OMEGA • 🤖 AUTO ROUTER]: 🔒 50% Bass Lock • 0% Brain / 100% L+R Ear 96% • 5-Zone Crossover 95% • 2ms Vocal Pocket 94% • Harmonics 92% • -0.1dBFS Brickwall ON",
+    // 💎 Carbon-Omega Quantum Audio Architecture v2.9 (8 Carbon-Class Hardware-Physics & Cochlear Neuro-Acoustic Upgrades)
+    val carbonOmegaMode: CarbonOmegaMode = CarbonOmegaMode.CARBON_OMEGA_ALL_8,
+    val btCodecUpscalerProfile: BluetoothCodecUpscalerProfile = BluetoothCodecUpscalerProfile.LDAC_990_96KHZ,
+    val carbonMasterMacro: CarbonMasterMacro = CarbonMasterMacro.VELVET_SILK_MASTER,
+    val linearPhaseFirPercent: Int = 96,
+    val deClipperCrestPercent: Int = 94,
+    val earCanalAntinodeCancelPercent: Int = 98,
+    val dualSubIsobaricSplitPercent: Int = 95,
+    val isPinna3dSphereEnabled: Boolean = true,
+    val isLufsAutoGainGuardEnabled: Boolean = true,
+    val carbonOmegaTelemetryText: String = "💎 [💎 CARBON-OMEGA 8 • 🎧 LDAC 990 • 96kHz • ✨ VELVET SILK]: 0° FIR Phase 96% • De-Clipper 94% • Ear-Canal Notch 98% • Isobaric Sub 95% • 🔒 50% Bass • LUFS -2.2dB"
 )
 
 class EqViewModel(application: Application) : AndroidViewModel(application) {
@@ -356,7 +384,8 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             )
         }
 
-        syncDspEngine()
+        // Immediately sanitize any previously saved over-boosted curve with the Velvet Anti-Khirich Carbon-Omega curve
+        recomputeAndApplyCarbonOmega()
         startFutureGenCoordinator()
     }
 
@@ -2672,6 +2701,301 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         recomputeAndApplyEarDirectZeroBrain()
     }
 
+    // =========================================================================
+    // 👑 GOD-TIER SOVEREIGN AUDIO OS v2.8 (7 UNBEATABLE ENGINES + 🔒 50% BASS LOCK)
+    // =========================================================================
+
+    private fun recomputeAndApplyGodTierSovereignOs() {
+        _uiState.update { s ->
+            val result = FutureGenAudioLabEngine.synthesizeGodTierSovereignOs(
+                baseBands = s.bandGainsDb,
+                mode = s.godTierMode,
+                multiDriverArray = s.multiDriverArray,
+                appRouterProfile = s.appRouterProfile,
+                dualEarBiometricMatchPercent = s.dualEarBiometricMatchPercent,
+                multiDriverCrossoverPercent = s.multiDriverCrossoverPercent,
+                spectralVocalPocketPercent = s.spectralVocalPocketPercent,
+                evenOddHarmonicMatrixPercent = s.evenOddHarmonicMatrixPercent,
+                volumeEqualLoudnessSyncEnabled = s.isVolumeEqualLoudnessSyncEnabled,
+                truePeakBrickwallEnabled = s.isTruePeakBrickwallEnabled,
+                systemVolumePercent = systemVolumePercent.value
+            )
+            if (s.godTierMode == GodTierSovereignMode.OFF) {
+                s.copy(godTierTelemetryText = result.telemetrySummary)
+            } else {
+                val effectiveBass = resolveBass(result.effectiveBassBoost, s)
+                s.copy(
+                    isMasterEnabled = true,
+                    activePresetName = "${s.godTierMode.badge} • ${s.multiDriverArray.badge}",
+                    bandGainsDb = applyBassLockToBands(result.sculptedBands31, effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
+                    spatialLevel = result.effectiveSpatial3D,
+                    reverbLevel = result.effectiveReverbLevel,
+                    reverbRoom = result.effectiveReverbRoom,
+                    crossfeedStrengthPercent = result.effectiveCrossfeedPct,
+                    analogDrivePercent = result.effectiveAnalogDrivePct,
+                    preampDb = result.effectivePreampDb,
+                    godTierTelemetryText = result.telemetrySummary
+                )
+            }
+        }
+        syncDspEngine()
+    }
+
+    fun setGodTierMode(mode: GodTierSovereignMode) {
+        _uiState.update { it.copy(godTierMode = mode) }
+        hapticManager.onAiPresetApplied("God-Tier ${mode.badge}")
+        recomputeAndApplyGodTierSovereignOs()
+    }
+
+    fun toggleGodTierSovereignOs() {
+        val nextMode = if (_uiState.value.godTierMode == GodTierSovereignMode.OFF) {
+            GodTierSovereignMode.GOD_TIER_OMEGA_ALL
+        } else {
+            GodTierSovereignMode.OFF
+        }
+        setGodTierMode(nextMode)
+    }
+
+    fun setMultiDriverHybridArray(array: MultiDriverHybridArray) {
+        _uiState.update { state ->
+            val nextMode = if (state.godTierMode == GodTierSovereignMode.OFF) {
+                GodTierSovereignMode.GOD_TIER_OMEGA_ALL
+            } else state.godTierMode
+            state.copy(
+                godTierMode = nextMode,
+                multiDriverArray = array
+            )
+        }
+        hapticManager.onAiPresetApplied("Hybrid Driver ${array.badge}")
+        recomputeAndApplyGodTierSovereignOs()
+    }
+
+    fun setAppAudioRouterProfile(profile: AppAudioRouterProfile) {
+        _uiState.update { state ->
+            val nextMode = if (state.godTierMode == GodTierSovereignMode.OFF) {
+                GodTierSovereignMode.GOD_TIER_OMEGA_ALL
+            } else state.godTierMode
+            state.copy(
+                godTierMode = nextMode,
+                appRouterProfile = profile
+            )
+        }
+        hapticManager.onAiPresetApplied("App Router ${profile.badge}")
+        recomputeAndApplyGodTierSovereignOs()
+    }
+
+    fun updateDualEarBiometricMatchPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.godTierMode == GodTierSovereignMode.OFF) {
+                GodTierSovereignMode.DUAL_EAR_BIOMETRIC_LR
+            } else state.godTierMode
+            state.copy(
+                godTierMode = nextMode,
+                dualEarBiometricMatchPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyGodTierSovereignOs()
+    }
+
+    fun updateMultiDriverCrossoverPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.godTierMode == GodTierSovereignMode.OFF) {
+                GodTierSovereignMode.HYBRID_12_DRIVER_IEM
+            } else state.godTierMode
+            state.copy(
+                godTierMode = nextMode,
+                multiDriverCrossoverPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyGodTierSovereignOs()
+    }
+
+    fun updateSpectralVocalPocketPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.godTierMode == GodTierSovereignMode.OFF) {
+                GodTierSovereignMode.VOCAL_POCKET_50_BASS_LOCK
+            } else state.godTierMode
+            state.copy(
+                godTierMode = nextMode,
+                spectralVocalPocketPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyGodTierSovereignOs()
+    }
+
+    fun updateEvenOddHarmonicMatrixPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.godTierMode == GodTierSovereignMode.OFF) {
+                GodTierSovereignMode.GOD_TIER_OMEGA_ALL
+            } else state.godTierMode
+            state.copy(
+                godTierMode = nextMode,
+                evenOddHarmonicMatrixPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyGodTierSovereignOs()
+    }
+
+    fun toggleVolumeEqualLoudnessSync() {
+        _uiState.update { it.copy(isVolumeEqualLoudnessSyncEnabled = !it.isVolumeEqualLoudnessSyncEnabled) }
+        hapticManager.onControlTick("Fletcher-Munson Volume Sync")
+        recomputeAndApplyGodTierSovereignOs()
+    }
+
+    fun toggleTruePeakBrickwall() {
+        _uiState.update { it.copy(isTruePeakBrickwallEnabled = !it.isTruePeakBrickwallEnabled) }
+        hapticManager.onControlTick("-0.1dBFS True-Peak Brickwall")
+        recomputeAndApplyGodTierSovereignOs()
+    }
+
+    // =========================================================================
+    // 💎 CARBON-OMEGA QUANTUM AUDIO ARCHITECTURE v2.9 (8 CARBON-CLASS UPGRADES)
+    // =========================================================================
+
+    private fun recomputeAndApplyCarbonOmega() {
+        _uiState.update { s ->
+            val result = FutureGenAudioLabEngine.synthesizeCarbonOmegaSuite(
+                baseBands = s.bandGainsDb,
+                mode = s.carbonOmegaMode,
+                btCodecProfile = s.btCodecUpscalerProfile,
+                masterMacro = s.carbonMasterMacro,
+                linearPhaseFirPercent = s.linearPhaseFirPercent,
+                deClipperCrestPercent = s.deClipperCrestPercent,
+                earCanalAntinodeCancelPercent = s.earCanalAntinodeCancelPercent,
+                dualSubIsobaricSplitPercent = s.dualSubIsobaricSplitPercent,
+                pinna3dSphereEnabled = s.isPinna3dSphereEnabled,
+                lufsAutoGainGuardEnabled = s.isLufsAutoGainGuardEnabled
+            )
+            if (s.carbonOmegaMode == CarbonOmegaMode.OFF) {
+                s.copy(carbonOmegaTelemetryText = result.telemetrySummary)
+            } else {
+                val effectiveBass = resolveBass(result.effectiveBassBoost, s)
+                s.copy(
+                    isMasterEnabled = true,
+                    activePresetName = "${s.carbonOmegaMode.badge} • ${s.carbonMasterMacro.badge}",
+                    bandGainsDb = applyBassLockToBands(result.sculptedBands31, effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
+                    spatialLevel = result.effectiveSpatial3D,
+                    reverbLevel = result.effectiveReverbLevel,
+                    reverbRoom = result.effectiveReverbRoom,
+                    crossfeedStrengthPercent = result.effectiveCrossfeedPct,
+                    analogDrivePercent = result.effectiveAnalogDrivePct,
+                    preampDb = result.effectivePreampDb,
+                    carbonOmegaTelemetryText = result.telemetrySummary
+                )
+            }
+        }
+        syncDspEngine()
+    }
+
+    fun setCarbonOmegaMode(mode: CarbonOmegaMode) {
+        _uiState.update { it.copy(carbonOmegaMode = mode) }
+        hapticManager.onAiPresetApplied("Carbon-Omega ${mode.badge}")
+        recomputeAndApplyCarbonOmega()
+    }
+
+    fun toggleCarbonOmegaSwitch() {
+        val nextMode = if (_uiState.value.carbonOmegaMode == CarbonOmegaMode.OFF) {
+            CarbonOmegaMode.CARBON_OMEGA_ALL_8
+        } else {
+            CarbonOmegaMode.OFF
+        }
+        setCarbonOmegaMode(nextMode)
+    }
+
+    fun setBtCodecUpscalerProfile(profile: BluetoothCodecUpscalerProfile) {
+        _uiState.update { state ->
+            val nextMode = if (state.carbonOmegaMode == CarbonOmegaMode.OFF) {
+                CarbonOmegaMode.CARBON_OMEGA_ALL_8
+            } else state.carbonOmegaMode
+            state.copy(
+                carbonOmegaMode = nextMode,
+                btCodecUpscalerProfile = profile
+            )
+        }
+        hapticManager.onAiPresetApplied("BT Codec ${profile.badge}")
+        recomputeAndApplyCarbonOmega()
+    }
+
+    fun setCarbonMasterMacro(macro: CarbonMasterMacro) {
+        _uiState.update { state ->
+            val nextMode = if (state.carbonOmegaMode == CarbonOmegaMode.OFF) {
+                CarbonOmegaMode.CARBON_OMEGA_ALL_8
+            } else state.carbonOmegaMode
+            state.copy(
+                carbonOmegaMode = nextMode,
+                carbonMasterMacro = macro
+            )
+        }
+        hapticManager.onAiPresetApplied("Carbon Macro ${macro.badge}")
+        recomputeAndApplyCarbonOmega()
+    }
+
+    fun updateLinearPhaseFirPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.carbonOmegaMode == CarbonOmegaMode.OFF) {
+                CarbonOmegaMode.LINEAR_PHASE_FIR_ZERO_DELAY
+            } else state.carbonOmegaMode
+            state.copy(
+                carbonOmegaMode = nextMode,
+                linearPhaseFirPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyCarbonOmega()
+    }
+
+    fun updateDeClipperCrestPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.carbonOmegaMode == CarbonOmegaMode.OFF) {
+                CarbonOmegaMode.ISOBARIC_DUAL_SUB_CREST
+            } else state.carbonOmegaMode
+            state.copy(
+                carbonOmegaMode = nextMode,
+                deClipperCrestPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyCarbonOmega()
+    }
+
+    fun updateEarCanalAntinodeCancelPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.carbonOmegaMode == CarbonOmegaMode.OFF) {
+                CarbonOmegaMode.EAR_CANAL_VELVET_ANTINODE
+            } else state.carbonOmegaMode
+            state.copy(
+                carbonOmegaMode = nextMode,
+                earCanalAntinodeCancelPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyCarbonOmega()
+    }
+
+    fun updateDualSubIsobaricSplitPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.carbonOmegaMode == CarbonOmegaMode.OFF) {
+                CarbonOmegaMode.ISOBARIC_DUAL_SUB_CREST
+            } else state.carbonOmegaMode
+            state.copy(
+                carbonOmegaMode = nextMode,
+                dualSubIsobaricSplitPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyCarbonOmega()
+    }
+
+    fun togglePinna3dSphere() {
+        _uiState.update { it.copy(isPinna3dSphereEnabled = !it.isPinna3dSphereEnabled) }
+        hapticManager.onControlTick("Pinna 3D Velvet Sphere")
+        recomputeAndApplyCarbonOmega()
+    }
+
+    fun toggleLufsAutoGainGuard() {
+        _uiState.update { it.copy(isLufsAutoGainGuardEnabled = !it.isLufsAutoGainGuardEnabled) }
+        hapticManager.onControlTick("LUFS Constant-Loudness Guard")
+        recomputeAndApplyCarbonOmega()
+    }
+
     private fun startFutureGenCoordinator() {
         viewModelScope.launch {
             var tickCount = 0
@@ -2769,7 +3093,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                         kickThumpPunchPct = s.kickThumpPunchPercent,
                         skullBoneDrain = s.isSkullBoneDrainEnabled,
                         velvetEarCanalSilk = s.isVelvetEarCanalSilkEnabled,
-                        wooferEnclosure = s.wooferEnclosureType
+                        wooferEnclosure = s.wooferEnclosureType,
+                        godTierEnabled = s.godTierMode != GodTierSovereignMode.OFF,
+                        dualEarMatchPct = s.dualEarBiometricMatchPercent,
+                        multiDriverCrossPct = s.multiDriverCrossoverPercent,
+                        vocalPocketPct = s.spectralVocalPocketPercent,
+                        harmonicMatrixPct = s.evenOddHarmonicMatrixPercent,
+                        truePeakBrickwall = s.isTruePeakBrickwallEnabled,
+                        multiDriverArray = s.multiDriverArray
                     )
                 }
                 // Bass-to-Haptic Sub-Woofer Tactile Engine: pulse phone vibrator on sub-bass hits
@@ -2909,7 +3240,14 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             kickThumpPunchPct = s.kickThumpPunchPercent,
             skullBoneDrain = s.isSkullBoneDrainEnabled,
             velvetEarCanalSilk = s.isVelvetEarCanalSilkEnabled,
-            wooferEnclosure = s.wooferEnclosureType
+            wooferEnclosure = s.wooferEnclosureType,
+            godTierEnabled = s.godTierMode != GodTierSovereignMode.OFF,
+            dualEarMatchPct = s.dualEarBiometricMatchPercent,
+            multiDriverCrossPct = s.multiDriverCrossoverPercent,
+            vocalPocketPct = s.spectralVocalPocketPercent,
+            harmonicMatrixPct = s.evenOddHarmonicMatrixPercent,
+            truePeakBrickwall = s.isTruePeakBrickwallEnabled,
+            multiDriverArray = s.multiDriverArray
         )
         dspEngine.updateDspState(
             enabled = s.isMasterEnabled,

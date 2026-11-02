@@ -140,6 +140,7 @@ class PresetManager(
             .putInt(KEY_USER_PREFERRED_BASS, clamped)
             .putInt(KEY_BASS_BOOST, clamped)
             .putBoolean(KEY_BASS_V25_MIGRATED, true)
+            .putBoolean(KEY_BASS_V28_50_MIGRATED, true)
             .apply()
     }
 
@@ -180,23 +181,20 @@ class PresetManager(
     }
 
     fun loadSavedActiveProfile(): EqPresetEntity {
-        val defaultPreset = EqPresetEntity.BUILT_IN_PRESETS[3] // Harman Target (Smooth Balanced)
-        val alreadyMigrated = activeStateBox.getBoolean(KEY_BASS_V25_MIGRATED, false)
-        if (!alreadyMigrated) {
-            val existingBass = activeStateBox.getInt(KEY_BASS_BOOST, -1)
+        val defaultPreset = EqPresetEntity.BUILT_IN_PRESETS[3] // Harman Target (Balanced)
+        val alreadyMigratedV28 = activeStateBox.getBoolean(KEY_BASS_V28_50_MIGRATED, false)
+        if (!alreadyMigratedV28) {
             val existingPreset = activeStateBox.getString(KEY_ACTIVE_PRESET, null)
-            // Migrate old hardcoded 78%+ Bass Boost default to smooth 25% default on APK upgrade/install
-            val migratedBass = if (existingBass in 0..60) existingBass else DEFAULT_SMOOTH_BASS
+            // Migrate to 50% Bass Memory Lock on v2.8 upgrade/install
             val editor = activeStateBox.edit()
                 .putBoolean(KEY_BASS_V25_MIGRATED, true)
-                .putInt(KEY_USER_PREFERRED_BASS, migratedBass)
-                .putInt(KEY_BASS_BOOST, migratedBass)
+                .putBoolean(KEY_BASS_V28_50_MIGRATED, true)
+                .putInt(KEY_USER_PREFERRED_BASS, DEFAULT_SMOOTH_BASS)
+                .putInt(KEY_BASS_BOOST, DEFAULT_SMOOTH_BASS)
+                .putBoolean(KEY_BASS_LOCK_ENABLED, true)
             if (existingPreset == null || existingPreset == "Bass Boost") {
                 editor.putString(KEY_ACTIVE_PRESET, defaultPreset.name)
                 editor.putString(KEY_BANDS_CSV, defaultPreset.bandsCsv)
-            }
-            if (!activeStateBox.contains(KEY_BASS_LOCK_ENABLED)) {
-                editor.putBoolean(KEY_BASS_LOCK_ENABLED, true)
             }
             editor.apply()
         }
@@ -232,7 +230,7 @@ class PresetManager(
 
     companion object {
         const val ACTIVE_STATE_BOX_NAME = "equltra_settings_box"
-        const val DEFAULT_SMOOTH_BASS = 25
+        const val DEFAULT_SMOOTH_BASS = 50
         private const val KEY_ENABLED = "enabled"
         private const val KEY_BG_SERVICE_ENABLED = "bg_service_enabled"
         private const val KEY_AI_PRO_UNLOCKED = "ai_pro_unlocked"
@@ -243,6 +241,7 @@ class PresetManager(
         private const val KEY_USER_PREFERRED_BASS = "user_preferred_bass"
         private const val KEY_BASS_LOCK_ENABLED = "bass_lock_enabled"
         private const val KEY_BASS_V25_MIGRATED = "bass_v25_smooth_migrated"
+        private const val KEY_BASS_V28_50_MIGRATED = "bass_v28_50_lock_migrated"
         private const val KEY_REVERB_LEVEL = "reverb_level"
         private const val KEY_REVERB_ROOM = "reverb_room"
         private const val KEY_SPATIAL_LEVEL = "spatial_level"

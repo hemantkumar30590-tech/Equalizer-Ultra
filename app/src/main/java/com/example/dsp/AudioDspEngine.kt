@@ -47,7 +47,7 @@ class AudioDspEngine(
     private var currentBandsDb: FloatArray = FloatArray(EqPresetEntity.BAND_COUNT) { 0f }
 
     @Volatile
-    private var bassStrength: Int = 25 // 0..100 (Smooth 25% default)
+    private var bassStrength: Int = 50 // 0..100 (Locked 50% default)
 
     @Volatile
     private var reverbAmount: Int = 12 // 0..100
@@ -301,6 +301,27 @@ class AudioDspEngine(
     @Volatile
     private var activeWooferBox: WooferEnclosureType = WooferEnclosureType.PORTED_BASS_REFLEX
 
+    @Volatile
+    private var godTierActive: Boolean = true
+
+    @Volatile
+    private var dualEarMatchNorm: Float = 0.96f
+
+    @Volatile
+    private var multiDriverCrossNorm: Float = 0.95f
+
+    @Volatile
+    private var vocalPocketNorm: Float = 0.94f
+
+    @Volatile
+    private var harmonicMatrixNorm: Float = 0.92f
+
+    @Volatile
+    private var truePeakBrickwallOn: Boolean = true
+
+    @Volatile
+    private var activeMultiDriverArray: MultiDriverHybridArray = MultiDriverHybridArray.GOD_TIER_16_DRIVER_OMEGA
+
     private val _isPlayingTestLoop = MutableStateFlow(false)
     val isPlayingTestLoop: StateFlow<Boolean> = _isPlayingTestLoop.asStateFlow()
 
@@ -455,7 +476,14 @@ class AudioDspEngine(
         kickThumpPunchPct: Int = 90,
         skullBoneDrain: Boolean = true,
         velvetEarCanalSilk: Boolean = true,
-        wooferEnclosure: WooferEnclosureType = WooferEnclosureType.PORTED_BASS_REFLEX
+        wooferEnclosure: WooferEnclosureType = WooferEnclosureType.PORTED_BASS_REFLEX,
+        godTierEnabled: Boolean = true,
+        dualEarMatchPct: Int = 96,
+        multiDriverCrossPct: Int = 95,
+        vocalPocketPct: Int = 94,
+        harmonicMatrixPct: Int = 92,
+        truePeakBrickwall: Boolean = true,
+        multiDriverArray: MultiDriverHybridArray = MultiDriverHybridArray.GOD_TIER_16_DRIVER_OMEGA
     ) {
         neuralBrainwaveMode = brainwaveMode
         radarAzimuthDeg = azimuthDeg.coerceIn(-180f, 180f)
@@ -536,6 +564,13 @@ class AudioDspEngine(
         skullBoneDrainOn = skullBoneDrain
         velvetEarSilkOn = velvetEarCanalSilk
         activeWooferBox = wooferEnclosure
+        godTierActive = godTierEnabled
+        dualEarMatchNorm = (dualEarMatchPct.coerceIn(0, 100) / 100f)
+        multiDriverCrossNorm = (multiDriverCrossPct.coerceIn(0, 100) / 100f)
+        vocalPocketNorm = (vocalPocketPct.coerceIn(0, 100) / 100f)
+        harmonicMatrixNorm = (harmonicMatrixPct.coerceIn(0, 100) / 100f)
+        truePeakBrickwallOn = truePeakBrickwall
+        activeMultiDriverArray = multiDriverArray
     }
 
     fun updateDspState(
@@ -575,7 +610,11 @@ class AudioDspEngine(
             lrTwinVocalPct = (sideTwinProjectionNorm * 100f).roundToInt(),
             earDirectEnabled = earDirectActive,
             zeroBrainPct = (zeroBrainNullNorm * 100f).roundToInt(),
-            wooferBox = activeWooferBox
+            wooferBox = activeWooferBox,
+            godTierEnabled = godTierActive,
+            godTierDualEarPct = (dualEarMatchNorm * 100f).roundToInt(),
+            multiDriverArray = activeMultiDriverArray,
+            truePeakBrickwall = truePeakBrickwallOn
         )
         if (!audioRecordAnalyzer.isCapturing.value) {
             _hardwareStatus.value = globalEffectManager.statusText.value
@@ -930,73 +969,76 @@ class AudioDspEngine(
                         outR = (outR + kalmanAnchorR + chestSlamSub + formantSpotlight + planarCloak + phiTriodeFlux) * mayerWave
                     }
 
-                    // ↔️ L/R Twin-Side Vocal Splitter (Zero-Front Vocal Engine: 0% Front / 50% Left + 50% Right)
-                    if (active && lrTwinVocalActive) {
-                        // 1. 🎯 100% Front-Center Vocal Nulling: subtract shared mono mid vocal from center
-                        val centerNull = midComp * 0.78f * frontCenterNullNorm
-                        // 2. ⏱️ 12ms Haas Stereo Doubler (529 samples @ 44.1kHz) + 6ms Left tap (264 samples)
-                        val haasTapL = delayLineL[(delayIdxL - 264 + delayLineL.size) % delayLineL.size]
-                        val haasTapR = delayLineR[(delayIdxR - 529 + delayLineR.size) % delayLineR.size]
-                        // 3. ↔️ 50% Left + 50% Right Complementary Twin-Side Vocal Projection (±90° ear wings)
-                        val sideWingL = (midComp * 0.62f + haasTapL * 0.34f * haasStereoDoublerNorm + hiComp * 0.24f * lateralPinnaCueNorm) * sideTwinProjectionNorm
-                        val sideWingR = (-midComp * 0.62f + haasTapR * 0.34f * haasStereoDoublerNorm - hiComp * 0.24f * lateralPinnaCueNorm) * sideTwinProjectionNorm
-                        // 4. 🔒 Sub-Bass Center Anchor: keeps 20–120Hz subComp locked in mono center
-                        val subCenterAnchor = if (subBassCenterAnchorOn) subComp * 0.14f else 0f
-                        // 5. ✨ Velvet Side-Vocal Air
-                        val sideAirL = if (velvetSideAirOn) hiComp * 0.16f else 0f
-                        val sideAirR = if (velvetSideAirOn) -hiComp * 0.16f else 0f
+                    // ↔️ L/R Twin-Side Vocal Splitter + 👂 Ear-Direct Zero-Brain + 👑 God-Tier Sovereign Audio OS
+                    // Unified Velvet Headroom Stage (No triple gain stacking or cubic distortion!)
+                    if (active && (lrTwinVocalActive || earDirectActive || godTierActive)) {
+                        val haasTapL = delayLineL[(delayIdxL - 211 + delayLineL.size) % delayLineL.size]
+                        val haasTapR = delayLineR[(delayIdxR - 419 + delayLineR.size) % delayLineR.size]
 
-                        outL = (outL - centerNull) + sideWingL + subCenterAnchor + sideAirL
-                        outR = (outR - centerNull) + sideWingR + subCenterAnchor + sideAirR
-                    }
+                        // 1. 🧠🚫 Smooth Center-Brain Pressure Relief (without phase-cancellation hollowness)
+                        val nullStrength = max(
+                            if (lrTwinVocalActive) frontCenterNullNorm * 0.22f else 0f,
+                            max(
+                                if (earDirectActive) zeroBrainNullNorm * 0.24f else 0f,
+                                if (godTierActive) dualEarMatchNorm * 0.25f else 0f
+                            )
+                        )
+                        val centerRelief = midComp * nullStrength
+                        val skullDrain = if (earDirectActive && skullBoneDrainOn) lpMid * 0.09f else 0f
 
-                    // 👂 Ear-Direct Zero-Brain-Pressure & 7-Woofer Box Engine (100% Kaan Me • 0% Dimag Pressure)
-                    if (active && earDirectActive) {
-                        // 1. 🧠🚫 Zero-Brain Forehead Phantom Center Nuller (cancels 630–1.25kHz & 3.15kHz cranial pressure)
-                        val brainPressureDrain = midComp * 0.42f * zeroBrainNullNorm
-                        // 2. 🦴 Skull-Bone 180Hz Boom Drain (removes temporal-bone muddy upper-bass vibration)
-                        val skullDrain = if (skullBoneDrainOn) lpMid * 0.19f else 0f
-                        // 3. 👂↔️👂 Left & Right Outer-Ear Pinna Cup Coupling (9.5ms = 419 samples, 4.8ms = 211 samples)
-                        val pinnaTapL = delayLineL[(delayIdxL - 211 + delayLineL.size) % delayLineL.size]
-                        val pinnaTapR = delayLineR[(delayIdxR - 419 + delayLineR.size) % delayLineR.size]
-                        val earCupL = (midComp * 0.38f + pinnaTapL * 0.28f + hiComp * 0.22f) * earDirectPinnaNorm
-                        val earCupR = (-midComp * 0.38f + pinnaTapR * 0.28f - hiComp * 0.22f) * earDirectPinnaNorm
-                        // 4. 📦 7-Woofer Enclosure Sub-Rumble (20–50Hz) & Kick-Punch (60–110Hz) Ear-Lobe Coupling
+                        // 2. 👂↔️👂 Smooth Left & Right Kaan-Direct Pinna Coupling
+                        val earWingScale = max(
+                            if (lrTwinVocalActive) sideTwinProjectionNorm * 0.20f else 0f,
+                            max(
+                                if (earDirectActive) earDirectPinnaNorm * 0.22f else 0f,
+                                if (godTierActive) dualEarMatchNorm * 0.24f else 0f
+                            )
+                        )
+                        val earCupL = (midComp * 0.45f + haasTapL * 0.30f + hiComp * 0.18f) * earWingScale
+                        val earCupR = (-midComp * 0.45f + haasTapR * 0.30f - hiComp * 0.18f) * earWingScale
+
+                        // 3. 🌊 Smooth 50% Locked Sub-Bass & Woofer Punch (Clean linear sub without clipping)
                         val boxBoost = when (activeWooferBox) {
-                            WooferEnclosureType.PORTED_BASS_REFLEX -> 1.18f
+                            WooferEnclosureType.PORTED_BASS_REFLEX -> 1.06f
                             WooferEnclosureType.SEALED_ACOUSTIC_BOX -> 0.96f
-                            WooferEnclosureType.PASSIVE_RADIATOR_TWIN -> 1.24f
-                            WooferEnclosureType.BANDPASS_6TH_ORDER_SPL -> 1.32f
-                            WooferEnclosureType.FOLDED_HORN_SCOOP -> 1.28f
-                            WooferEnclosureType.TRANSMISSION_LINE_LAB -> 1.15f
-                            WooferEnclosureType.ISOBARIC_PUSH_PULL -> 1.20f
+                            WooferEnclosureType.PASSIVE_RADIATOR_TWIN -> 1.08f
+                            WooferEnclosureType.BANDPASS_6TH_ORDER_SPL -> 1.12f
+                            WooferEnclosureType.FOLDED_HORN_SCOOP -> 1.10f
+                            WooferEnclosureType.TRANSMISSION_LINE_LAB -> 1.05f
+                            WooferEnclosureType.ISOBARIC_PUSH_PULL -> 1.08f
                         }
-                        val earSubMassage = (subComp * 0.22f * subRumbleNorm + (kickEnv.toFloat() * subComp * 0.24f * kickPunchNorm)) * boxBoost
-                        // 5. ✨ Velvet Ear-Canal Silk (smooths high-frequency glare)
-                        val earSilk = if (velvetEarSilkOn && abs(hiComp) > 0.22f) -hiComp * 0.16f else 0f
+                        val subWeight = if (godTierActive) 0.16f * multiDriverCrossNorm else if (earDirectActive) 0.14f * subRumbleNorm else 0.10f
+                        val cleanSub = (subComp * subWeight + (kickEnv.toFloat() * subComp * 0.10f)) * boxBoost
 
-                        outL = (outL - brainPressureDrain - skullDrain) + earCupL + earSubMassage + earSilk
-                        outR = (outR - brainPressureDrain - skullDrain) + earCupR + earSubMassage + earSilk
+                        // 4. ⚡ 2ms Vocal Auto-Pocket & Anti-Sibilance Velvet Silk (Tames harsh highs so 0% khirich-khirich occurs)
+                        val vocalPocketLift = if (godTierActive) {
+                            (midComp * 0.14f - lpSub * (abs(midComp) * 0.10f)) * vocalPocketNorm
+                        } else 0f
+                        val velvetAntiScratch = if (abs(hiComp) > 0.18f) -hiComp * 0.18f else hiComp * 0.06f
+
+                        outL = ((outL - centerRelief - skullDrain) + earCupL + cleanSub + vocalPocketLift + velvetAntiScratch) * 0.78f
+                        outR = ((outR - centerRelief - skullDrain) + earCupR + cleanSub + vocalPocketLift + velvetAntiScratch) * 0.78f
                     }
 
-                    // Analog Vacuum Tube / Tape Harmonic Saturation
-                    if (analogDriveNorm > 0.02f) {
-                        val drive = 1f + analogDriveNorm * 1.15f
-                        outL = tanh((outL * drive + 0.04f * analogDriveNorm * outL * outL).toDouble()).toFloat()
-                        outR = tanh((outR * drive + 0.04f * analogDriveNorm * outR * outR).toDouble()).toFloat()
+                    // Gentle Analog Tube Warmth (Only when explicitly enabled, zero asymmetric square-wave DC offset)
+                    if (analogDriveNorm > 0.05f && !godTierActive) {
+                        val drive = 1f + analogDriveNorm * 0.45f
+                        outL = (tanh((outL * drive).toDouble()).toFloat() * 0.92f)
+                        outR = (tanh((outR * drive).toDouble()).toFloat() * 0.92f)
                     }
 
-                    delayLineL[delayIdxL] = eqSignal + delayedL * (0.35f * reverbMix)
-                    delayLineR[delayIdxR] = eqSignal + delayedR * (0.38f * reverbMix)
+                    delayLineL[delayIdxL] = eqSignal + delayedL * (0.28f * reverbMix)
+                    delayLineR[delayIdxR] = eqSignal + delayedR * (0.30f * reverbMix)
                     delayIdxL = (delayIdxL + 1) % delayLineL.size
                     delayIdxR = (delayIdxR + 1) % delayLineR.size
 
-                    if (softLimiterEnabled) {
-                        outL = tanh(outL.toDouble()).toFloat()
-                        outR = tanh(outR.toDouble()).toFloat()
+                    // 🛡️ Velvet True-Peak Headroom Ceiling (-0.6 dBFS = 0.933f) — Zero hard clipping, zero crackling
+                    if (softLimiterEnabled || truePeakBrickwallOn) {
+                        outL = (tanh((outL * 0.85f).toDouble()).toFloat() * 0.933f)
+                        outR = (tanh((outR * 0.85f).toDouble()).toFloat() * 0.933f)
                     } else {
-                        outL = outL.coerceIn(-1f, 1f)
-                        outR = outR.coerceIn(-1f, 1f)
+                        outL = (outL * 0.85f).coerceIn(-0.95f, 0.95f)
+                        outR = (outR * 0.85f).coerceIn(-0.95f, 0.95f)
                     }
 
                     maxPeak = max(maxPeak, max(abs(outL), abs(outR)))
