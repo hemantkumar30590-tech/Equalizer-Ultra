@@ -98,7 +98,16 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
     @Volatile
     private var lrTwinVocalStrength: Int = 96 // 0..100
 
-    private val _statusText = MutableStateFlow("Global YouTube & System DSP Active (31-Band + ↔️ L/R Twin-Vocal Split)")
+    @Volatile
+    private var earDirectZeroBrainActive: Boolean = true
+
+    @Volatile
+    private var zeroBrainPressureStrength: Int = 98 // 0..100
+
+    @Volatile
+    private var wooferBoxType: WooferEnclosureType = WooferEnclosureType.PORTED_BASS_REFLEX
+
+    private val _statusText = MutableStateFlow("Global YouTube & System DSP Active (31-Band + 👂 Kaan-Direct 0% Dimag + ↔️ L/R Vocal)")
     val statusText: StateFlow<String> = _statusText.asStateFlow()
 
     private val _isExternalMediaPlaying = MutableStateFlow(false)
@@ -326,7 +335,10 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         preamp: Float,
         limiter: Boolean,
         lrTwinVocalEnabled: Boolean = lrTwinVocalSplitterActive,
-        lrTwinVocalPct: Int = lrTwinVocalStrength
+        lrTwinVocalPct: Int = lrTwinVocalStrength,
+        earDirectEnabled: Boolean = earDirectZeroBrainActive,
+        zeroBrainPct: Int = zeroBrainPressureStrength,
+        wooferBox: WooferEnclosureType = wooferBoxType
     ) {
         isMasterEnabled = enabled
         val interpolated = EqPresetEntity.interpolateTo31Bands(bandsDb)
@@ -343,6 +355,9 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         softLimiterEnabled = limiter
         lrTwinVocalSplitterActive = lrTwinVocalEnabled
         lrTwinVocalStrength = lrTwinVocalPct.coerceIn(0, 100)
+        earDirectZeroBrainActive = earDirectEnabled
+        zeroBrainPressureStrength = zeroBrainPct.coerceIn(0, 100)
+        wooferBoxType = wooferBox
 
         ensureSessionHooked(0, "GlobalOutputMix")
         applyParametersToAllSessions()
@@ -360,6 +375,9 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         val limit = softLimiterEnabled
         val twinVocalOn = lrTwinVocalSplitterActive && lrTwinVocalStrength > 0
         val twinVocalNorm = if (twinVocalOn) (lrTwinVocalStrength / 100f).coerceIn(0f, 1f) else 0f
+        val earDirectOn = earDirectZeroBrainActive && zeroBrainPressureStrength > 0
+        val zeroBrainNorm = if (earDirectOn) (zeroBrainPressureStrength / 100f).coerceIn(0f, 1f) else 0f
+        val wooferOffsets = wooferBoxType.bandOffsets9
 
         // Sub-bass extra shelf in dB from the Bass Boost knob across 20Hz..125Hz (bands 0..8)
         val maxSubBoostDb = if (active) (bass / 100f) * 5.8f else 0f
@@ -368,7 +386,7 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         val spatialAirDb = if (active) (spatial / 100f) * 3.5f else 0f
 
         sessionBundles.values.forEach { bundle ->
-            // 1. Apply 31-band EQ + Bass Boost + Spatial + L/R Twin-Vocal Split to DynamicsProcessing (API 28+)
+            // 1. Apply 31-band EQ + Bass Boost + 7-Woofer Box + Ear-Direct Zero-Brain + L/R Twin-Vocal Split to DynamicsProcessing (API 28+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 runCatching {
                     bundle.dynamicsProcessing?.let { dp ->
@@ -376,40 +394,55 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
                         val cutoffHz = EqPresetEntity.FREQUENCY_HZ
                         val bandCount = EqPresetEntity.BAND_COUNT
                         for (b in 0 until bandCount) {
+                            val wooferShapeDb = if (active && earDirectOn && b <= 8) {
+                                wooferOffsets.getOrElse(b) { 0f } * 0.45f * (bass / 25f).coerceIn(0.4f, 1.4f)
+                            } else 0f
                             val extraBass = if (b <= 8) {
-                                maxSubBoostDb * (1f - (b / 10f))
+                                maxSubBoostDb * (1f - (b / 10f)) + wooferShapeDb
                             } else 0f
                             val extraAir = if (b >= 23) spatialAirDb else 0f
-                            val baseBandDb = if (active) {
-                                (bands.getOrElse(b) { 0f } + extraBass + extraAir).coerceIn(-18f, 18f)
+
+                            // 🦴 Skull-Bone 160–250Hz Drain & 🧠🚫 Zero-Brain Center Pressure Relief
+                            val antiBrainCutDb = if (active && earDirectOn) {
+                                when (b) {
+                                    9, 10 -> -2.6f * zeroBrainNorm   // 160–200Hz skull-bone resonance drain
+                                    11 -> -1.4f * zeroBrainNorm      // 250Hz anti-mud relief
+                                    15, 16 -> -2.4f * zeroBrainNorm  // 630–800Hz forehead center phantom null
+                                    22 -> -2.0f * zeroBrainNorm      // 3.15kHz cranial nerve glare cut
+                                    else -> 0f
+                                }
                             } else 0f
 
-                            if (active && twinVocalOn && b >= 11) {
-                                // ↔️ L/R Twin-Side Vocal Splitter (0% Front • 50% Left + 50% Right):
+                            val baseBandDb = if (active) {
+                                (bands.getOrElse(b) { 0f } + extraBass + extraAir + antiBrainCutDb).coerceIn(-18f, 18f)
+                            } else 0f
+
+                            if (active && (twinVocalOn || earDirectOn) && b >= 11) {
+                                // ↔️ L/R Twin-Side Vocal Splitter + 👂 Ear-Direct Outer-Pinna Coupling:
                                 // Sub-bass (b <= 10) stays 100% center-locked (Channel 0 == Channel 1).
-                                // Vocal & presence bands (b in 11..30) receive complementary Left/Right
-                                // stereo comb-matrix offsets + front-center nasal scoop so mono vocals
-                                // decorrelate into 50% Left & 50% Right ear-wings instead of hitting from front!
+                                // Bands 11..30 receive complementary Left/Right Ear-Pinna HRTF & stereo comb-matrix
+                                // offsets so 0% sound sits inside the brain/skull and 100% hugs the Left & Right ears!
+                                val combinedSplitNorm = max(twinVocalNorm, zeroBrainNorm)
                                 val centerNotch = when (b) {
-                                    14, 15, 16 -> -2.8f * twinVocalNorm // 500–800Hz dead-center frontal null
-                                    17, 18 -> -2.4f * twinVocalNorm     // 1k–1.25kHz front nasal projection cut
-                                    25 -> -2.0f * twinVocalNorm         // 6.3kHz frontal pinna cue cut
+                                    14, 15, 16 -> -2.8f * combinedSplitNorm // 500–800Hz dead-center frontal/skull null
+                                    17, 18 -> -2.4f * combinedSplitNorm     // 1k–1.25kHz in-head mono lock cut
+                                    25 -> -2.2f * combinedSplitNorm         // 6.3kHz frontal pinna cue cut
                                     else -> 0f
                                 }
                                 val sideWingLift = when (b) {
-                                    11, 12 -> 1.8f * twinVocalNorm      // 250–315Hz warm side vocal body
-                                    19, 20, 21 -> 2.6f * twinVocalNorm  // 1.6k–2.5kHz wide L/R vocal wings
-                                    23, 24 -> 2.4f * twinVocalNorm      // 4k–5kHz lateral presence
-                                    26, 27, 28 -> 2.8f * twinVocalNorm  // 8k–12.5kHz ±90° lateral pinna air
+                                    11, 12, 13 -> 2.2f * combinedSplitNorm  // 250–400Hz warm Left/Right outer-ear cup cushion
+                                    19, 20, 21 -> 3.0f * combinedSplitNorm  // 1.6k–2.5kHz direct Left/Right ear-canal entrance lock
+                                    23, 24 -> 2.6f * combinedSplitNorm      // 4k–5kHz lateral pinna concha rim focus
+                                    26, 27, 28 -> 3.2f * combinedSplitNorm  // 8k–12.5kHz ±90° outer-ear velvet air
                                     else -> 0f
                                 }
-                                // Complementary L/R stereo comb decorrelation across vocal formants (b in 11..28)
+                                // Complementary L/R stereo comb decorrelation across vocal & pinna formants (b in 11..28)
                                 val polarity = if (b % 2 == 0) 1f else -1f
                                 val combSpreadDb = when (b) {
-                                    in 11..13 -> 3.4f * twinVocalNorm
-                                    in 14..22 -> 4.8f * twinVocalNorm
-                                    in 23..28 -> 3.8f * twinVocalNorm
-                                    else -> 2.0f * twinVocalNorm
+                                    in 11..13 -> 3.8f * combinedSplitNorm
+                                    in 14..22 -> 5.2f * combinedSplitNorm
+                                    in 23..28 -> 4.2f * combinedSplitNorm
+                                    else -> 2.2f * combinedSplitNorm
                                 }
                                 val leftTotalDb = (baseBandDb + centerNotch + sideWingLift + polarity * combSpreadDb)
                                     .coerceIn(-18f, 18f)
@@ -435,44 +468,45 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
                         }
 
                         // Boost low MBC postGain smoothly when Bass Boost is turned up,
-                        // and apply dynamic Haas L/R attack/release offset on vocal MBC bands when Twin-Vocal is ON!
+                        // and apply dynamic Haas L/R attack/release offset on vocal MBC bands when Twin-Vocal or Ear-Direct is ON!
                         val mbcCutoffs = floatArrayOf(85f, 220f, 750f, 2500f, 7000f, 20000f)
+                        val earSplitNorm = max(twinVocalNorm, zeroBrainNorm)
                         for (m in 0 until 6) {
                             val mbcPostGain = when {
                                 !active -> 0f
                                 m == 0 -> (bass / 100f) * 3.0f
-                                m == 1 -> (bass / 100f) * 1.5f
-                                m == 3 && twinVocalOn -> 2.4f * twinVocalNorm // 750Hz–2.5kHz L/R vocal wing lift
-                                m >= 4 -> (spatial / 100f) * 2.0f + (if (twinVocalOn) 1.5f * twinVocalNorm else 0f)
+                                m == 1 -> (bass / 100f) * 1.2f - (if (earDirectOn) 1.0f * zeroBrainNorm else 0f) // Drains 85-220Hz skull boom
+                                m == 3 && (twinVocalOn || earDirectOn) -> 2.6f * earSplitNorm // 750Hz–2.5kHz L/R ear-entrance lift
+                                m >= 4 -> (spatial / 100f) * 2.0f + (if (twinVocalOn || earDirectOn) 1.8f * earSplitNorm else 0f)
                                 else -> 0f
                             }
-                            if (active && twinVocalOn && m in 2..4) {
-                                // Dynamic Haas L/R Micro-Timing Split on vocal bands (Left fast 3ms attack, Right 14ms attack)
+                            if (active && (twinVocalOn || earDirectOn) && m in 2..4) {
+                                // Dynamic Haas L/R Micro-Timing Split on ear/vocal bands (Left fast 2.8ms attack, Right 14ms attack)
                                 val mbcLeft = DynamicsProcessing.MbcBand(
                                     true,
                                     mbcCutoffs[m],
-                                    if (m % 2 == 0) 3.0f else 13.5f,
-                                    if (m % 2 == 0) 65f else 95f,
+                                    if (m % 2 == 0) 2.8f else 14.0f,
+                                    if (m % 2 == 0) 62f else 98f,
                                     1.8f,
                                     -18f,
                                     6f,
                                     -65f,
                                     1.0f,
                                     0f,
-                                    mbcPostGain + (if (m % 2 == 0) 1.2f * twinVocalNorm else -0.8f * twinVocalNorm)
+                                    mbcPostGain + (if (m % 2 == 0) 1.4f * earSplitNorm else -1.0f * earSplitNorm)
                                 )
                                 val mbcRight = DynamicsProcessing.MbcBand(
                                     true,
                                     mbcCutoffs[m],
-                                    if (m % 2 == 0) 13.5f else 3.0f,
-                                    if (m % 2 == 0) 95f else 65f,
+                                    if (m % 2 == 0) 14.0f else 2.8f,
+                                    if (m % 2 == 0) 98f else 62f,
                                     1.8f,
                                     -18f,
                                     6f,
                                     -65f,
                                     1.0f,
                                     0f,
-                                    mbcPostGain + (if (m % 2 == 0) -0.8f * twinVocalNorm else 1.2f * twinVocalNorm)
+                                    mbcPostGain + (if (m % 2 == 0) -1.0f * earSplitNorm else 1.4f * earSplitNorm)
                                 )
                                 dp.setMbcBandByChannelIndex(0, m, mbcLeft)
                                 dp.setMbcBandByChannelIndex(1, m, mbcRight)
@@ -541,10 +575,11 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
                 }
             }
 
-            // 4. Apply to Hardware Virtualizer (Spatial 3D + L/R Twin-Vocal Wide Stage)
+            // 4. Apply to Hardware Virtualizer (Spatial 3D + Ear-Direct / L/R Twin-Vocal Wide Stage)
             runCatching {
                 bundle.virtualizer?.let { virt ->
-                    val effectiveSpatial = if (twinVocalOn) max(spatial, (88 + twinVocalNorm * 12f).roundToInt()) else spatial
+                    val earSplitNorm = max(twinVocalNorm, zeroBrainNorm)
+                    val effectiveSpatial = if (twinVocalOn || earDirectOn) max(spatial, (90 + earSplitNorm * 10f).roundToInt()) else spatial
                     virt.enabled = active && effectiveSpatial > 0
                     if (virt.strengthSupported) {
                         virt.setStrength((if (active) effectiveSpatial * 10 else 0).coerceIn(0, 1000).toShort())
@@ -588,18 +623,19 @@ class GlobalAudioEffectManager private constructor(private val appContext: Conte
         val hasEq = sessionBundles[0]?.equalizer != null
         val externalPlaying = _isExternalMediaPlaying.value
         val count = sessionBundles.size
-        val twinTag = if (lrTwinVocalSplitterActive) " • ↔️ L/R Vocal Split ON" else ""
+        val earTag = if (earDirectZeroBrainActive) " • 👂 Kaan-Direct (0% Dimag) • ${wooferBoxType.badge}" else ""
+        val twinTag = if (lrTwinVocalSplitterActive) " • ↔️ L/R Vocal" else ""
 
         _statusText.value = when {
             !isMasterEnabled -> "DSP Bypassed • Tap Power to Enable on YouTube & Apps"
             externalPlaying && hasDp ->
-                "YouTube / Media Hooked! (31-Band$twinTag • $count Session${if (count > 1) "s" else ""})"
+                "YouTube / Media Hooked! (31-Band$earTag$twinTag • $count Session${if (count > 1) "s" else ""})"
             hasDp ->
-                "Global YouTube & System Hook Active (31-Band$twinTag)"
+                "Global YouTube & System Hook Active (31-Band$earTag$twinTag)"
             hasEq ->
-                "Global Hardware AudioFX Hook Active ($count Session${if (count > 1) "s" else ""}$twinTag)"
+                "Global Hardware AudioFX Hook Active ($count Session${if (count > 1) "s" else ""}$earTag$twinTag)"
             else ->
-                "System DSP Active • Ready for YouTube & Media Apps$twinTag"
+                "System DSP Active • Ready for YouTube & Media Apps$earTag$twinTag"
         }
     }
 

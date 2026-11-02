@@ -277,6 +277,30 @@ class AudioDspEngine(
     @Volatile
     private var velvetSideAirOn: Boolean = true
 
+    @Volatile
+    private var earDirectActive: Boolean = true
+
+    @Volatile
+    private var zeroBrainNullNorm: Float = 0.98f
+
+    @Volatile
+    private var earDirectPinnaNorm: Float = 0.98f
+
+    @Volatile
+    private var subRumbleNorm: Float = 0.88f
+
+    @Volatile
+    private var kickPunchNorm: Float = 0.90f
+
+    @Volatile
+    private var skullBoneDrainOn: Boolean = true
+
+    @Volatile
+    private var velvetEarSilkOn: Boolean = true
+
+    @Volatile
+    private var activeWooferBox: WooferEnclosureType = WooferEnclosureType.PORTED_BASS_REFLEX
+
     private val _isPlayingTestLoop = MutableStateFlow(false)
     val isPlayingTestLoop: StateFlow<Boolean> = _isPlayingTestLoop.asStateFlow()
 
@@ -423,7 +447,15 @@ class AudioDspEngine(
         haasStereoDoublerPct: Int = 92,
         lateralPinnaCuePct: Int = 94,
         subBassCenterAnchor: Boolean = true,
-        velvetSideAir: Boolean = true
+        velvetSideAir: Boolean = true,
+        earDirectEnabled: Boolean = true,
+        zeroBrainPressurePct: Int = 98,
+        earDirectPinnaPct: Int = 98,
+        subRumbleEarPct: Int = 88,
+        kickThumpPunchPct: Int = 90,
+        skullBoneDrain: Boolean = true,
+        velvetEarCanalSilk: Boolean = true,
+        wooferEnclosure: WooferEnclosureType = WooferEnclosureType.PORTED_BASS_REFLEX
     ) {
         neuralBrainwaveMode = brainwaveMode
         radarAzimuthDeg = azimuthDeg.coerceIn(-180f, 180f)
@@ -496,6 +528,14 @@ class AudioDspEngine(
         lateralPinnaCueNorm = (lateralPinnaCuePct.coerceIn(0, 100) / 100f)
         subBassCenterAnchorOn = subBassCenterAnchor
         velvetSideAirOn = velvetSideAir
+        earDirectActive = earDirectEnabled
+        zeroBrainNullNorm = (zeroBrainPressurePct.coerceIn(0, 100) / 100f)
+        earDirectPinnaNorm = (earDirectPinnaPct.coerceIn(0, 100) / 100f)
+        subRumbleNorm = (subRumbleEarPct.coerceIn(0, 100) / 100f)
+        kickPunchNorm = (kickThumpPunchPct.coerceIn(0, 100) / 100f)
+        skullBoneDrainOn = skullBoneDrain
+        velvetEarSilkOn = velvetEarCanalSilk
+        activeWooferBox = wooferEnclosure
     }
 
     fun updateDspState(
@@ -532,7 +572,10 @@ class AudioDspEngine(
             preamp = preampDb,
             limiter = softLimiterEnabled,
             lrTwinVocalEnabled = lrTwinVocalActive,
-            lrTwinVocalPct = (sideTwinProjectionNorm * 100f).roundToInt()
+            lrTwinVocalPct = (sideTwinProjectionNorm * 100f).roundToInt(),
+            earDirectEnabled = earDirectActive,
+            zeroBrainPct = (zeroBrainNullNorm * 100f).roundToInt(),
+            wooferBox = activeWooferBox
         )
         if (!audioRecordAnalyzer.isCapturing.value) {
             _hardwareStatus.value = globalEffectManager.statusText.value
@@ -905,6 +948,35 @@ class AudioDspEngine(
 
                         outL = (outL - centerNull) + sideWingL + subCenterAnchor + sideAirL
                         outR = (outR - centerNull) + sideWingR + subCenterAnchor + sideAirR
+                    }
+
+                    // 👂 Ear-Direct Zero-Brain-Pressure & 7-Woofer Box Engine (100% Kaan Me • 0% Dimag Pressure)
+                    if (active && earDirectActive) {
+                        // 1. 🧠🚫 Zero-Brain Forehead Phantom Center Nuller (cancels 630–1.25kHz & 3.15kHz cranial pressure)
+                        val brainPressureDrain = midComp * 0.42f * zeroBrainNullNorm
+                        // 2. 🦴 Skull-Bone 180Hz Boom Drain (removes temporal-bone muddy upper-bass vibration)
+                        val skullDrain = if (skullBoneDrainOn) lpMid * 0.19f else 0f
+                        // 3. 👂↔️👂 Left & Right Outer-Ear Pinna Cup Coupling (9.5ms = 419 samples, 4.8ms = 211 samples)
+                        val pinnaTapL = delayLineL[(delayIdxL - 211 + delayLineL.size) % delayLineL.size]
+                        val pinnaTapR = delayLineR[(delayIdxR - 419 + delayLineR.size) % delayLineR.size]
+                        val earCupL = (midComp * 0.38f + pinnaTapL * 0.28f + hiComp * 0.22f) * earDirectPinnaNorm
+                        val earCupR = (-midComp * 0.38f + pinnaTapR * 0.28f - hiComp * 0.22f) * earDirectPinnaNorm
+                        // 4. 📦 7-Woofer Enclosure Sub-Rumble (20–50Hz) & Kick-Punch (60–110Hz) Ear-Lobe Coupling
+                        val boxBoost = when (activeWooferBox) {
+                            WooferEnclosureType.PORTED_BASS_REFLEX -> 1.18f
+                            WooferEnclosureType.SEALED_ACOUSTIC_BOX -> 0.96f
+                            WooferEnclosureType.PASSIVE_RADIATOR_TWIN -> 1.24f
+                            WooferEnclosureType.BANDPASS_6TH_ORDER_SPL -> 1.32f
+                            WooferEnclosureType.FOLDED_HORN_SCOOP -> 1.28f
+                            WooferEnclosureType.TRANSMISSION_LINE_LAB -> 1.15f
+                            WooferEnclosureType.ISOBARIC_PUSH_PULL -> 1.20f
+                        }
+                        val earSubMassage = (subComp * 0.22f * subRumbleNorm + (kickEnv.toFloat() * subComp * 0.24f * kickPunchNorm)) * boxBoost
+                        // 5. ✨ Velvet Ear-Canal Silk (smooths high-frequency glare)
+                        val earSilk = if (velvetEarSilkOn && abs(hiComp) > 0.22f) -hiComp * 0.16f else 0f
+
+                        outL = (outL - brainPressureDrain - skullDrain) + earCupL + earSubMassage + earSilk
+                        outR = (outR - brainPressureDrain - skullDrain) + earCupR + earSubMassage + earSilk
                     }
 
                     // Analog Vacuum Tube / Tape Harmonic Saturation

@@ -425,7 +425,33 @@ fun EqultraScreen(
                         onUpdateHaasStereoDoubler = viewModel::updateHaasStereoDoublerPercent,
                         onUpdateLateralPinnaCue = viewModel::updateLateralPinnaCuePercent,
                         onToggleSubBassCenterAnchor = viewModel::toggleSubBassCenterAnchor,
-                        onToggleVelvetSideAir = viewModel::toggleVelvetSideAir
+                        onToggleVelvetSideAir = viewModel::toggleVelvetSideAir,
+                        onSelectEarDirectMode = { mode ->
+                            viewModel.setEarDirectMode(mode)
+                            Toast.makeText(context, "Kaan-Direct Mode: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onToggleEarDirectSwitch = {
+                            viewModel.toggleEarDirectZeroBrain()
+                            Toast.makeText(
+                                context,
+                                if (uiState.earDirectMode == com.example.dsp.EarDirectZeroBrainMode.OFF) {
+                                    "👂 Kaan-Direct Zero-Dimag Engine ON (100% Kaan • 0% Dimag)"
+                                } else {
+                                    "👂 Kaan-Direct Zero-Dimag Engine OFF"
+                                },
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        },
+                        onSelectWooferBox = { box ->
+                            viewModel.setWooferEnclosureType(box)
+                            Toast.makeText(context, "Woofer Box: ${box.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdateZeroBrainPressure = viewModel::updateZeroBrainPressurePercent,
+                        onUpdateEarDirectPinna = viewModel::updateEarDirectPinnaPercent,
+                        onUpdateSubRumbleEar = viewModel::updateSubRumbleEarPercent,
+                        onUpdateKickThumpPunch = viewModel::updateKickThumpPunchPercent,
+                        onToggleSkullBoneDrain = viewModel::toggleSkullBoneDrain,
+                        onToggleVelvetEarCanalSilk = viewModel::toggleVelvetEarCanalSilk
                     )
 
                     1 -> BassAndSpatialDspTab(
@@ -608,7 +634,33 @@ fun EqultraScreen(
                         onUpdateHaasStereoDoubler = viewModel::updateHaasStereoDoublerPercent,
                         onUpdateLateralPinnaCue = viewModel::updateLateralPinnaCuePercent,
                         onToggleSubBassCenterAnchor = viewModel::toggleSubBassCenterAnchor,
-                        onToggleVelvetSideAir = viewModel::toggleVelvetSideAir
+                        onToggleVelvetSideAir = viewModel::toggleVelvetSideAir,
+                        onSelectEarDirectMode = { mode ->
+                            viewModel.setEarDirectMode(mode)
+                            Toast.makeText(context, "Kaan-Direct Mode: ${mode.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onToggleEarDirectSwitch = {
+                            viewModel.toggleEarDirectZeroBrain()
+                            Toast.makeText(
+                                context,
+                                if (uiState.earDirectMode == com.example.dsp.EarDirectZeroBrainMode.OFF) {
+                                    "👂 Kaan-Direct Zero-Dimag Engine ON (100% Kaan • 0% Dimag)"
+                                } else {
+                                    "👂 Kaan-Direct Zero-Dimag Engine OFF"
+                                },
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        },
+                        onSelectWooferBox = { box ->
+                            viewModel.setWooferEnclosureType(box)
+                            Toast.makeText(context, "Woofer Box: ${box.title}", Toast.LENGTH_SHORT).show()
+                        },
+                        onUpdateZeroBrainPressure = viewModel::updateZeroBrainPressurePercent,
+                        onUpdateEarDirectPinna = viewModel::updateEarDirectPinnaPercent,
+                        onUpdateSubRumbleEar = viewModel::updateSubRumbleEarPercent,
+                        onUpdateKickThumpPunch = viewModel::updateKickThumpPunchPercent,
+                        onToggleSkullBoneDrain = viewModel::toggleSkullBoneDrain,
+                        onToggleVelvetEarCanalSilk = viewModel::toggleVelvetEarCanalSilk
                     )
 
                     2 -> DevicePresetsTab(
@@ -998,6 +1050,21 @@ fun EqultraScreen(
             onUpdateLateralPinnaCue = viewModel::updateLateralPinnaCuePercent,
             onToggleSubBassCenterAnchor = viewModel::toggleSubBassCenterAnchor,
             onToggleVelvetSideAir = viewModel::toggleVelvetSideAir,
+            onSelectEarDirectMode = { mode ->
+                viewModel.setEarDirectMode(mode)
+                Toast.makeText(context, "Kaan-Direct Mode: ${mode.title}", Toast.LENGTH_SHORT).show()
+            },
+            onToggleEarDirectSwitch = viewModel::toggleEarDirectZeroBrain,
+            onSelectWooferBox = { box ->
+                viewModel.setWooferEnclosureType(box)
+                Toast.makeText(context, "Woofer Box: ${box.title}", Toast.LENGTH_SHORT).show()
+            },
+            onUpdateZeroBrainPressure = viewModel::updateZeroBrainPressurePercent,
+            onUpdateEarDirectPinna = viewModel::updateEarDirectPinnaPercent,
+            onUpdateSubRumbleEar = viewModel::updateSubRumbleEarPercent,
+            onUpdateKickThumpPunch = viewModel::updateKickThumpPunchPercent,
+            onToggleSkullBoneDrain = viewModel::toggleSkullBoneDrain,
+            onToggleVelvetEarCanalSilk = viewModel::toggleVelvetEarCanalSilk,
             onDismiss = { viewModel.setFutureLabDialogVisible(false) }
         )
     }
@@ -1059,7 +1126,7 @@ private fun StudioTopHeader(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "v2.6 PRO",
+                                text = "v2.7 PRO",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = AmoledBlack,
                                 fontWeight = FontWeight.ExtraBold,
@@ -1069,17 +1136,17 @@ private fun StudioTopHeader(
                             )
                             Spacer(modifier = Modifier.width(5.dp))
                             Text(
-                                text = "↔️ 50%L/50%R",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                color = Color.White,
+                                text = "👂 100% KAAN • 0% DIMAG",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
+                                color = AmoledBlack,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier
-                                    .background(NeonMagenta, RoundedCornerShape(4.dp))
+                                    .background(SignalEmerald, RoundedCornerShape(4.dp))
                                     .padding(horizontal = 5.dp, vertical = 2.dp)
                             )
                         }
                         Text(
-                            text = "↔️ 0% FRONT VOCAL • 🔒 25% BASS LOCK • ${activePresetName.uppercase(Locale.US)}",
+                            text = "👂 KAAN-DIRECT • 🧠🚫 0% DIMAG • 🔒 25% BASS LOCK • ${activePresetName.uppercase(Locale.US)}",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                             color = if (isEnabled) SignalEmerald else TextMuted,
                             maxLines = 1,
@@ -1294,7 +1361,16 @@ private fun TenBandEqualizerTab(
     onUpdateHaasStereoDoubler: (Int) -> Unit = {},
     onUpdateLateralPinnaCue: (Int) -> Unit = {},
     onToggleSubBassCenterAnchor: () -> Unit = {},
-    onToggleVelvetSideAir: () -> Unit = {}
+    onToggleVelvetSideAir: () -> Unit = {},
+    onSelectEarDirectMode: (com.example.dsp.EarDirectZeroBrainMode) -> Unit = {},
+    onToggleEarDirectSwitch: () -> Unit = {},
+    onSelectWooferBox: (com.example.dsp.WooferEnclosureType) -> Unit = {},
+    onUpdateZeroBrainPressure: (Int) -> Unit = {},
+    onUpdateEarDirectPinna: (Int) -> Unit = {},
+    onUpdateSubRumbleEar: (Int) -> Unit = {},
+    onUpdateKickThumpPunch: (Int) -> Unit = {},
+    onToggleSkullBoneDrain: () -> Unit = {},
+    onToggleVelvetEarCanalSilk: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -1315,6 +1391,22 @@ private fun TenBandEqualizerTab(
             stereoVuLevels = stereoVuLevels,
             systemVolumePercent = systemVolumePercent,
             isSystemAudioActive = isSystemAudioActive
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // v2.7 👂 EAR-DIRECT ZERO-BRAIN-PRESSURE & 7-WOOFER BOX ENGINE ("KAAN ME SOUND, NA KI DIMAG ME")
+        EarDirectZeroBrainAndWooferCard(
+            uiState = uiState,
+            onSelectEarDirectMode = onSelectEarDirectMode,
+            onToggleMainSwitch = onToggleEarDirectSwitch,
+            onSelectWooferBox = onSelectWooferBox,
+            onUpdateZeroBrainPressure = onUpdateZeroBrainPressure,
+            onUpdateEarDirectPinna = onUpdateEarDirectPinna,
+            onUpdateSubRumbleEar = onUpdateSubRumbleEar,
+            onUpdateKickThumpPunch = onUpdateKickThumpPunch,
+            onToggleSkullBoneDrain = onToggleSkullBoneDrain,
+            onToggleVelvetEarCanalSilk = onToggleVelvetEarCanalSilk
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -1743,7 +1835,16 @@ private fun BassAndSpatialDspTab(
     onUpdateHaasStereoDoubler: (Int) -> Unit = {},
     onUpdateLateralPinnaCue: (Int) -> Unit = {},
     onToggleSubBassCenterAnchor: () -> Unit = {},
-    onToggleVelvetSideAir: () -> Unit = {}
+    onToggleVelvetSideAir: () -> Unit = {},
+    onSelectEarDirectMode: (com.example.dsp.EarDirectZeroBrainMode) -> Unit = {},
+    onToggleEarDirectSwitch: () -> Unit = {},
+    onSelectWooferBox: (com.example.dsp.WooferEnclosureType) -> Unit = {},
+    onUpdateZeroBrainPressure: (Int) -> Unit = {},
+    onUpdateEarDirectPinna: (Int) -> Unit = {},
+    onUpdateSubRumbleEar: (Int) -> Unit = {},
+    onUpdateKickThumpPunch: (Int) -> Unit = {},
+    onToggleSkullBoneDrain: () -> Unit = {},
+    onToggleVelvetEarCanalSilk: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -1760,6 +1861,22 @@ private fun BassAndSpatialDspTab(
             peakDb = peakDb,
             bassBoostPercent = uiState.bassBoostStrength,
             spatialPercent = uiState.spatialLevel
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // v2.7 👂 EAR-DIRECT ZERO-BRAIN-PRESSURE & 7-WOOFER BOX ENGINE ("KAAN ME SOUND, NA KI DIMAG ME")
+        EarDirectZeroBrainAndWooferCard(
+            uiState = uiState,
+            onSelectEarDirectMode = onSelectEarDirectMode,
+            onToggleMainSwitch = onToggleEarDirectSwitch,
+            onSelectWooferBox = onSelectWooferBox,
+            onUpdateZeroBrainPressure = onUpdateZeroBrainPressure,
+            onUpdateEarDirectPinna = onUpdateEarDirectPinna,
+            onUpdateSubRumbleEar = onUpdateSubRumbleEar,
+            onUpdateKickThumpPunch = onUpdateKickThumpPunch,
+            onToggleSkullBoneDrain = onToggleSkullBoneDrain,
+            onToggleVelvetEarCanalSilk = onToggleVelvetEarCanalSilk
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -2232,7 +2349,7 @@ private fun ApkAndGithubGuideTab() {
                         inStream.copyTo(outStream)
                     }
                 }
-                Toast.makeText(context, "Saved Equltra-v2.6-TwinVocal-LR.apk successfully!", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Saved Equltra-v2.7-EarDirect-ZeroBrain.apk successfully!", Toast.LENGTH_LONG).show()
             }.onFailure {
                 Toast.makeText(context, "Export failed: ${it.localizedMessage}", Toast.LENGTH_LONG).show()
             }
@@ -2261,13 +2378,13 @@ private fun ApkAndGithubGuideTab() {
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "Equltra v2.6 (L/R Twin-Vocal + Bass-Lock) APK",
+                            text = "Equltra v2.7 (Kaan-Direct + 7-Woofer Box + Bass-Lock) APK",
                             style = MaterialTheme.typography.titleLarge,
                             color = TextPrimary,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "↔️ 0% Front / 50% L+R Vocal Split • 🔒 25% Smooth Bass Lock",
+                            text = "👂 100% Kaan • 🧠🚫 0% Dimag • 📦 7 Woofer Boxes • ↔️ L/R Vocal • 🔒 25% Bass Lock",
                             style = MaterialTheme.typography.labelSmall,
                             color = SignalEmerald
                         )
@@ -2277,7 +2394,7 @@ private fun ApkAndGithubGuideTab() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
-                    onClick = { exportApkLauncher.launch("Equltra-v2.6-TwinVocal-LR.apk") },
+                    onClick = { exportApkLauncher.launch("Equltra-v2.7-EarDirect-ZeroBrain.apk") },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = ElectricCyan,
                         contentColor = AmoledBlack
@@ -2290,12 +2407,12 @@ private fun ApkAndGithubGuideTab() {
                 ) {
                     Icon(
                         imageVector = Icons.Default.Download,
-                        contentDescription = "Save Equltra-v2.6-TwinVocal-LR.apk",
+                        contentDescription = "Save Equltra-v2.7-EarDirect-ZeroBrain.apk",
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "EXPORT EQULTRA-V2.6-TWINVOCAL-LR.APK",
+                        text = "EXPORT EQULTRA-V2.7-EARDIRECT-ZEROBRAIN.APK",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold
                     )

@@ -37,7 +37,9 @@ import com.example.dsp.SpatialStageNode
 import com.example.dsp.SpeedCruiseMode
 import com.example.dsp.StemDeMixerPreset
 import com.example.dsp.VoiceControlAction
+import com.example.dsp.WooferEnclosureType
 import com.example.dsp.ZeroEarbudOpenAirMode
+import com.example.dsp.EarDirectZeroBrainMode
 import com.example.service.EqForegroundService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -206,7 +208,17 @@ data class EqUiState(
     val lateralPinnaCuePercent: Int = 94,
     val isSubBassCenterAnchorEnabled: Boolean = true,
     val isVelvetSideAirEnabled: Boolean = true,
-    val lrTwinVocalTelemetryText: String = "↔️ [🔥 0% FRONT • 50% L/R]: 0% Front Null 96% • 50%L/50%R Split 96% • Haas 12ms 92% • ±90° Pinna 94% • Sub Center-Lock ON • Side Air ON"
+    val lrTwinVocalTelemetryText: String = "↔️ [🔥 0% FRONT • 50% L/R]: 0% Front Null 96% • 50%L/50%R Split 96% • Haas 12ms 92% • ±90° Pinna 94% • Sub Center-Lock ON • Side Air ON",
+    // 👂 Ear-Direct Zero-Brain-Pressure & 7-Woofer Box Engine (100% Kaan Me • 0% Dimag Pressure)
+    val earDirectMode: EarDirectZeroBrainMode = EarDirectZeroBrainMode.EAR_DIRECT_OMEGA_ALL,
+    val wooferEnclosureType: WooferEnclosureType = WooferEnclosureType.PORTED_BASS_REFLEX,
+    val zeroBrainPressurePercent: Int = 98,
+    val earDirectPinnaPercent: Int = 98,
+    val subRumbleEarPercent: Int = 88,
+    val kickThumpPunchPercent: Int = 90,
+    val isSkullBoneDrainEnabled: Boolean = true,
+    val isVelvetEarCanalSilkEnabled: Boolean = true,
+    val earDirectTelemetryText: String = "👂 [🔥 KAAN OMEGA • 0% DIMAG • 📦 PORTED REFLEX]: 0% Dimag Null 98% • 100% Kaan Pinna 98% • Sub-Rumble 88% • Kick-Punch 90% • Skull-Drain ON"
 )
 
 class EqViewModel(application: Application) : AndroidViewModel(application) {
@@ -2529,6 +2541,137 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
         recomputeAndApplyLrTwinVocalSplitter()
     }
 
+    // =========================================================================
+    // 👂 EAR-DIRECT ZERO-BRAIN-PRESSURE & 7-WOOFER BOX ENGINE ("KAAN ME SOUND, NA KI DIMAG ME")
+    // =========================================================================
+
+    private fun recomputeAndApplyEarDirectZeroBrain() {
+        _uiState.update { s ->
+            val result = FutureGenAudioLabEngine.synthesizeEarDirectZeroBrainSuite(
+                baseBands = s.bandGainsDb,
+                mode = s.earDirectMode,
+                wooferBox = s.wooferEnclosureType,
+                zeroBrainPressurePercent = s.zeroBrainPressurePercent,
+                earDirectPinnaPercent = s.earDirectPinnaPercent,
+                subRumbleEarPercent = s.subRumbleEarPercent,
+                kickThumpPunchPercent = s.kickThumpPunchPercent,
+                skullBoneDrainEnabled = s.isSkullBoneDrainEnabled,
+                velvetEarCanalSilkEnabled = s.isVelvetEarCanalSilkEnabled
+            )
+            if (s.earDirectMode == EarDirectZeroBrainMode.OFF) {
+                s.copy(earDirectTelemetryText = result.telemetrySummary)
+            } else {
+                val effectiveBass = resolveBass(result.effectiveBassBoost, s)
+                s.copy(
+                    isMasterEnabled = true,
+                    activePresetName = "${s.earDirectMode.badge} • ${s.wooferEnclosureType.badge}",
+                    bandGainsDb = applyBassLockToBands(result.sculptedBands31, effectiveBass, s.isBassBoostLocked),
+                    bassBoostStrength = effectiveBass,
+                    spatialLevel = result.effectiveSpatial3D,
+                    reverbLevel = result.effectiveReverbLevel,
+                    reverbRoom = result.effectiveReverbRoom,
+                    crossfeedStrengthPercent = result.effectiveCrossfeedPct,
+                    preampDb = result.effectivePreampDb,
+                    earDirectTelemetryText = result.telemetrySummary
+                )
+            }
+        }
+        syncDspEngine()
+    }
+
+    fun setEarDirectMode(mode: EarDirectZeroBrainMode) {
+        _uiState.update { it.copy(earDirectMode = mode) }
+        hapticManager.onAiPresetApplied("Kaan-Direct ${mode.badge}")
+        recomputeAndApplyEarDirectZeroBrain()
+    }
+
+    fun toggleEarDirectZeroBrain() {
+        val nextMode = if (_uiState.value.earDirectMode == EarDirectZeroBrainMode.OFF) {
+            EarDirectZeroBrainMode.EAR_DIRECT_OMEGA_ALL
+        } else {
+            EarDirectZeroBrainMode.OFF
+        }
+        setEarDirectMode(nextMode)
+    }
+
+    fun setWooferEnclosureType(box: WooferEnclosureType) {
+        _uiState.update { state ->
+            val nextMode = if (state.earDirectMode == EarDirectZeroBrainMode.OFF) {
+                EarDirectZeroBrainMode.EAR_DIRECT_OMEGA_ALL
+            } else state.earDirectMode
+            state.copy(
+                earDirectMode = nextMode,
+                wooferEnclosureType = box
+            )
+        }
+        hapticManager.onAiPresetApplied("Woofer Box ${box.badge}")
+        recomputeAndApplyEarDirectZeroBrain()
+    }
+
+    fun updateZeroBrainPressurePercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.earDirectMode == EarDirectZeroBrainMode.OFF) {
+                EarDirectZeroBrainMode.PURE_KAAN_ZERO_DIMAG
+            } else state.earDirectMode
+            state.copy(
+                earDirectMode = nextMode,
+                zeroBrainPressurePercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyEarDirectZeroBrain()
+    }
+
+    fun updateEarDirectPinnaPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.earDirectMode == EarDirectZeroBrainMode.OFF) {
+                EarDirectZeroBrainMode.OUTER_PINNA_VELVET_CUP
+            } else state.earDirectMode
+            state.copy(
+                earDirectMode = nextMode,
+                earDirectPinnaPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyEarDirectZeroBrain()
+    }
+
+    fun updateSubRumbleEarPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.earDirectMode == EarDirectZeroBrainMode.OFF) {
+                EarDirectZeroBrainMode.EAR_LOBE_BASS_MASSAGE
+            } else state.earDirectMode
+            state.copy(
+                earDirectMode = nextMode,
+                subRumbleEarPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyEarDirectZeroBrain()
+    }
+
+    fun updateKickThumpPunchPercent(percent: Int) {
+        _uiState.update { state ->
+            val nextMode = if (state.earDirectMode == EarDirectZeroBrainMode.OFF) {
+                EarDirectZeroBrainMode.EAR_LOBE_BASS_MASSAGE
+            } else state.earDirectMode
+            state.copy(
+                earDirectMode = nextMode,
+                kickThumpPunchPercent = percent.coerceIn(0, 100)
+            )
+        }
+        recomputeAndApplyEarDirectZeroBrain()
+    }
+
+    fun toggleSkullBoneDrain() {
+        _uiState.update { it.copy(isSkullBoneDrainEnabled = !it.isSkullBoneDrainEnabled) }
+        hapticManager.onControlTick("180Hz Skull-Bone Boom Drain")
+        recomputeAndApplyEarDirectZeroBrain()
+    }
+
+    fun toggleVelvetEarCanalSilk() {
+        _uiState.update { it.copy(isVelvetEarCanalSilkEnabled = !it.isVelvetEarCanalSilkEnabled) }
+        hapticManager.onControlTick("Velvet Ear-Canal Silk")
+        recomputeAndApplyEarDirectZeroBrain()
+    }
+
     private fun startFutureGenCoordinator() {
         viewModelScope.launch {
             var tickCount = 0
@@ -2618,7 +2761,15 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
                         haasStereoDoublerPct = s.haasStereoDoublerPercent,
                         lateralPinnaCuePct = s.lateralPinnaCuePercent,
                         subBassCenterAnchor = s.isSubBassCenterAnchorEnabled,
-                        velvetSideAir = s.isVelvetSideAirEnabled
+                        velvetSideAir = s.isVelvetSideAirEnabled,
+                        earDirectEnabled = s.earDirectMode != EarDirectZeroBrainMode.OFF,
+                        zeroBrainPressurePct = s.zeroBrainPressurePercent,
+                        earDirectPinnaPct = s.earDirectPinnaPercent,
+                        subRumbleEarPct = s.subRumbleEarPercent,
+                        kickThumpPunchPct = s.kickThumpPunchPercent,
+                        skullBoneDrain = s.isSkullBoneDrainEnabled,
+                        velvetEarCanalSilk = s.isVelvetEarCanalSilkEnabled,
+                        wooferEnclosure = s.wooferEnclosureType
                     )
                 }
                 // Bass-to-Haptic Sub-Woofer Tactile Engine: pulse phone vibrator on sub-bass hits
@@ -2750,7 +2901,15 @@ class EqViewModel(application: Application) : AndroidViewModel(application) {
             haasStereoDoublerPct = s.haasStereoDoublerPercent,
             lateralPinnaCuePct = s.lateralPinnaCuePercent,
             subBassCenterAnchor = s.isSubBassCenterAnchorEnabled,
-            velvetSideAir = s.isVelvetSideAirEnabled
+            velvetSideAir = s.isVelvetSideAirEnabled,
+            earDirectEnabled = s.earDirectMode != EarDirectZeroBrainMode.OFF,
+            zeroBrainPressurePct = s.zeroBrainPressurePercent,
+            earDirectPinnaPct = s.earDirectPinnaPercent,
+            subRumbleEarPct = s.subRumbleEarPercent,
+            kickThumpPunchPct = s.kickThumpPunchPercent,
+            skullBoneDrain = s.isSkullBoneDrainEnabled,
+            velvetEarCanalSilk = s.isVelvetEarCanalSilkEnabled,
+            wooferEnclosure = s.wooferEnclosureType
         )
         dspEngine.updateDspState(
             enabled = s.isMasterEnabled,

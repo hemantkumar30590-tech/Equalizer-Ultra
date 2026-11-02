@@ -1894,6 +1894,255 @@ object FutureGenAudioLabEngine {
             telemetrySummary = summary
         )
     }
+
+    /**
+     * 18. 👂 EAR-DIRECT ZERO-BRAIN-PRESSURE & 7-WOOFER BOX ENGINE ("KAAN ME SOUND • 0% DIMAG PRESSURE")
+     * Engineered specifically so sound NEVER feels trapped inside the brain/skull ("Dimag me nahi")
+     * and instead projects 100% directly into the Left Ear & Right Ear externally ("Sidha Kaan me")
+     * with authentic 7-Type Woofer/Subwoofer Enclosure physics:
+     * 1) 🧠🚫 100% Zero-Brain / Anti-Skull Pressure Nuller (0%–100%): Cancels the 630Hz–1.6kHz monophonic
+     *    in-head skull phantom image and 3.15kHz cranial nerve glare so 0% sound presses inside the brain.
+     * 2) 👂↔️👂 100% Left & Right Outer-Ear Pinna Coupling (0%–100%): Focuses acoustic energy at the
+     *    outer Left & Right ear concha entrances (250–350Hz warm ear-cup cushion + 1.8k–2.5kHz L/R ear-canal
+     *    entry + 8k–16kHz velvet outer-pinna air) so speakers feel physically hugging your Left & Right ears!
+     * 3) 📦 7-Type Woofer & Subwoofer Box Simulator (Sealed, Ported, Passive Radiator, 6th-Order Bandpass,
+     *    Folded Horn, Transmission Line, Isobaric Push-Pull): Shapes the 20Hz–125Hz sub/mid-bass curve
+     *    to match real physical subwoofer enclosures.
+     * 4) 🌊 Dual-Zone Ear-Drum Sub-Rumble (20–50Hz) vs 🥁 Kick Thump Punch (60–110Hz) Controllers.
+     * 5) 🦴 Skull-Bone 160–220Hz Resonance Drain (ON/OFF): Drains muddy temporal-bone boom that causes head heaviness.
+     * 6) ✨ Velvet Ear-Canal Silk & Anti-Fatigue Guard (ON/OFF): Keeps eardrums 100% relaxed for hours.
+     */
+    fun synthesizeEarDirectZeroBrainSuite(
+        baseBands: List<Float>,
+        mode: EarDirectZeroBrainMode,
+        wooferBox: WooferEnclosureType,
+        zeroBrainPressurePercent: Int,
+        earDirectPinnaPercent: Int,
+        subRumbleEarPercent: Int,
+        kickThumpPunchPercent: Int,
+        skullBoneDrainEnabled: Boolean,
+        velvetEarCanalSilkEnabled: Boolean
+    ): EarDirectZeroBrainResult {
+        val current = EqPresetEntity.interpolateTo31Bands(baseBands)
+        if (mode == EarDirectZeroBrainMode.OFF) {
+            return EarDirectZeroBrainResult(
+                sculptedBands31 = current,
+                effectiveBassBoost = 25,
+                effectiveSpatial3D = 35,
+                effectiveReverbLevel = 12,
+                effectiveReverbRoom = "Small Room",
+                effectiveCrossfeedPct = 20,
+                effectivePreampDb = -1.5f,
+                telemetrySummary = "👂 EAR-DIRECT ENGINE OFF • Tap 👂 Kaan-Direct Omega or 📦 7-Woofer Box to move sound into Ears (0% Dimag)"
+            )
+        }
+
+        val zeroBrainNorm = (zeroBrainPressurePercent.coerceIn(0, 100) / 100f) * mode.zeroBrainScale
+        val earPinnaNorm = (earDirectPinnaPercent.coerceIn(0, 100) / 100f) * mode.earPinnaScale
+        val subRumbleNorm = (subRumbleEarPercent.coerceIn(0, 100) / 100f) * mode.subRumbleScale
+        val kickPunchNorm = (kickThumpPunchPercent.coerceIn(0, 100) / 100f) * mode.kickPunchScale
+
+        val outBands = MutableList(EqPresetEntity.BAND_COUNT) { idx ->
+            var g = current[idx] * 0.40f
+
+            // 1. 📦 7-Type Woofer & Subwoofer Box Acoustic Physics (20Hz–125Hz, idx 0..8)
+            val boxOffset = wooferBox.bandOffsets9.getOrElse(idx) { 0f }
+            if (idx in 0..8) {
+                g += boxOffset * 0.72f
+            }
+
+            // 2. 🌊 Zone 1: 20Hz–50Hz Ear-Drum Sub-Rumble (idx 0..4)
+            if (idx in 0..4) {
+                g += (3.2f * subRumbleNorm) * (1f - idx * 0.12f)
+            }
+
+            // 3. 🥁 Zone 2: 63Hz–125Hz Tight Kick & Dholak Thump (idx 5..8)
+            if (idx in 5..8) {
+                g += (3.0f * kickPunchNorm) * (1f - (idx - 5) * 0.15f)
+            }
+
+            // 4. 🦴 Skull-Bone 160Hz–250Hz Resonance Drain (Eliminates "Dimag Bhari / Head Boom" feeling)
+            if (skullBoneDrainEnabled) {
+                when (idx) {
+                    9 -> g -= 3.2f * zeroBrainNorm   // 160Hz primary temporal-bone boom drain
+                    10 -> g -= 3.6f * zeroBrainNorm  // 200Hz skull-cavity mud eraser
+                    11 -> g -= 2.0f * zeroBrainNorm  // 250Hz upper-mud anti-masking cut
+                }
+            }
+
+            // 5. 🧠🚫 100% Zero-Brain / Anti-Skull Center Pressure Nuller:
+            // Scoops the 630Hz–1.25kHz (idx 15..18) in-head phantom center lock and 3.15kHz (idx 22) cranial nerve glare
+            when (idx) {
+                15, 16 -> g -= 3.4f * zeroBrainNorm  // 630Hz–800Hz center-of-forehead pressure null
+                17, 18 -> g -= 3.0f * zeroBrainNorm  // 1kHz–1.25kHz inside-the-head mono lock eraser
+                22 -> g -= 2.6f * zeroBrainNorm      // 3.15kHz cranial fatigue & brain-piercing glare cut
+            }
+
+            // 6. 👂↔️👂 100% Left & Right Outer-Ear Pinna Coupling ("Sidha Kaan Me"):
+            // Boosts outer-ear cup warmth (315–500Hz, idx 12..14), binaural L/R ear-entrance presence (1.6k–2.5kHz, idx 19..21),
+            // and outer-pinna lateral air (4k–16kHz, idx 23..29)
+            when (idx) {
+                12, 13 -> g += 2.4f * earPinnaNorm   // 315Hz–400Hz warm Left/Right outer-ear cup cushion
+                19, 20, 21 -> g += 3.5f * earPinnaNorm // 1.6kHz–2.5kHz direct Left/Right ear-canal entrance lock
+                23, 24 -> g += 2.9f * earPinnaNorm   // 4kHz–5kHz outer pinna concha rim focus
+                25 -> g -= 2.2f * earPinnaNorm      // 6.3kHz frontal notch (keeps sound anchored at the ears, not forehead)
+                26, 27, 28 -> g += 3.6f * earPinnaNorm // 8kHz–12.5kHz tactile ear-side sparkle
+            }
+
+            // 7. ✨ Velvet Ear-Canal Silk & Anti-Fatigue Guard
+            if (velvetEarCanalSilkEnabled) {
+                if (idx == 25 || idx == 26) g -= 1.0f // Smooth any sibilance
+                if (idx in 28..30) g += 2.6f          // 12.5kHz–20kHz silky ear-tickle ribbon air
+            }
+
+            (kotlin.math.round(g * 2f) / 2f).coerceIn(-15f, 15f)
+        }
+
+        val effBass = 25 // Always honors 25% Smooth Bass Memory Lock by default
+        val effSpatial = (90 + (earPinnaNorm * 10f)).roundToInt().coerceIn(75, 100)
+        val effReverb = (18 + (earPinnaNorm * 8f)).roundToInt().coerceIn(10, 34)
+        val effRoom = "Small Room"
+        // Zero crossfeed (0%) so Left & Right ear channels stay 100% in the Left & Right ears and NEVER mix into the brain center!
+        val effCrossfeed = 0
+        val effPreamp = -1.5f
+
+        val summary = buildString {
+            append("👂 [${mode.badge} • ${wooferBox.badge}]: ")
+            append("0% Dimag Null ${zeroBrainPressurePercent}% • ")
+            append("100% Kaan Pinna ${earDirectPinnaPercent}% • ")
+            append("Sub-Rumble ${subRumbleEarPercent}% • ")
+            append("Kick-Punch ${kickThumpPunchPercent}%")
+            if (skullBoneDrainEnabled) append(" • Skull-Drain ON")
+        }
+
+        return EarDirectZeroBrainResult(
+            sculptedBands31 = outBands,
+            effectiveBassBoost = effBass,
+            effectiveSpatial3D = effSpatial,
+            effectiveReverbLevel = effReverb,
+            effectiveReverbRoom = effRoom,
+            effectiveCrossfeedPct = effCrossfeed,
+            effectivePreampDb = effPreamp,
+            telemetrySummary = summary
+        )
+    }
+}
+
+data class EarDirectZeroBrainResult(
+    val sculptedBands31: List<Float>,
+    val effectiveBassBoost: Int,
+    val effectiveSpatial3D: Int,
+    val effectiveReverbLevel: Int,
+    val effectiveReverbRoom: String,
+    val effectiveCrossfeedPct: Int,
+    val effectivePreampDb: Float,
+    val telemetrySummary: String
+)
+
+enum class EarDirectZeroBrainMode(
+    val title: String,
+    val badge: String,
+    val zeroBrainScale: Float,
+    val earPinnaScale: Float,
+    val subRumbleScale: Float,
+    val kickPunchScale: Float,
+    val subtitle: String
+) {
+    OFF(
+        title = "Standard Headphone Path (Off)",
+        badge = "STANDARD",
+        zeroBrainScale = 0f,
+        earPinnaScale = 0f,
+        subRumbleScale = 0f,
+        kickPunchScale = 0f,
+        subtitle = "Standard headphone mix without Zero-Brain or Ear-Pinna direct projection"
+    ),
+    PURE_KAAN_ZERO_DIMAG(
+        title = "👂🚫 100% Kaan Me • 0% Dimag Me (Zero Brain Pressure)",
+        badge = "👂 100% KAAN • 0% DIMAG",
+        zeroBrainScale = 1.0f,
+        earPinnaScale = 1.0f,
+        subRumbleScale = 0.85f,
+        kickPunchScale = 0.88f,
+        subtitle = "Erases 100% of inside-the-brain center pressure and delivers sound strictly into Left & Right ears"
+    ),
+    OUTER_PINNA_VELVET_CUP(
+        title = "🎧 Outer-Ear Velvet Cup Monitor (Left & Right Ear Hug)",
+        badge = "🎧 OUTER-EAR HUG",
+        zeroBrainScale = 0.95f,
+        earPinnaScale = 1.0f,
+        subRumbleScale = 0.90f,
+        kickPunchScale = 0.92f,
+        subtitle = "Feels like two warm, plush studio speakers sitting right outside your Left & Right earlobes"
+    ),
+    EAR_LOBE_BASS_MASSAGE(
+        title = "🌊 Ear-Drum & Earlobe Sub-Vibration Massage",
+        badge = "🌊 EAR-LOBE SUB",
+        zeroBrainScale = 0.96f,
+        earPinnaScale = 0.94f,
+        subRumbleScale = 1.0f,
+        kickPunchScale = 1.0f,
+        subtitle = "Soft, physical sub-bass air-cushion vibration on the eardrums with zero skull/headache boom"
+    ),
+    EAR_DIRECT_OMEGA_ALL(
+        title = "🔥 Kaan-Direct Zero-Dimag Omega (All 6 Ear Engines + 7-Woofer)",
+        badge = "🔥 KAAN OMEGA • 0% DIMAG",
+        zeroBrainScale = 0.98f,
+        earPinnaScale = 0.98f,
+        subRumbleScale = 0.94f,
+        kickPunchScale = 0.95f,
+        subtitle = "Full 6-Engine Ear-Direct Stack: 0% Brain Pressure + 100% L/R Ear Concha Lock + 7-Woofer Box Physics"
+    )
+}
+
+enum class WooferEnclosureType(
+    val title: String,
+    val badge: String,
+    val shortSpec: String,
+    val bandOffsets9: FloatArray
+) {
+    PORTED_BASS_REFLEX(
+        title = "📦 Ported / Bass-Reflex Tube",
+        badge = "📦 PORTED REFLEX",
+        shortSpec = "32Hz–55Hz Deep Air-Port Ear Vibration • Long Smooth Decay",
+        bandOffsets9 = floatArrayOf(3.2f, 4.2f, 4.8f, 4.5f, 3.6f, 2.4f, 1.4f, 0.4f, -0.8f)
+    ),
+    SEALED_ACOUSTIC_BOX(
+        title = "🔒 Sealed Tight Box (Acoustic Suspension)",
+        badge = "🔒 SEALED TIGHT",
+        shortSpec = "45Hz–85Hz Super-Fast, Tight & Clean Studio Punch • Zero Mud",
+        bandOffsets9 = floatArrayOf(1.6f, 2.2f, 3.0f, 3.8f, 4.2f, 4.4f, 3.8f, 2.2f, -1.2f)
+    ),
+    PASSIVE_RADIATOR_TWIN(
+        title = "🪩 Dual Passive Radiator (Earbud Sub-Extender)",
+        badge = "🪩 PASSIVE RADIATOR",
+        shortSpec = "28Hz–63Hz Drone-Cone Sub Extension for TWS Earbuds & Neckbands",
+        bandOffsets9 = floatArrayOf(3.8f, 4.4f, 4.6f, 4.0f, 3.2f, 2.2f, 1.2f, 0.0f, -1.4f)
+    ),
+    BANDPASS_6TH_ORDER_SPL(
+        title = "🚘 6th-Order Bandpass Car SPL Monster",
+        badge = "🚘 6TH-ORDER SPL",
+        shortSpec = "Dual-Chamber 35Hz + 75Hz High-Pressure Car Trunk Slam",
+        bandOffsets9 = floatArrayOf(2.8f, 4.0f, 5.0f, 4.2f, 2.8f, 4.4f, 4.6f, 2.6f, -1.6f)
+    ),
+    FOLDED_HORN_SCOOP(
+        title = "📯 Folded Horn / DJ Scoop Cabinet",
+        badge = "📯 FOLDED HORN",
+        shortSpec = "50Hz–110Hz Long-Throw Open-Ground Concert Acoustic Horn",
+        bandOffsets9 = floatArrayOf(1.2f, 2.0f, 3.2f, 4.2f, 4.8f, 5.0f, 4.6f, 3.4f, 1.2f)
+    ),
+    TRANSMISSION_LINE_LAB(
+        title = "🌀 Transmission Line (Quarter-Wave T-Line)",
+        badge = "🌀 T-LINE 20HZ",
+        shortSpec = "20Hz–40Hz Acoustic Labyrinth • Zero Back-Wave Distortion",
+        bandOffsets9 = floatArrayOf(4.8f, 4.8f, 4.4f, 3.8f, 3.0f, 2.2f, 1.4f, 0.6f, -0.6f)
+    ),
+    ISOBARIC_PUSH_PULL(
+        title = "⚡ Isobaric Push-Pull Twin Woofer",
+        badge = "⚡ ISOBARIC TWIN",
+        shortSpec = "Dual Coupled Magnet Force • Zero Cone Distortion at Max Volume",
+        bandOffsets9 = floatArrayOf(3.6f, 4.2f, 4.5f, 4.4f, 4.0f, 3.6f, 2.8f, 1.4f, -1.0f)
+    )
 }
 
 data class LrTwinVocalSplitterResult(

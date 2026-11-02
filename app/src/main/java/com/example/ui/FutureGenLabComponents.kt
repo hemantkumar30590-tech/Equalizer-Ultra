@@ -88,7 +88,9 @@ import com.example.dsp.SpatialStageFormation
 import com.example.dsp.SpatialStageNode
 import com.example.dsp.SpeedCruiseMode
 import com.example.dsp.StemDeMixerPreset
+import com.example.dsp.WooferEnclosureType
 import com.example.dsp.ZeroEarbudOpenAirMode
+import com.example.dsp.EarDirectZeroBrainMode
 import com.example.ui.theme.AmoledBlack
 import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.HyperViolet
@@ -157,14 +159,14 @@ fun FutureGenQuickStripCard(
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "v2.6 QUANTUM & L/R VOCAL LAB",
+                                text = "v2.7 KAAN-DIRECT & 7-WOOFER LAB",
                                 style = MaterialTheme.typography.titleSmall,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "↔️ 50%L/50%R VOCAL",
+                                text = "👂 100% KAAN • 0% DIMAG",
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
                                 color = AmoledBlack,
                                 fontWeight = FontWeight.Bold,
@@ -174,7 +176,7 @@ fun FutureGenQuickStripCard(
                             )
                         }
                         Text(
-                            text = "0% Front / 50% L+R Vocal Split • 25% Bass Lock • 3D Stage • Sonar",
+                            text = "100% Kaan Direct • 0% Dimag Pressure • 7 Woofer Boxes • L/R Vocal • 25% Bass Lock",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                             color = ElectricCyan,
                             maxLines = 1,
@@ -945,6 +947,15 @@ fun FutureGenQuantumLabDialog(
     onUpdateLateralPinnaCue: (Int) -> Unit = {},
     onToggleSubBassCenterAnchor: () -> Unit = {},
     onToggleVelvetSideAir: () -> Unit = {},
+    onSelectEarDirectMode: (EarDirectZeroBrainMode) -> Unit = {},
+    onToggleEarDirectSwitch: () -> Unit = {},
+    onSelectWooferBox: (WooferEnclosureType) -> Unit = {},
+    onUpdateZeroBrainPressure: (Int) -> Unit = {},
+    onUpdateEarDirectPinna: (Int) -> Unit = {},
+    onUpdateSubRumbleEar: (Int) -> Unit = {},
+    onUpdateKickThumpPunch: (Int) -> Unit = {},
+    onToggleSkullBoneDrain: () -> Unit = {},
+    onToggleVelvetEarCanalSilk: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -980,13 +991,13 @@ fun FutureGenQuantumLabDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = "EQULTRA v2.6 L/R TWIN-VOCAL & QUANTUM LAB",
+                                text = "EQULTRA v2.7 KAAN-DIRECT & 7-WOOFER LAB",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
-                                text = "↔️ 0% Front / 50% L+R Vocal • 🌌 Apex • 🧠 Chrono-Neural • 🎻 Live Stage",
+                                text = "👂 100% Kaan • 🧠🚫 0% Dimag • 📦 7 Woofer Boxes • ↔️ 50% L/R Vocal",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ElectricCyan
                             )
@@ -1009,6 +1020,20 @@ fun FutureGenQuantumLabDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // 00000000000. 👂 EAR-DIRECT ZERO-BRAIN-PRESSURE & 7-WOOFER BOX ENGINE ("KAAN ME SOUND, NA KI DIMAG ME")
+                    EarDirectZeroBrainAndWooferCard(
+                        uiState = uiState,
+                        onSelectEarDirectMode = onSelectEarDirectMode,
+                        onToggleMainSwitch = onToggleEarDirectSwitch,
+                        onSelectWooferBox = onSelectWooferBox,
+                        onUpdateZeroBrainPressure = onUpdateZeroBrainPressure,
+                        onUpdateEarDirectPinna = onUpdateEarDirectPinna,
+                        onUpdateSubRumbleEar = onUpdateSubRumbleEar,
+                        onUpdateKickThumpPunch = onUpdateKickThumpPunch,
+                        onToggleSkullBoneDrain = onToggleSkullBoneDrain,
+                        onToggleVelvetEarCanalSilk = onToggleVelvetEarCanalSilk
+                    )
+
                     // 0000000000. ↔️ L/R TWIN-SIDE VOCAL SPLITTER (ZERO-FRONT VOCAL ENGINE: 0% FRONT • 50% LEFT + 50% RIGHT)
                     LrTwinVocalSplitterCard(
                         uiState = uiState,
@@ -4655,5 +4680,438 @@ fun LrTwinVocalSplitterCard(
     }
 }
 
+@Composable
+fun EarDirectZeroBrainAndWooferCard(
+    uiState: EqUiState,
+    onSelectEarDirectMode: (EarDirectZeroBrainMode) -> Unit,
+    onToggleMainSwitch: () -> Unit,
+    onSelectWooferBox: (WooferEnclosureType) -> Unit,
+    onUpdateZeroBrainPressure: (Int) -> Unit,
+    onUpdateEarDirectPinna: (Int) -> Unit,
+    onUpdateSubRumbleEar: (Int) -> Unit,
+    onUpdateKickThumpPunch: (Int) -> Unit,
+    onToggleSkullBoneDrain: () -> Unit,
+    onToggleVelvetEarCanalSilk: () -> Unit
+) {
+    val isActive = uiState.earDirectMode != EarDirectZeroBrainMode.OFF
+    val activeBox = uiState.wooferEnclosureType
+    Surface(
+        color = ObsidianCard,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            width = 2.6.dp,
+            brush = Brush.horizontalGradient(
+                listOf(SignalEmerald, ElectricCyan, StudioAmber, NeonMagenta)
+            )
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // Header Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Hearing,
+                            contentDescription = "Ear-Direct Zero-Brain-Pressure Engine",
+                            tint = SignalEmerald,
+                            modifier = Modifier.size(21.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "👂 KAAN-DIRECT & ZERO-DIMAG ENGINE + 7 WOOFER BOX",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "100% Sound Sidha Left & Right Kaan Me • 0% Dimag/Forehead Pressure • 7 Subwoofer Enclosures",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = SignalEmerald
+                    )
+                }
+                Switch(
+                    checked = isActive,
+                    onCheckedChange = { onToggleMainSwitch() },
+                    modifier = Modifier.testTag("ear_direct_zero_brain_switch"),
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = AmoledBlack,
+                        checkedTrackColor = SignalEmerald,
+                        uncheckedThumbColor = TextSecondary,
+                        uncheckedTrackColor = AmoledBlack
+                    )
+                )
+            }
 
+            // Visual Left Kaan | 0% Dimag | Right Kaan Status Bar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Surface(
+                    color = AmoledBlack,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, if (isActive) SignalEmerald else ObsidianBorder),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(vertical = 6.dp, horizontal = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "👂 LEFT KAAN",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(
+                            text = if (isActive) "${uiState.earDirectPinnaPercent}% DIRECT" else "BYPASS",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                Surface(
+                    color = AmoledBlack,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, if (isActive) NeonMagenta else ObsidianBorder),
+                    modifier = Modifier.weight(1.15f)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(vertical = 6.dp, horizontal = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "🧠🚫 DIMAG / SKULL",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(
+                            text = if (isActive) "0% PRESSURE (${uiState.zeroBrainPressurePercent}% NULL)" else "NORMAL",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                            color = StudioAmber,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
+                Surface(
+                    color = AmoledBlack,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, if (isActive) ElectricCyan else ObsidianBorder),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(vertical = 6.dp, horizontal = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "RIGHT KAAN 👂",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(
+                            text = if (isActive) "${uiState.earDirectPinnaPercent}% DIRECT" else "BYPASS",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
 
+            // Live Telemetry Banner
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, if (isActive) SignalEmerald.copy(alpha = 0.8f) else ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = uiState.earDirectTelemetryText,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = if (isActive) SignalEmerald else TextSecondary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                )
+            }
+
+            // 1. 1-Tap Kaan-Direct Zero-Dimag Mode Chips
+            Text(
+                text = "1️⃣ Kaan-Direct Mode (1-Tap Zero-Dimag Selector):",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = ElectricCyan,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                EarDirectZeroBrainMode.entries.forEach { mode ->
+                    val selected = uiState.earDirectMode == mode
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectEarDirectMode(mode) },
+                        label = {
+                            Text(
+                                text = mode.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = SignalEmerald,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        )
+                    )
+                }
+            }
+
+            // 2. 7-Type Woofer & Subwoofer Enclosure Box Simulator
+            Text(
+                text = "2️⃣ 7-Type Woofer & Subwoofer Box Simulator (Select Your Bass Cabinet):",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = StudioAmber,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                WooferEnclosureType.entries.forEach { box ->
+                    val selected = uiState.wooferEnclosureType == box
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectWooferBox(box) },
+                        label = {
+                            Text(
+                                text = box.title,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = StudioAmber,
+                            selectedLabelColor = AmoledBlack,
+                            containerColor = AmoledBlack,
+                            labelColor = TextPrimary
+                        )
+                    )
+                }
+            }
+
+            // Active Woofer Box Spec Banner
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, StudioAmber.copy(alpha = 0.65f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)) {
+                    Text(
+                        text = "${activeBox.title}  •  [${activeBox.badge}]",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
+                        color = StudioAmber,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        text = activeBox.shortSpec,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
+                        color = TextSecondary
+                    )
+                }
+            }
+
+            // 3. 4 Kaan-Direct & Dual-Zone Bass Physics Sliders
+            Surface(
+                color = AmoledBlack,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, ObsidianBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    // Slider 1: 🧠🚫 Zero-Brain / Anti-Skull Pressure Nuller
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🧠🚫 Zero-Dimag / Forehead Pressure Nuller (630Hz–3.15kHz)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.zeroBrainPressurePercent}% NULL",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = NeonMagenta,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.zeroBrainPressurePercent.toFloat(),
+                        onValueChange = { onUpdateZeroBrainPressure(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = NeonMagenta,
+                            activeTrackColor = NeonMagenta
+                        )
+                    )
+
+                    // Slider 2: 👂↔️👂 Left & Right Outer-Ear Pinna Cup Coupling
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "👂↔️👂 Left & Right Kaan Pinna Cup Coupling (100% Ear Lock)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.earDirectPinnaPercent}% KAAN",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SignalEmerald,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.earDirectPinnaPercent.toFloat(),
+                        onValueChange = { onUpdateEarDirectPinna(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = SignalEmerald,
+                            activeTrackColor = SignalEmerald
+                        )
+                    )
+
+                    // Slider 3: 🌊 20–50Hz Sub-Rumble Ear-Drum Wave
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🌊 20–50Hz Sub-Woofer Rumble (Deep Ear-Lobe Air Wave)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.subRumbleEarPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricCyan,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.subRumbleEarPercent.toFloat(),
+                        onValueChange = { onUpdateSubRumbleEar(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = ElectricCyan,
+                            activeTrackColor = ElectricCyan
+                        )
+                    )
+
+                    // Slider 4: 🥁 60–110Hz Tight Kick & Dholak Thump Punch
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "🥁 60–110Hz Mid-Bass Woofer Kick & Dholak Thump",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.kickThumpPunchPercent}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StudioAmber,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Slider(
+                        value = uiState.kickThumpPunchPercent.toFloat(),
+                        onValueChange = { onUpdateKickThumpPunch(it.roundToInt()) },
+                        valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = StudioAmber,
+                            activeTrackColor = StudioAmber
+                        )
+                    )
+                }
+            }
+
+            // 4. 🦴 180Hz Skull-Bone Boom Drain + ✨ Velvet Ear-Canal Silk Switches
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = uiState.isSkullBoneDrainEnabled,
+                    onClick = onToggleSkullBoneDrain,
+                    label = {
+                        Text(
+                            text = if (uiState.isSkullBoneDrainEnabled) {
+                                "🦴 160–250Hz Skull-Bone Boom Drain (No Head Vibration): ON"
+                            } else {
+                                "🦴 160–250Hz Skull-Bone Boom Drain: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = SignalEmerald,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+
+                FilterChip(
+                    selected = uiState.isVelvetEarCanalSilkEnabled,
+                    onClick = onToggleVelvetEarCanalSilk,
+                    label = {
+                        Text(
+                            text = if (uiState.isVelvetEarCanalSilkEnabled) {
+                                "✨ Velvet Ear-Canal Silk (Zero Ear-Drum Fatigue): ON"
+                            } else {
+                                "✨ Velvet Ear-Canal Silk: OFF"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = ElectricCyan,
+                        selectedLabelColor = AmoledBlack,
+                        containerColor = AmoledBlack,
+                        labelColor = TextSecondary
+                    )
+                )
+            }
+        }
+    }
+}
