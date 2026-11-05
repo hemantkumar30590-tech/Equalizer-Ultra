@@ -27,28 +27,41 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Stage or Build Verified Native Equltra v3.0 Three-Live Spatial 3D APK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Prepare Build Environment
         run: |
           mkdir -p "$GITHUB_WORKSPACE/release_apks"
-          if [ ! -f "$GITHUB_WORKSPACE/.env.example" ]; then
-            echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > "$GITHUB_WORKSPACE/.env.example"
+          echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > "$GITHUB_WORKSPACE/.env"
+          echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > "$GITHUB_WORKSPACE/.env.example"
+          if [ ! -f "$GITHUB_WORKSPACE/debug.keystore" ]; then
+            keytool -genkey -v -keystore "$GITHUB_WORKSPACE/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
+          chmod +x gradlew || true
+
+      - name: Compile and Build Android APK with Gradle
+        continue-on-error: true
+        run: |
+          ./gradlew assembleDebug --no-daemon --stacktrace || gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Stage Verified Native Equltra v3.0 Three-Live Spatial 3D APK
+        run: |
           if [ -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" ]; then
+            echo "Successfully compiled fresh native APK with Gradle!"
             cp -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v3.0-ThreeLive-Spatial3D.apk"
             cp -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v1.0.apk"
             cp -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" "$GITHUB_WORKSPACE/release_apks/Equltra.apk"
           elif [ -f "$GITHUB_WORKSPACE/Equltra-v3.0-ThreeLive-Spatial3D.apk" ]; then
+            echo "Staged root APK fallback..."
             cp -f "$GITHUB_WORKSPACE/Equltra-v3.0-ThreeLive-Spatial3D.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v3.0-ThreeLive-Spatial3D.apk"
             cp -f "$GITHUB_WORKSPACE/Equltra-v3.0-ThreeLive-Spatial3D.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v1.0.apk"
             cp -f "$GITHUB_WORKSPACE/Equltra-v3.0-ThreeLive-Spatial3D.apk" "$GITHUB_WORKSPACE/release_apks/Equltra.apk"
-          elif [ -f "$GITHUB_WORKSPACE/Equltra-v2.9-CarbonOmega-50BassLock.apk" ]; then
-            cp -f "$GITHUB_WORKSPACE/Equltra-v2.9-CarbonOmega-50BassLock.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v3.0-ThreeLive-Spatial3D.apk"
-            cp -f "$GITHUB_WORKSPACE/Equltra-v2.9-CarbonOmega-50BassLock.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v1.0.apk"
-            cp -f "$GITHUB_WORKSPACE/Equltra-v2.9-CarbonOmega-50BassLock.apk" "$GITHUB_WORKSPACE/release_apks/Equltra.apk"
-          elif [ -f "$GITHUB_WORKSPACE/Equltra-v1.0.apk" ]; then
-            cp -f "$GITHUB_WORKSPACE/Equltra-v1.0.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v3.0-ThreeLive-Spatial3D.apk"
-            cp -f "$GITHUB_WORKSPACE/Equltra-v1.0.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v1.0.apk"
-            cp -f "$GITHUB_WORKSPACE/Equltra-v1.0.apk" "$GITHUB_WORKSPACE/release_apks/Equltra.apk"
           fi
           ls -lh "$GITHUB_WORKSPACE/release_apks/"
 
@@ -63,7 +76,6 @@ jobs:
           if-no-files-found: error
 
       - name: Upload APK to GitHub Releases Automatically (v3.0.0-threelive-spatial3d)
-        continue-on-error: true
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v3.0.0-threelive-spatial3d
