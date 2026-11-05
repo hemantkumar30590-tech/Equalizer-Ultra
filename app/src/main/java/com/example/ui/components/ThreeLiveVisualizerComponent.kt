@@ -307,11 +307,11 @@ fun ThreeLiveSpatialVisualizerCard(
                                     val currentRadius = ringRadius + waveDistort
 
                                     val x3d = currentRadius * cos(angle).toFloat()
-                                    val z3d = currentRadius * sin(angle).toFloat()
+                                    val z3d = (currentRadius * sin(angle)).toFloat()
 
                                     // Perspective projection with rotX tilt
-                                    val projX = cx + x3d
-                                    val projY = cy + ringYOffset + (z3d * sin(rotX * PI / 180f)).toFloat()
+                                    val projX = (cx + x3d).toFloat()
+                                    val projY = (cy + ringYOffset + (z3d * sin(rotX * PI / 180f))).toFloat()
 
                                     val point = Offset(projX, projY)
                                     if (p == 0) {

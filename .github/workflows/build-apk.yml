@@ -46,23 +46,19 @@ jobs:
           chmod +x gradlew || true
 
       - name: Compile and Build Android APK with Gradle
-        continue-on-error: true
         run: |
-          ./gradlew assembleDebug --no-daemon --stacktrace || gradle assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Stage Verified Native Equltra v3.0 Three-Live Spatial 3D APK
         run: |
-          if [ -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" ]; then
-            echo "Successfully compiled fresh native APK with Gradle!"
-            cp -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v3.0-ThreeLive-Spatial3D.apk"
-            cp -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v1.0.apk"
-            cp -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" "$GITHUB_WORKSPACE/release_apks/Equltra.apk"
-          elif [ -f "$GITHUB_WORKSPACE/Equltra-v3.0-ThreeLive-Spatial3D.apk" ]; then
-            echo "Staged root APK fallback..."
-            cp -f "$GITHUB_WORKSPACE/Equltra-v3.0-ThreeLive-Spatial3D.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v3.0-ThreeLive-Spatial3D.apk"
-            cp -f "$GITHUB_WORKSPACE/Equltra-v3.0-ThreeLive-Spatial3D.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v1.0.apk"
-            cp -f "$GITHUB_WORKSPACE/Equltra-v3.0-ThreeLive-Spatial3D.apk" "$GITHUB_WORKSPACE/release_apks/Equltra.apk"
+          if [ ! -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" ]; then
+            echo "Error: app-debug.apk was not built by Gradle!"
+            exit 1
           fi
+          echo "Successfully compiled fresh native APK with Gradle!"
+          cp -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v3.0-ThreeLive-Spatial3D.apk"
+          cp -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" "$GITHUB_WORKSPACE/release_apks/Equltra-v1.0.apk"
+          cp -f "$GITHUB_WORKSPACE/app/build/outputs/apk/debug/app-debug.apk" "$GITHUB_WORKSPACE/release_apks/Equltra.apk"
           ls -lh "$GITHUB_WORKSPACE/release_apks/"
 
       - name: Upload APK to GitHub Actions Artifacts

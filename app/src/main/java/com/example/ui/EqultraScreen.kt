@@ -1544,7 +1544,7 @@ private fun TenBandEqualizerTab(
             bassEnergy = bassBandEnergy.coerceIn(0.1f, 1.0f),
             midEnergy = midBandEnergy.coerceIn(0.1f, 1.0f),
             trebleEnergy = trebleBandEnergy.coerceIn(0.1f, 1.0f),
-            selectedPresetName = uiState.selectedPresetName
+            selectedPresetName = uiState.activePresetName
         )
 
         Spacer(modifier = Modifier.height(10.dp))
