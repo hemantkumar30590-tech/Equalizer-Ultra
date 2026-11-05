@@ -98,6 +98,7 @@ import com.example.data.EqPresetEntity
 import com.example.ui.components.FrequencyResponseAndSpectrumCanvas
 import com.example.ui.components.StudioRotaryKnobCard
 import com.example.ui.components.SystemAudioLevelVisualizerCard
+import com.example.ui.components.ThreeLiveSpatialVisualizerCard
 import com.example.ui.components.VerticalEqBandFader
 import com.example.ui.theme.AmoledBlack
 import com.example.ui.theme.ElectricCyan
@@ -1531,6 +1532,19 @@ private fun TenBandEqualizerTab(
             stereoVuLevels = stereoVuLevels,
             systemVolumePercent = systemVolumePercent,
             isSystemAudioActive = isSystemAudioActive
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // v3.0 🌐 GOOGLE THREE-LIVE (v1.2.4) 3D SPATIAL COMPUTING & HOLOGRAPHIC SOUNDSTAGE
+        val bassBandEnergy = ((uiState.bandGainsDb.getOrNull(0) ?: 0f) + 15f) / 30f
+        val midBandEnergy = ((uiState.bandGainsDb.getOrNull(5) ?: 0f) + 15f) / 30f
+        val trebleBandEnergy = ((uiState.bandGainsDb.getOrNull(9) ?: 0f) + 15f) / 30f
+        ThreeLiveSpatialVisualizerCard(
+            bassEnergy = bassBandEnergy.coerceIn(0.1f, 1.0f),
+            midEnergy = midBandEnergy.coerceIn(0.1f, 1.0f),
+            trebleEnergy = trebleBandEnergy.coerceIn(0.1f, 1.0f),
+            selectedPresetName = uiState.selectedPresetName
         )
 
         Spacer(modifier = Modifier.height(10.dp))

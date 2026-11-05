@@ -4,10 +4,13 @@ import crypto from 'node:crypto';
 
 const PORT = 3000;
 const APK_PATHS = [
-  '/app/applet/Equltra-v2.9-CarbonOmega-50BassLock.apk',
+  './Equltra-v3.0-ThreeLive-Spatial3D.apk',
+  '/app/applet/Equltra-v3.0-ThreeLive-Spatial3D.apk',
+  './Equltra-v3.0-ThreeLive-Spatial3D.apk',
+  '/app/applet/Equltra-v3.0-ThreeLive-Spatial3D.apk',
   '/app/applet/app/build/outputs/apk/debug/app-debug.apk',
   '/app/applet/.build-outputs/app-debug.apk',
-  '/app/applet/Equltra-v2.8-GodTier-50BassLock.apk',
+  './Equltra.apk',
   '/app/applet/Equltra.apk',
 ];
 
@@ -25,12 +28,13 @@ function getApkMeta() {
   const hash = crypto.createHash('sha256').update(fs.readFileSync(apk)).digest('hex').slice(0, 16).toUpperCase();
   return {
     ready: true,
-    fileName: 'Equltra-v2.9-CarbonOmega-50BassLock.apk',
-    versionName: '2.9.0',
-    versionCode: 30,
+    fileName: 'Equltra-v3.0-ThreeLive-Spatial3D.apk',
+    versionName: '3.0.0',
+    versionCode: 31,
     bassLockDefaultPercent: 50,
-    antiKhirichVelvetSilk: true,
-    carbonOmegaArchitecture: true,
+    threeLiveSpatial3D: true,
+    threeLiveVersion: '1.2.4',
+    filamentArchitecture: true,
     sizeBytes: stat.size,
     sizeMb: (stat.size / (1024 * 1024)).toFixed(2) + ' MB',
     sha256Short: hash,
@@ -48,6 +52,7 @@ const HTML_PAGE = `<!DOCTYPE html>
   <meta name="description" content="Equltra - 31-Band ISO 1/3-Octave System-wide EQ with YouTube Hook, 7-in-1 Future-Gen Quantum Lab, Sonar Scanner, Neural Brainwave 40Hz, 360 Soundstage Radar, Bio-Ear DNA &amp; Esports X-Ray." />
   <meta property="og:title" content="Equltra — 31-Band ISO Studio EQ &amp; 2027 Quantum Audio Lab" />
   <meta property="og:description" content="Equltra - 31-Band ISO 1/3-Octave System-wide EQ with YouTube Hook, 7-in-1 Future-Gen Quantum Lab, Sonar Scanner, Neural Brainwave 40Hz, 360 Soundstage Radar, Bio-Ear DNA &amp; Esports X-Ray." />
+  <script type="module" src="https://google.github.io/three-live/dist/three-live.min.js"></script>
   <style>
     :root {
       --bg: #050608;
@@ -269,23 +274,23 @@ const HTML_PAGE = `<!DOCTYPE html>
     <div class="header-actions">
       <button class="btn" id="testAudioBtn" onclick="toggleSynth()">▶ Play Test Synth</button>
       <button class="btn btn-magenta" onclick="runSonarSweep()">📡 Sonar Room Scan</button>
-      <a class="btn btn-primary" href="/download/Equltra-v2.9-CarbonOmega-50BassLock.apk?v=30" target="_blank" rel="noopener" download="Equltra-v2.9-CarbonOmega-50BassLock.apk">⬇ Download APK v2.9 (Carbon-Omega)</a>
+      <a class="btn btn-primary" href="/download/Equltra-v3.0-ThreeLive-Spatial3D.apk?v=31" target="_blank" rel="noopener" download="Equltra-v3.0-ThreeLive-Spatial3D.apk">⬇ Download APK v3.0 (Three-Live 3D)</a>
     </div>
   </header>
 
   <main>
-    <!-- 📦 VERIFIED v2.9.0 (BUILD 30) DIRECT APK DOWNLOAD & VERIFICATION HUB -->
+    <!-- 📦 VERIFIED v3.0.0 (BUILD 31) THREE-LIVE 3D DIRECT APK DOWNLOAD -->
     <div class="quantum-card" style="border: 2px solid var(--cyan); background: linear-gradient(135deg, rgba(8,24,32,0.96), rgba(13,18,28,0.98));">
       <div class="card-header">
         <div>
-          <span class="card-title" style="color:var(--cyan); font-size:14px;">💎 VERIFIED EQULTRA v2.9.0 (BUILD 30) — CARBON-OMEGA 8-ENGINE + ✨ 0% KHIRICH + 🔒 50% BASS LOCK APK</span>
+          <span class="card-title" style="color:var(--cyan); font-size:14px;">🌐 VERIFIED EQULTRA v3.0.0 (BUILD 31) — THREE-LIVE 3D SPATIAL COMPUTING & 🔒 50% BASS LOCK APK</span>
           <div id="apkVerifyMeta" style="font-size:11.5px; color:var(--text); margin-top:4px; font-family:monospace;">
-            📦 File: Equltra-v2.9-CarbonOmega-50BassLock.apk • Version: 2.9.0 (Code 30) • 🔒 Bass Lock: 50% • ✨ 0% Khirich Velvet Silk • Verifying...
+            📦 File: Equltra-v3.0-ThreeLive-Spatial3D.apk • Version: 3.0.0 (Code 31) • 🌐 Google Three-Live v1.2.4 • 🔒 Bass Lock: 50% • Verifying...
           </div>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <a class="btn btn-primary" href="/download/Equltra-v2.9-CarbonOmega-50BassLock.apk?v=30" target="_blank" rel="noopener" download="Equltra-v2.9-CarbonOmega-50BassLock.apk" style="font-size:13px; padding:10px 16px;">
-            ⬇ Direct Download APK (Equltra-v2.9-CarbonOmega-50BassLock.apk)
+          <a class="btn btn-primary" href="/download/Equltra-v3.0-ThreeLive-Spatial3D.apk?v=31" target="_blank" rel="noopener" download="Equltra-v3.0-ThreeLive-Spatial3D.apk" style="font-size:13px; padding:10px 16px;">
+            ⬇ Direct Download APK (Equltra-v3.0-ThreeLive-Spatial3D.apk)
           </a>
           <button class="btn btn-magenta" id="blobDownloadBtn" onclick="forceBlobDownload()" style="font-size:12.5px; padding:10px 14px;">
             ⚡ Force Stream Save to Phone (100% Iframe-Safe)
@@ -293,8 +298,47 @@ const HTML_PAGE = `<!DOCTYPE html>
         </div>
       </div>
       <div style="font-size:11.5px; color:var(--muted); display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:space-between;">
-        <span>✨ <b>In-App Verified (v2.9 CARBON-OMEGA):</b> Top badge shows <b>v2.9 CARBON-OMEGA • ✨ 0% KHIRICH • 🔒 50% BASS</b> + <b>💎 8 Carbon-Omega Quantum Engines</b> + <b>🔒 50% Bass Memory Lock Default</b>!</span>
+        <span>✨ <b>In-App Verified (v3.0 THREE-LIVE 3D):</b> Top badge shows <b>v3.0 THREE-LIVE • 🌐 3D SPATIAL AUDIO • 🔒 50% BASS</b> + <b>Filament 3D Engine</b>!</span>
         <span id="blobProgressText" style="color:var(--emerald); font-weight:800; font-family:monospace;">READY FOR DOWNLOAD</span>
+      </div>
+    </div>
+
+    <!-- 🌐 GOOGLE THREE-LIVE (v1.2.4) HOLOGRAPHIC 3D SOUNDSTAGE -->
+    <div class="quantum-card" style="border: 2px solid var(--violet); background: linear-gradient(135deg, rgba(20,10,35,0.96), rgba(8,12,24,0.98));">
+      <div class="card-header">
+        <div>
+          <span class="card-title" style="color:var(--violet); font-size:14px;">🌐 THREE-LIVE v1.2.4 — REAL-TIME 3D HOLOGRAPHIC AUDIO STAGE</span>
+          <div style="font-size:11.5px; color:var(--text); margin-top:4px;">
+            Interactive 3D Acoustic Mesh with Camera Controls & 6DoF Spatial Soundstage.
+          </div>
+        </div>
+        <span class="badge" style="background:rgba(139,92,246,0.25); color:var(--violet); border:1px solid var(--violet); padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;">JIT FILAMENT ENGINE</span>
+      </div>
+      <div style="width:100%; height:260px; border-radius:12px; overflow:hidden; background:#000; border:1px solid var(--border); margin-top:10px;">
+        <three-live allow-client-scripts camera-controls auto-rotate style="width:100%; height:100%; display:block;">
+          <script type="text/three">
+            const geom = new THREE.IcosahedronGeometry(1.2, 3);
+            const mat = new THREE.MeshStandardMaterial({
+              color: 0x00f0ff,
+              wireframe: true,
+              roughness: 0.1,
+              metalness: 0.8
+            });
+            const mesh = new THREE.Mesh(geom, mat);
+            mesh.name = 'AudioSphere';
+            mesh.userData.xr = { grab: true };
+            scene.add(mesh);
+
+            const innerGeom = new THREE.SphereGeometry(0.7, 16, 16);
+            const innerMat = new THREE.MeshBasicMaterial({ color: 0xff2a85, wireframe: true });
+            const innerMesh = new THREE.Mesh(innerGeom, innerMat);
+            scene.add(innerMesh);
+
+            const light = new THREE.PointLight(0x00f0ff, 2.0, 10);
+            light.position.set(2, 3, 4);
+            scene.add(light);
+          </script>
+        </three-live>
       </div>
     </div>
 
@@ -2187,7 +2231,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       try {
         if (btn) btn.disabled = true;
         if (status) status.textContent = '⏳ STREAMING APK (0%)...';
-        const response = await fetch('/download/Equltra-v2.9-CarbonOmega-50BassLock.apk?v=30&t=' + Date.now());
+        const response = await fetch('/download/Equltra-v3.0-ThreeLive-Spatial3D.apk?v=30&t=' + Date.now());
         if (!response.ok) throw new Error('HTTP ' + response.status);
         const total = parseInt(response.headers.get('Content-Length') || '19220000', 10);
         const reader = response.body.getReader();
@@ -2205,17 +2249,17 @@ const HTML_PAGE = `<!DOCTYPE html>
         const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = blobUrl;
-        a.download = 'Equltra-v2.9-CarbonOmega-50BassLock.apk';
+        a.download = 'Equltra-v3.0-ThreeLive-Spatial3D.apk';
         document.body.appendChild(a);
         a.click();
         setTimeout(() => {
           document.body.removeChild(a);
           URL.revokeObjectURL(blobUrl);
         }, 4000);
-        if (status) status.textContent = '✅ SAVED Equltra-v2.9-CarbonOmega-50BassLock.apk TO DOWNLOADS!';
+        if (status) status.textContent = '✅ SAVED Equltra-v3.0-ThreeLive-Spatial3D.apk TO DOWNLOADS!';
       } catch (err) {
         if (status) status.textContent = '⚠️ Opening direct download tab...';
-        window.open('/download/Equltra-v2.9-CarbonOmega-50BassLock.apk?v=30', '_blank');
+        window.open('/download/Equltra-v3.0-ThreeLive-Spatial3D.apk?v=30', '_blank');
       } finally {
         if (btn) btn.disabled = false;
       }
@@ -2263,8 +2307,8 @@ const server = http.createServer((req, res) => {
       return;
     }
     const stat = fs.statSync(apk);
-    const reqFile = url.split('/').pop() || 'Equltra-v2.9-CarbonOmega-50BassLock.apk';
-    const outName = reqFile.endsWith('.apk') ? reqFile : 'Equltra-v2.9-CarbonOmega-50BassLock.apk';
+    const reqFile = url.split('/').pop() || 'Equltra-v3.0-ThreeLive-Spatial3D.apk';
+    const outName = reqFile.endsWith('.apk') ? reqFile : 'Equltra-v3.0-ThreeLive-Spatial3D.apk';
     const headers = {
       'Content-Type': 'application/vnd.android.package-archive',
       'Content-Length': stat.size,

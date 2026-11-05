@@ -17,8 +17,8 @@ android {
     applicationId = "com.aistudio.voideq.equltra"
     minSdk = 24
     targetSdk = 36
-    versionCode = 30
-    versionName = "2.9.0"
+    versionCode = 31
+    versionName = "3.0.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -84,6 +84,10 @@ googleServices { missingGoogleServicesStrategy = MissingGoogleServicesStrategy.W
 // Some unused dependencies are commented out below instead of being removed.
 // This makes it easy to add them back in the future if needed.
 dependencies {
+  // Google Three-Live 3D & Spatial Computing Suite (v1.2.4)
+  implementation(files("libs/three-live-compiler-release.aar"))
+  implementation(files("libs/three-live-filament-release.aar"))
+
   implementation(platform(libs.androidx.compose.bom))
   // implementation(platform(libs.firebase.bom))
   // implementation(libs.accompanist.permissions)
