@@ -1247,7 +1247,7 @@ private fun StudioTopHeader(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "v2.9 CARBON-OMEGA",
+                                text = "v3.0 THREE-LIVE 3D",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = AmoledBlack,
                                 fontWeight = FontWeight.ExtraBold,
@@ -2591,7 +2591,7 @@ private fun ApkAndGithubGuideTab() {
                         inStream.copyTo(outStream)
                     }
                 }
-                Toast.makeText(context, "Saved Equltra-v2.9-CarbonOmega-50BassLock.apk successfully!", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Saved Equltra-v3.0-ThreeLive-Spatial3D.apk successfully!", Toast.LENGTH_LONG).show()
             }.onFailure {
                 Toast.makeText(context, "Export failed: ${it.localizedMessage}", Toast.LENGTH_LONG).show()
             }
@@ -2620,13 +2620,13 @@ private fun ApkAndGithubGuideTab() {
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "Equltra v2.9 (Carbon-Omega 8-Engine + 0% Khirich + 50% Bass Lock) APK",
+                            text = "Equltra v3.0 (Three-Live 3D Spatial + Carbon-Omega) APK",
                             style = MaterialTheme.typography.titleLarge,
                             color = TextPrimary,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "💎 Carbon-Omega 8 • 0° FIR Phase • 👂 100% Kaan • ✨ 0% Khirich • 🔒 50% Bass Lock",
+                            text = "🌐 Three-Live v1.2.4 3D • 💎 Carbon-Omega 8 • 0° FIR Phase • 👂 100% Kaan • ✨ 0% Khirich • 🔒 50% Bass Lock",
                             style = MaterialTheme.typography.labelSmall,
                             color = SignalEmerald
                         )
@@ -2636,7 +2636,7 @@ private fun ApkAndGithubGuideTab() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
-                    onClick = { exportApkLauncher.launch("Equltra-v2.9-CarbonOmega-50BassLock.apk") },
+                    onClick = { exportApkLauncher.launch("Equltra-v3.0-ThreeLive-Spatial3D.apk") },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = ElectricCyan,
                         contentColor = AmoledBlack
@@ -2649,7 +2649,7 @@ private fun ApkAndGithubGuideTab() {
                 ) {
                     Icon(
                         imageVector = Icons.Default.Download,
-                        contentDescription = "Save Equltra-v2.9-CarbonOmega-50BassLock.apk",
+                        contentDescription = "Save Equltra-v3.0-ThreeLive-Spatial3D.apk",
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))

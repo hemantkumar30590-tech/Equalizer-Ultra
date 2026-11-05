@@ -5634,7 +5634,7 @@ fun CarbonOmegaQuantumCard(
                                 shape = RoundedCornerShape(6.dp)
                             ) {
                                 Text(
-                                    text = if (isActive) "v2.9 • 0% KHIRICH" else "BYPASS",
+                                    text = if (isActive) "v3.0 • 0% KHIRICH" else "BYPASS",
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                     color = if (isActive) AmoledBlack else TextSecondary,
                                     fontWeight = FontWeight.ExtraBold,
